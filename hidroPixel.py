@@ -30,9 +30,13 @@ from .resources import *
 
 # Import the code for the dialog
 from .hidroPixel_dialog import HidroPixelDialog
+from .modulos_files import global_variables,RDC_variables
 import os.path
 import sys, os
 from osgeo import ogr
+
+# Importing libs
+import numpy as np
 
 
 class HidroPixel:
@@ -182,15 +186,149 @@ class HidroPixel:
                 action)
             self.iface.removeToolBarIcon(action)
 
+
     def carregaArquivos(self):
         """Esta função é utilizada para adicionar layers no projeto"""
-        abrir_camada = str(QFileDialog.getOpenFileName(caption="Escolha uma camada!", filter="Shapefiles (*.shp)")[0])
+        self.abrir_arquivo = str(QFileDialog.getOpenFileName(caption="Escolha os arquivos referentes a ...!", filter="Raster ou Texto(.txt, .RST)")[0])
         
-        # verificar se abrir_camada for diferente de vazio: executa a função de adicionar
-        if (abrir_camada != ''):
-            self.iface.addVectorLayer(abrir_camada, os.path.splitext(os.path.basename(abrir_camada))[0], "ogr")
-            self.dlg.lineEdit.setText(abrir_camada)
+    def leh_bacia(self):
+        """Esta função é utilizada para ler as informações da bacia hidrográfica (arquivo .rst)"""
+        # Redimensionando a matriz bacia, para as dimensões: número de linahas e número de colunas
+        global_variables.bacia.shape = (RDC_variables.nlin, RDC_variables.ncol)
+
+        # Abrindo o arquivo fornecido com as as características da bacia
+        with open(self.abrir_arquivo, 'rb') as arquivo_bin:
+            self.dados_lidos_bacia = np.fromfile(arquivo_bin, dtype = int, count = -1)
         
+            # Reorganizando os dados lidos da bacia em uma nova matriz 2D
+            global_variables.bacia = np.reshape(self.dados_lidos_bacia, (len(self.dados_lidos_bacia)//RDC_variables.ncol,RDC_variables.ncol))
+
+        return global_variables.bacia
+    
+    def leh_caracteristica_dRios(self):
+        """Esta função é utilizada para ler as informações acerca da característica dos rios de uma bacia hidrográfica (texto .rst)"""
+
+        # Abrindo o arquivo de texto (.txt) com as informações acerca das classes dos rios
+        with open(self.abrir_arquivo, 'r') as arquivo_txt:
+            arquivo_txt.readlines()
+            global_variables.nclasses = arquivo_txt.readlines()# com base no arquivo fornecido, o numéro de classes está na segunda linha!! (X)
+
+        #  Atualizando as variáveis que dependen    
+        global_variables.Sclasse.rezise(global_variables.nclasses)
+        global_variables.Mannclasse.int(global_variables.nclasses)
+        global_variables.Rhclasse.int(global_variables.nclasses)
+
+        # Descartando a linha que possui o cabeçalho (id,declividade...) das colunas no arquivo txt
+        next(arquivo_txt)
+
+        # Armazenando os valores  das colunas (id, S, Mann, Rh) nas suas respectivas variáveis (vetores de dimensão nclasses)
+        for i in range(1, global_variables.nclasse + 1):
+            lines = arquivo_txt.readline().split()
+            global_variables.j,global_variables.Sclasse[i], global_variables.Mannclasse[i], global_variables.Rhclasse[i] = map(float,lines)
+
+        return global_variables.Sclasse, global_variables.Mannclasse, global_variables.Rhclasse
+    
+
+    def leh_chasses_rios(self):
+        """Esta função é utilizada para ler as informações acerca da classe dos rios da bacia hidrográfica (arquivo raster -  .rst)"""
+        # Redimensionando a matriz da classe dos rios para as dimensões: número de linhas e número de colunas
+        global_variables.classerio.shape = (RDC_variables.nlin, RDC_variables.ncol)
+
+        # abrindo o arquivo fornecido com as características das classes dos rios
+        with open(self.abrir_arquivo, 'rb') as arquivo_bin:
+            self.dados_lidos_classe_rio = np.fromfile(arquivo_bin, dtype = int, count = -1)
+        
+        global_variables.classerio = np.reshape(self.dados_lidos_classe_rio, (len(self.dados_lidos_classe_rio)//RDC_variables.ncol,RDC_variables.ncol))
+
+        return global_variables.classerio
+    
+    def leh_direcao_rios(self):
+        """Esta função é utilizada para ler as informações acerca da direção de escoamento dos rios (arquivo raster - .rst)"""
+        # será desenvolvida...
+        return
+
+    def leh_drenagem(self):
+        """Esta função é utilizada para ler as informações acerca da drenagem dos rios (arquivo raster - .rst)"""
+        # Redimensionando a matriz da drenagem para as dimensões: número de linhas e número de colunas
+        global_variables.dren.shape = (RDC_variables.nlin, RDC_variables.ncol)
+
+        # Abrindo o arquivo fornecido com as características referentes a drenagem (sistema de drenagem?) da bacia
+        with open(self.abrir_arquivo, 'rb') as arquivo_bin:
+            self.dados_lidos_drenagem = np.fromfile(arquivo_bin, dtype = int, count = -1)
+
+        # Redimensionando a matriz da drenagem com base nos dados lidos do arquivo fornecido
+        global_variables.dren = np.reshape(self.dados_lidos_drenagem, (len(self.dados_lidos_drenagem)//RDC_variables.ncol,RDC_variables.ncol))
+
+        return global_variables.dren
+
+    def leh_modelo_numerico_dTerreno(self):
+        """Esta função é utilizada para ler as informações acerca do modelo numérico do terreno (arquivo raster - .rst)"""
+        # Redimensionando as matrizes referentes ao MDE e MDEReal para as dimensões: número de linhas e número de colunas
+        global_variables.MDE.shape = (RDC_variables.nlin, RDC_variables.ncol)
+        global_variables.MDEreal.shape = (RDC_variables.nlin, RDC_variables.ncol)
+
+        # Abrindo o arquivo fornecido com as características acerca do modelo numérico do terreno (MNT)
+        with open(self.abrir_arquivo, 'rb') as arquivo_bin:
+            self.dados_lidos_MNT = np.fromfile(arquivo_bin, dtype = np.int32, count = -1)
+
+        # Redimensionando a matriz da drenagem com base nos dados lidos do arquivo fornecido
+        global_variables.MDEreal = np.reshape(self.dados_lidos_MNT, (len(self.dados_lidos_MNT)//RDC_variables.ncol,RDC_variables.ncol), order = 'F')
+
+        # Atribuindo o valor da matriz MDE a partir da conversão dos valores da matriz MDEreal para float
+        global_variables.MDE = global_variables.MDEreal.astype(float)
+
+        # Resentando a matriz MDEreal
+        global_variables.MDEreal = None
+
+        return global_variables.MDE
+
+    def leh_precipitacao_24h(self):
+        """Esta função é utilizada para ler as informações acerca da precipitação das últimas 24horas, P24 (arquivo texto - .txt)"""
+        # lendo os arquivos acerda da precipitação das últimas 24 horas
+        with open(self.abrir_arquivo, 'r') as arquivo_txt:
+            self.dados_lidos_P24 = float(arquivo_txt.read()) # considerando que no arquivo só possui um valor de precipitação
+
+        return self.dados_lidos_P24
+
+    def leh_uso_do_solo(self):
+        """Esta função é utilizada para ler as informações acerca do uso do solo (arquivo raster - .rst)"""
+        # Redimensionando a matriz do uso do solo
+        global_variables.usosolo.shape = (RDC_variables.nlin, RDC_variables.ncol)
+
+        # Abrindo o arquivo fornecido com as características acerca do uso do solo
+        with open(self.abrir_arquivo, 'rb') as arquivo_bin:
+            self.dados_lidos_uso_solo = np.fromfile(arquivo_bin, dtype=int, count=-1)
+        
+        # Atualizando a matriz de uso do solo após a leitura dos dados fornecidos
+        global_variables.usosolo = np.reshape(self.dados_lidos_uso_solo, (len(self.dados_lidos_uso_solo)//RDC_variables.ncol, RDC_variables.ncol), order='F')
+
+        # 
+        self.global_variables.nusomax = 0
+        for l in range(1, RDC_variables.nlin + 1):
+            for c in range(1, RDC_variables.ncol + 1):
+                if global_variables.bacia[l, c] > 0:
+                    if global_variables.usosolo[l, c] > self.global_variables.nusomax:
+                        self.global_variables.nusomax = global_variables.usosolo[l, c]
+
+        return self.global_variables.nusomax
+
+    def leh_uso_manning (self):
+        """Esta função é utilizada para ler as informações acerca do uso do solo e o coeficiente de rugosidade de Manning (arquivo texto - .txt)"""
+        # Redimensionando a matriz do uso do solo para o coeficiente de Manning
+        global_variables.Mann.shape = (self.global_variables.nusomax)
+
+        # Abrindo o arquivo que contém o coeficiente de Manning para os diferentes usos do solo
+        with open('relacao_uso_Manning.txt', 'r') as arquivo_txt:
+        # Ignora a primeira linha, pois ela contém apenas o cabeçalho
+            next(arquivo_txt)
+        # Lê as informações de uso do solo e coeficiente de Manning para cada tt
+        for global_variables.tt in range(1, global_variables.Nusomax + 1):
+            line = next(arquivo_txt)
+            global_variables.usaux, global_variables.Mann[global_variables.usaux - 1] = map(float, line.strip().split())
+
+        return global_variables.Mann
+    
+    
     def run(self):
         """Run method that performs all the real work"""
 
@@ -211,5 +349,5 @@ class HidroPixel:
         # See if OK was pressed
         if result:
             # Do something useful here - delete the line containing pass and
-            # substitute with your code.
+            # substitute with your code. I will
             pass
