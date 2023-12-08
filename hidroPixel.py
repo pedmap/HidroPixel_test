@@ -30,10 +30,11 @@ from .resources import *
 
 # Import the code for the dialog
 from .hidroPixel_dialog import HidroPixelDialog
-from .modulos_files import global_variables,RDC_variables
+from modulos_files.RDC_variables import RDCVariables
+from modulos_files.global_variables import GlobalVariables
 import os.path
 import sys, os
-from osgeo import ogr
+from osgeo import ogr, gdal
 
 # Importing libs
 import numpy as np
@@ -189,59 +190,126 @@ class HidroPixel:
 
     def carregaArquivos(self):
         """Esta função é utilizada para adicionar layers no projeto"""
-        self.abrir_arquivo = str(QFileDialog.getOpenFileName(caption="Escolha os arquivos referentes a ...!", filter="Raster ou Texto(.txt, .RST)")[0])
-        
+        # Guarda o arquivo selecionado em uma variável.
+        abrir_arquivo = str(QFileDialog.getOpenFileName(caption="Escolha os arquivos referentes a ...!", filter="Raster ou Texto(.txt, .RST)")[0])
+
+        return abrir_arquivo
+    
     def leh_bacia(self):
         """Esta função é utilizada para ler as informações da bacia hidrográfica (arquivo .rst)"""
-        # Redimensionando a matriz bacia, para as dimensões: número de linahas e número de colunas
-        global_variables.bacia.shape = (RDC_variables.nlin, RDC_variables.ncol)
+        # Criando instâncias das classes
+        global_vars = GlobalVariables()
+        rdc_vars = RDCVariables()
 
-        # Abrindo o arquivo fornecido com as as características da bacia
-        with open(self.abrir_arquivo, 'rb') as arquivo_bin:
-            self.dados_lidos_bacia = np.fromfile(arquivo_bin, dtype = int, count = -1)
+        # Recebendo o arquivo enviado através do usuário
+        file = self.carregaArquivos()
+        # Realizando a abertura do arquivo raster e coletando as informações referentes as dimensões do mesmo
+        rst_file_bacia = gdal.Open(file)
         
-            # Reorganizando os dados lidos da bacia em uma nova matriz 2D
-            global_variables.bacia = np.reshape(self.dados_lidos_bacia, (len(self.dados_lidos_bacia)//RDC_variables.ncol,RDC_variables.ncol))
+        # Tratamento de erro: verifica se o arquivo foi aberto corretamente
+        if rst_file_bacia is not None:
 
-        return global_variables.bacia
-    
+            # atualizando os valores das variáveis para coletar o numéro de linhas e colunas do arquivo raster lido
+            rdc_vars.nlin,rdc_vars.ncol = rst_file_bacia.RasterXSize,rst_file_bacia.RasterYSize
+
+            # Determinando o numéro de elementos contidos no arquivo raster
+            num_elements_bacia = len(rst_file_bacia)
+
+            # Tratamento de erros: verifica se o número de elementos (pixel) do arquivo está de acordo com as dimensões da matriz da bacia hidrográfica
+            if num_elements_bacia != rdc_vars.nlin * rdc_vars.ncol:
+                print(f"ERROR! As dimensões do arquivo raster ({rdc_vars.nlin},{rdc_vars.ncol}) são diferentes do número total de \
+                      de elementos {num_elements_bacia}. Assim, não é possível ler o arquivo raster '{file}' e armazená-lo na matriz destinada.")
+            else:
+                # Lendo os dados raster como um array 
+                dados_lidos_bacia = rst_file_bacia.GetRasterBand(1).ReadAsArray()
+
+                # Reorganizando os dados lidos da bacia em uma nova matriz chamada bacia.
+                global_vars.bacia = dados_lidos_bacia
+
+                # Fechando o dataset GDAL
+                rst_file_bacia = None
+        else:
+            print(f"Failed to open the raster file: {file}")
+
+        return global_vars.bacia
+        
     def leh_caracteristica_dRios(self):
-        """Esta função é utilizada para ler as informações acerca da característica dos rios de uma bacia hidrográfica (texto .rst)"""
+        """Esta função é utilizada para ler as informações acerca da característica dos rios de uma bacia hidrográfica (texto .txt)"""
+        # Criando instâncias das classes
+        global_vars = GlobalVariables()
 
         # Abrindo o arquivo de texto (.txt) com as informações acerca das classes dos rios
-        with open(self.abrir_arquivo, 'r') as arquivo_txt:
-            arquivo_txt.readlines()
-            global_variables.nclasses = arquivo_txt.readlines()# com base no arquivo fornecido, o numéro de classes está na segunda linha!! (X)
+        file = self.carregaArquivos()
+        with open(file, 'r', encoding='utf-8') as arquivo_txt:
+            #  Atualizando as variáveis que dependem
+            arquivo_txt.readline()
+            global_vars.nclasses = int(arquivo_txt.readline().strip())  # com base no arquivo fornecido, o número de classes está na segunda linha!! (X)
+            arquivo_txt.readline()
+            # Inicializando as listas
+            j_list = []
+            Sclasse_list = []
+            Mannclasse_list = []
+            Rhclasse_list = []
 
-        #  Atualizando as variáveis que dependen    
-        global_variables.Sclasse.rezise(global_variables.nclasses)
-        global_variables.Mannclasse.int(global_variables.nclasses)
-        global_variables.Rhclasse.int(global_variables.nclasses)
+            # Iterando sobre as linhas do arquivo
+            for line in arquivo_txt:
+                # Divide a linha nos espaços em branco e converte para float para guardar os valores das colunas
+                indice, Scla, Mann, Rh = map(float, line.split())
 
-        # Descartando a linha que possui o cabeçalho (id,declividade...) das colunas no arquivo txt
-        next(arquivo_txt)
+                # Adiciona os valores às listas
+                j_list.append(indice)
+                Sclasse_list.append(Scla)
+                Mannclasse_list.append(Mann)
+                Rhclasse_list.append(Rh)
 
-        # Armazenando os valores  das colunas (id, S, Mann, Rh) nas suas respectivas variáveis (vetores de dimensão nclasses)
-        for i in range(1, global_variables.nclasse + 1):
-            lines = arquivo_txt.readline().split()
-            global_variables.j,global_variables.Sclasse[i], global_variables.Mannclasse[i], global_variables.Rhclasse[i] = map(float,lines)
+                # Convertendo as listas em arrays e armazendo nas respectivas variáveis
+                global_vars.j = np.array(j_list)
+                global_vars.Sclasse = np.array(Sclasse_list)
+                global_vars.Mannclasse = np.array(Mannclasse_list)
+                global_vars.Rhclasse = np.array(Rhclasse_list)
 
-        return global_variables.Sclasse, global_variables.Mannclasse, global_variables.Rhclasse
+        return global_vars.j, global_vars.Sclasse, global_vars.Mannclasse, global_vars.Rhclasse
     
 
-    def leh_chasses_rios(self):
+    def leh_classes_rios(self):
         """Esta função é utilizada para ler as informações acerca da classe dos rios da bacia hidrográfica (arquivo raster -  .rst)"""
-        # Redimensionando a matriz da classe dos rios para as dimensões: número de linhas e número de colunas
-        global_variables.classerio.shape = (RDC_variables.nlin, RDC_variables.ncol)
+        # Criando instâncias das classes
+        global_vars = GlobalVariables()
+        rdc_vars = RDCVariables()
 
-        # abrindo o arquivo fornecido com as características das classes dos rios
-        with open(self.abrir_arquivo, 'rb') as arquivo_bin:
-            self.dados_lidos_classe_rio = np.fromfile(arquivo_bin, dtype = int, count = -1)
+        # Obtendo o arquivo referente as calasses dos rios da bacia hidrográfica
+        file = self.carregaArquivos()
+
+         # Realizando a abertura do arquivo raster e coletando as informações referentes as dimensões do mesmo
+        rst_file_claRIO = gdal.Open(file)
         
-        global_variables.classerio = np.reshape(self.dados_lidos_classe_rio, (len(self.dados_lidos_classe_rio)//RDC_variables.ncol,RDC_variables.ncol))
+        #  Tratamento de erros: verifica se o arquivo raster foi aberto corretamente
+        if rst_file_claRIO is not None:
+            # Lendo as dimensões do arquivo raster
+            rdc_vars.nlin, rdc_vars.ncol = rst_file_claRIO.RasterXSize, rst_file_claRIO.RasterYSize
 
-        return global_variables.classerio
-    
+            # Determinando o número de elementos (pixel) do arquivo raster
+            num_elements_claRIOS = len(rst_file_claRIO)
+
+            # Tratamento de erros: verifica se o número de elementos do arquivo raster está consoante as dimensões da matriz das classes dos rios
+            if num_elements_claRIOS != rdc_vars.nlin * rdc_vars.ncol:
+                print(f"ERROR! As dimensões do arquivo raster ({rdc_vars.nlin},{rdc_vars.ncol}) são diferentes do número total de \
+                      de elementos {num_elements_claRIOS}. Assim, não é possível ler o arquivo raster '{file}' e armazená-lo na matriz destinada." )
+            else:
+                # Lendo os dados raste como um array 
+                dados_lidos_raster_claRIO = rst_file_claRIO.GetRasterBand(1).ReadAsArray()
+
+                # Reorganizando os dados lidos em uma nova matriz, essa possui as informações sobre as classes dos rios
+                global_vars.classerio = dados_lidos_raster_claRIO
+
+                # Fechando o dataset GDAL referente ao arquivo raster
+                rst_file_claRIO = None
+        else:
+            print(f"Failed to open the raster file: {file}")
+
+        return global_vars.classerio
+
+           
     def leh_direcao_rios(self):
         """Esta função é utilizada para ler as informações acerca da direção de escoamento dos rios (arquivo raster - .rst)"""
         # será desenvolvida...
@@ -249,84 +317,179 @@ class HidroPixel:
 
     def leh_drenagem(self):
         """Esta função é utilizada para ler as informações acerca da drenagem dos rios (arquivo raster - .rst)"""
-        # Redimensionando a matriz da drenagem para as dimensões: número de linhas e número de colunas
-        global_variables.dren.shape = (RDC_variables.nlin, RDC_variables.ncol)
+        # Criando instâncias das classes
+        global_vars = GlobalVariables()
+        rdc_vars = RDCVariables()
 
-        # Abrindo o arquivo fornecido com as características referentes a drenagem (sistema de drenagem?) da bacia
-        with open(self.abrir_arquivo, 'rb') as arquivo_bin:
-            self.dados_lidos_drenagem = np.fromfile(arquivo_bin, dtype = int, count = -1)
+        # Obtendo o arquivo referente as calasses dos rios da bacia hidrográfica
+        file = self.carregaArquivos() #será alterado!!
 
-        # Redimensionando a matriz da drenagem com base nos dados lidos do arquivo fornecido
-        global_variables.dren = np.reshape(self.dados_lidos_drenagem, (len(self.dados_lidos_drenagem)//RDC_variables.ncol,RDC_variables.ncol))
+        # Abrindo o arquivo raster com as informações acerda do sistema de drenagem da bacia hidrográfica
+        rst_file_drenagem = gdal.Open(file)
+        
+        # Tratamento de erros: verifica se o arquivo raster foi aberto corretamente
+        if rst_file_drenagem is not None:
+            # Lendo as dimensões do arquivo raster (linhas, colunas)
+            global_vars.nlin, global_vars.ncol = rst_file_drenagem.RasteXSize, rst_file_drenagem.RasterYSize 
 
-        return global_variables.dren
+            # Lendo os dados raster como um array
+            dados_lidos_drenagem = rst_file_drenagem.GetRasterBand(1).ReadAsArruy()
+
+            # Determinando a quantidade de elementos (pixel) no arquivo raster
+            num_elementos_rst_dren = len(dados_lidos_drenagem)
+
+            # Tratamento de erros: verifica se as dimensões do arquivo raster estão consoante o numéro de elementos (pixel)
+            if num_elementos_rst_dren != global_vars.nlin * global_vars.ncol:
+                print(f"ERROR! As dimensões do arquivo raster ({rdc_vars.nlin},{rdc_vars.ncol}) são diferentes do número total de \
+                      de elementos {num_elementos_rst_dren}. Assim, não é possível ler o arquivo raster e armazená-lo na matriz destinada." )    
+            else:
+                """Se os o número de elementos (pixel) estiver de acordo com as dimensões do arquivo raster, não ocorrerão erros."""
+                # Reorganizando os dados lidos na matriz destinadas às informações da drenagem da bacia hidrográfica
+                global_vars.dren = dados_lidos_drenagem
+
+            # Fechando o dataset GEDAl referente ao arquivo raster
+            rst_file_drenagem = None
+        else:
+            """Caso o arquivo raster apresente erros durante a abertura, ocorrerá um erro"""
+            print(f"Failde to open the raster file: {file}")
+          
+        return global_vars.dren
 
     def leh_modelo_numerico_dTerreno(self):
         """Esta função é utilizada para ler as informações acerca do modelo numérico do terreno (arquivo raster - .rst)"""
-        # Redimensionando as matrizes referentes ao MDE e MDEReal para as dimensões: número de linhas e número de colunas
-        global_variables.MDE.shape = (RDC_variables.nlin, RDC_variables.ncol)
-        global_variables.MDEreal.shape = (RDC_variables.nlin, RDC_variables.ncol)
+        # Criando instâncias das classes
+        global_vars = GlobalVariables()
+        rdc_vars = RDCVariables()
 
-        # Abrindo o arquivo fornecido com as características acerca do modelo numérico do terreno (MNT)
-        with open(self.abrir_arquivo, 'rb') as arquivo_bin:
-            self.dados_lidos_MNT = np.fromfile(arquivo_bin, dtype = np.int32, count = -1)
+        # Obtendo o arquivo referente ao MDE da bacia hidrográfica
+        file = self.carregaArquivos()
 
-        # Redimensionando a matriz da drenagem com base nos dados lidos do arquivo fornecido
-        global_variables.MDEreal = np.reshape(self.dados_lidos_MNT, (len(self.dados_lidos_MNT)//RDC_variables.ncol,RDC_variables.ncol), order = 'F')
+        # Realizando a abertura do arquivo raster e coletando as informações referentes as dimensões do mesmo
+        rst_file_MDE = gdal.Open(file)
 
-        # Atribuindo o valor da matriz MDE a partir da conversão dos valores da matriz MDEreal para float
-        global_variables.MDE = global_variables.MDEreal.astype(float)
+        #  Tratamento de erros: verifica se o arquivo raster foi aberto corretamente
+        if rst_file_MDE is not None:
+            # Lendo as dimensões do arquivo raster ligado ao MDE da bacia hidrgráfica
+            rdc_vars.nlin, rdc_vars.ncol = rst_file_MDE.RasterYSize, rst_file_MDE.RasterXSize
 
-        # Resentando a matriz MDEreal
-        global_variables.MDEreal = None
+            # Determinando o número de elementos (pixel) do arquivo raster
+            num_elements_MNT = len(rst_file_MDE)
 
-        return global_variables.MDE
+            # Tratamento de erros: verifica se o número de elementos do arquivo está de acordo com as dimensões da matriz ligada ao MNT
+            if num_elements_MNT != rdc_vars.nlin * rdc_vars.ncol:
+                print(f"ERROR! As dimensões do arquivo raster ({rdc_vars.nlin},{rdc_vars.ncol}) são diferentes do número total de \
+                      de elementos {num_elements_MNT}. Assim, não é possível ler o arquivo raster '{file}' e armazená-lo na matriz destinada." )
+            else:
+                # Lendo os dados raster como um array
+                dados_lidos_MDE = rst_file_MDE.GetRasterBand(1).ReadAsArray()
+
+                # Reoganizando os dados lidos em uma nova matriz que possuirá os dados ligados ao MDE da baica hidrográfica
+                global_vars.MDE = dados_lidos_MDE
+                
+                # Fechando o 
+                rst_file_MDE
+        return global_vars.MDE
 
     def leh_precipitacao_24h(self):
-        """Esta função é utilizada para ler as informações acerca da precipitação das últimas 24horas, P24 (arquivo texto - .txt)"""
-        # lendo os arquivos acerda da precipitação das últimas 24 horas
-        with open(self.abrir_arquivo, 'r') as arquivo_txt:
-            self.dados_lidos_P24 = float(arquivo_txt.read()) # considerando que no arquivo só possui um valor de precipitação
+        """Esta função é utilizada para ler as informações acerca da precipitação das últimas 24 horas, P24 (arquivo texto - .txt)"""
+        # Criando instâncias das classes
+        global_vars = GlobalVariables()
+        rdc_vars = RDCVariables()
 
-        return self.dados_lidos_P24
+        # Coledando os arquivo fornecido
+        file = self.carregaArquivos()
+
+        # lendo os arquivos acerda da precipitação das últimas 24 horas
+        with open(file, 'r') as arquivo_txt:
+            dados_lidos_P24 = float(arquivo_txt.read()) # considerando que no arquivo só possui um valor de precipitação
+
+        # Armazenando o valor da precipitação de 24 horas em uma variável específica
+        global_vars.P24 = dados_lidos_P24
+
+        return global_vars.P24
 
     def leh_uso_do_solo(self):
         """Esta função é utilizada para ler as informações acerca do uso do solo (arquivo raster - .rst)"""
-        # Redimensionando a matriz do uso do solo
-        global_variables.usosolo.shape = (RDC_variables.nlin, RDC_variables.ncol)
+        # Criando instâncias das classes
+        global_vars = GlobalVariables()
+        rdc_vars = RDCVariables()
 
-        # Abrindo o arquivo fornecido com as características acerca do uso do solo
-        with open(self.abrir_arquivo, 'rb') as arquivo_bin:
-            self.dados_lidos_uso_solo = np.fromfile(arquivo_bin, dtype=int, count=-1)
-        
-        # Atualizando a matriz de uso do solo após a leitura dos dados fornecidos
-        global_variables.usosolo = np.reshape(self.dados_lidos_uso_solo, (len(self.dados_lidos_uso_solo)//RDC_variables.ncol, RDC_variables.ncol), order='F')
+        # Obtendo o arquivo raster referente ao uso do solo
+        file = self.carregaArquivos()
 
-        # 
-        self.global_variables.nusomax = 0
-        for l in range(1, RDC_variables.nlin + 1):
-            for c in range(1, RDC_variables.ncol + 1):
-                if global_variables.bacia[l, c] > 0:
-                    if global_variables.usosolo[l, c] > self.global_variables.nusomax:
-                        self.global_variables.nusomax = global_variables.usosolo[l, c]
+        # Abrindo o arquivo raster com as informações acerda do uso do solo da bacia hidrográfica
+        rst_file_usoSolo = gdal.Open(file)
 
-        return self.global_variables.nusomax
+        # Tratamento de erros: verifica se o arquivo raster foi aberto corretamente
+        if rst_file_usoSolo is not None:
+            # Lendo as dimensões do arquivo raster (linhas, colunas)
+            rdc_vars.nlin, rdc_vars.ncol = rst_file_usoSolo.RasterXSize, rst_file_usoSolo.RasterYSize
+
+            # Lendo os dados do arquivo raster como um array
+            dados_lidos_usoSolo = rst_file_usoSolo.GetRasterBand(1).ReadAsArray()
+
+            # Determinando a quantidade de elementos (pixel) no arquivo raster lido
+            num_elementos_raster_usoSolo = len(dados_lidos_usoSolo)
+
+            # Tratamento de erros: verifica se a quantidade de elementos do arquivo raster está consoante as suas dimensões
+            if num_elementos_raster_usoSolo != rdc_vars.nlin * rdc_vars.ncol:
+                print(f"ERROR! As dimensões do arquivo raster ({rdc_vars.nlin},{rdc_vars.ncol}) são diferentes do número total de \
+                      de elementos {num_elementos_raster_usoSolo}. Assim, não é possível ler o arquivo raster '{file}' e armazená-lo na matriz destinada." )    
+            else:
+                """Se os o número de elementos (pixel) estiver de acordo com as dimensões do arquivo raster, não ocorrerão erros."""
+                # Reorganizando os dados lidos na matriz destinadas às informações da drenagem da bacia hidrográfica
+                global_vars.usosolo = dados_lidos_usoSolo 
+
+                # Inicializando as variáveis fundamentais
+                global_vars.Nusomax = 0
+                bacia_rst = self.leh_bacia() 
+
+                # Inicia uma estrutura de repetição para ler os valores das linhas da matriz bacia_rst
+                for l in range(1, rdc_vars.nlin + 1):
+                    # Inicia uma estrutura de repetição para ler os valores das colunas da matriz bacia_rst
+                    for c in range(1, rdc_vars.ncol + 1):
+                        # Estrutura condicional para coletar apenas os valores maiores que zero, 
+                        # ou seja, aqueles presentes na delimitação da bacia hidrográfica 
+                        if bacia_rst[l, c] > 0:
+                            # Determina os valores valores dos pixels da matriz com os dados do uso do solo
+                            if global_vars.usosolo[l, c] > global_vars.Nusomax:
+                                # Atualiza a variável que armazena os maiores valores dos pixels do uso do solo
+                                global_vars.Nusomax = global_vars.usosolo[l, c]
+            
+        else:
+            """Caso o arquivo raster apresente erros durante a abertura, ocorrerá um erro"""
+            print(f"Failde to open the raster file: {file}")
+
+        return global_vars.Nusomax
 
     def leh_uso_manning (self):
         """Esta função é utilizada para ler as informações acerca do uso do solo e o coeficiente de rugosidade de Manning (arquivo texto - .txt)"""
-        # Redimensionando a matriz do uso do solo para o coeficiente de Manning
-        global_variables.Mann.shape = (self.global_variables.nusomax)
-
+        # Criando instâncias das classes
+        global_vars = GlobalVariables()
+        rdc_vars = RDCVariables()
+        # Onbtendo o arquivo de texto (.txt) com as informações acerca dos coeficientes De Manning para as zonas da bacia hidrográfica
+        file = self.carregaArquivos()
+        # Criando variável extra, para armazenar os tipos de uso e coeficente de Manning
+        uso_manning = []
+        coef_maning = []
         # Abrindo o arquivo que contém o coeficiente de Manning para os diferentes usos do solo
-        with open('relacao_uso_Manning.txt', 'r') as arquivo_txt:
-        # Ignora a primeira linha, pois ela contém apenas o cabeçalho
-            next(arquivo_txt)
-        # Lê as informações de uso do solo e coeficiente de Manning para cada tt
-        for global_variables.tt in range(1, global_variables.Nusomax + 1):
-            line = next(arquivo_txt)
-            global_variables.usaux, global_variables.Mann[global_variables.usaux - 1] = map(float, line.strip().split())
+        with open(file, 'r', encoding='utf-8') as arquivo_txt:
+        #  Ignora a primeira linha, pois ela contém apenas o cabeçalho
+            firt_line = arquivo_txt.readline()
+            # Lê as informações de uso do solo e coeficiente de Manning 
+            for line in arquivo_txt:
+                # Coletando as informações de cada linha
+                info = line.strip().split()
 
-        return global_variables.Mann
+                # Armazenando os valores das linhas nas suas respectivas variáveis
+                global_vars.usaux = int(info[0])
+                coef_maning = float(info[1])
+
+                # Adionado cada valor as suas respectivas variáveis
+                uso_manning = np.append(uso_manning,global_vars.usaux)
+                global_vars.Mann = np.append(global_vars.Mann,coef_maning)
+            
+        return uso_manning, global_vars.Mann
     
     
     def run(self):
