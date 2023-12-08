@@ -10,7 +10,7 @@ Date of last update: 30/11/2023
 # IMPORTING libs
 import numpy as np
 
-class RDC:
+class RDCVariables:
     """
     This class is responsible for creating the RDC's variables necessary for the HidroPixel Plugin operation.
     """

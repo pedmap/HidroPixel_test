@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>282</width>
-    <height>270</height>
+    <width>292</width>
+    <height>291</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -23,6 +23,13 @@
       <enum>QFrame::Raised</enum>
      </property>
      <layout class="QGridLayout" name="gridLayout">
+      <item row="2" column="0">
+       <widget class="QRadioButton" name="radioButton">
+        <property name="text">
+         <string>RadioButton</string>
+        </property>
+       </widget>
+      </item>
       <item row="0" column="0">
        <widget class="QLabel" name="label_2">
         <property name="whatsThis">
@@ -40,6 +47,20 @@ rgb:213, 213, 213;</string>
         </property>
        </widget>
       </item>
+      <item row="4" column="0">
+       <widget class="QRadioButton" name="radioButton_3">
+        <property name="text">
+         <string>RadioButton</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="0">
+       <widget class="QRadioButton" name="radioButton_2">
+        <property name="text">
+         <string>RadioButton</string>
+        </property>
+       </widget>
+      </item>
       <item row="1" column="0">
        <widget class="QLabel" name="label">
         <property name="styleSheet">
@@ -50,7 +71,7 @@ rgb:213, 213, 213;</string>
         </property>
        </widget>
       </item>
-      <item row="2" column="0">
+      <item row="6" column="0">
        <layout class="QHBoxLayout" name="horizontalLayout">
         <item>
          <widget class="QLineEdit" name="lineEdit"/>
@@ -64,7 +85,7 @@ rgb:213, 213, 213;</string>
         </item>
        </layout>
       </item>
-      <item row="3" column="0">
+      <item row="7" column="0">
        <widget class="QDialogButtonBox" name="button_box">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Expanding" vsizetype="Maximum">
@@ -92,6 +113,13 @@ rgb:213, 213, 213;</string>
         </property>
         <property name="centerButtons">
          <bool>false</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="5" column="0">
+       <widget class="QRadioButton" name="radioButton_4">
+        <property name="text">
+         <string>RadioButton</string>
         </property>
        </widget>
       </item>

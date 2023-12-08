@@ -36,7 +36,6 @@ class GlobalVariables:
         self.MDE = np.empty((0,0), dtype = np.float64)
         self.DIST = np.empty((0,0), dtype = np.float64) # !
         self.DISTtre = np.empty((0,0), dtype = np.float64)# !
-        self.Mann = np.empty((0,0), dtype = np.float64)
         self.TS = np.empty((0,0), dtype = np.float64)
         self.TScabe = np.empty((0,0), dtype = np.float64)
         self.TScabe2d = np.empty((0,0), dtype = np.float64)
@@ -52,7 +51,7 @@ class GlobalVariables:
         self.Somaaux = np.empty((0,0), dtype = np.float64)
         self.Somaauxpond = np.empty((0,0), dtype = np.float64)
         self.SomaauxDist = np.empty((0,0), dtype = np.float64)
-        self.DECLIVpixjus = np.empty((0,0),dtyoe = np.float64)
+        self.DECLIVpixjus = np.empty((0,0),dtype = np.float64)
         self.TSpix = np.empty((0,0), dtype = np.float64)
         self.TSpixacum = np.empty((0,0), dtype = np.float64)
 
@@ -62,10 +61,12 @@ class GlobalVariables:
         self.lincabe = np.empty([], dtype = np.int16)
         self.colcabe = np.empty([], dtype = np.int16)
         self.Sclasse = np.empty([], dtype = np.int16)
+        self.usaux = np.empty([], dtype = np.int16)
+        self.Mann = np.empty([], dtype = np.int16)
         self.Mannclasse = np.empty([], dtype = np.int16)
         self.Rhclasse = np.empty([], dtype = np.int16)
-        self.dlin = np.empty((128), dtype = np.int)
-        self.dcol = np.empty((128), dtype = np.int)
+        self.dlin = np.empty((128), dtype = int)
+        self.dcol = np.empty((128), dtype = int)
         
         # string's declaration
         self.texto1= ""
@@ -96,7 +97,6 @@ class GlobalVariables:
         self.j = 0
         self.resplist =0
         self.cont = 0
-        self.usaux = 0
         self.t = 0
         self.tt = 0
         self.Nusomax = 0
@@ -139,7 +139,7 @@ class GlobalVariables:
         self.naux = np.float64(0.0)
         self.Saux = np.float64(0.0)
         self.Laux = np.float64(0.0)
-        self.Ps4 = np.float64(0.0)
+        self.P24 = np.float64(0.0)
         self.Taux = np.float64(0.0)        
         self.DISTtreaux = np.float64(0.0)   
         self.tamfoz = np.float64(0.0)
