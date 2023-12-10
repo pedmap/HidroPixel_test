@@ -23,17 +23,21 @@
 """
 from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication
 from qgis.PyQt.QtGui import QIcon
-from qgis.PyQt.QtWidgets import QAction, QFileDialog
+from qgis.PyQt.QtWidgets import QAction, QFileDialog, QMessageBox
+from qgis.core import QgsMessageLog, Qgis
+from qgis.utils import iface
 
 # Initialize Qt resources from file resources.py
 from .resources import *
 
 # Import the code for the dialog
-from .hidroPixel_dialog import HidroPixelDialog
-from modulos_files.RDC_variables import RDCVariables
-from modulos_files.global_variables import GlobalVariables
 import os.path
 import sys, os
+from .hidroPixel_dialog import HidroPixelDialog
+from pathlib import Path
+from hidropixel.modulos_files.RDC_variables import RDCVariables
+from hidropixel.modulos_files.global_variables import GlobalVariables
+
 from osgeo import ogr, gdal
 
 # Importing libs
@@ -188,23 +192,43 @@ class HidroPixel:
             self.iface.removeToolBarIcon(action)
 
 
+
     def carregaArquivos(self):
         """Esta função é utilizada para adicionar layers no projeto"""
-        # Guarda o arquivo selecionado em uma variável.
-        abrir_arquivo = str(QFileDialog.getOpenFileName(caption="Escolha os arquivos referentes a ...!", filter="Raster ou Texto(.txt, .RST)")[0])
+        # Inicializa as variáveis
+        self.abrir_arquivo = None
+        self.extensao = None
 
-        return abrir_arquivo
-    
-    def leh_bacia(self):
+        # Janela de diálogo com o Usuário
+        self.abrir_arquivo,_ = QFileDialog.getOpenFileName(caption="Escolha os arquivos referentes!", filter="Text (*.txt);;Raster (*.bmp *.png *.jpg *.tif *.gif *.rst)")
+        
+        # Verificar se algum arquivo foi selecionado
+        if self.abrir_arquivo != "":
+            # Adiciona o arquivo selecionado a lineEdit
+            self.dlg.lineEdit.setText(self.abrir_arquivo)
+            
+            # Verificando a extensão do arquivo escolhido
+            self.extensao = Path(self.abrir_arquivo).suffix.lower()
+            return self.abrir_arquivo
+        else:
+            result ="Nenhum arquivo foi selecionado!"
+            QMessageBox.warning(None, "ERROR!", result)
+
+        
+    def leh_bacia(self,arquivo):
         """Esta função é utilizada para ler as informações da bacia hidrográfica (arquivo .rst)"""
         # Criando instâncias das classes
         global_vars = GlobalVariables()
         rdc_vars = RDCVariables()
 
         # Recebendo o arquivo enviado através do usuário
-        file = self.carregaArquivos()
+        file = arquivo
+
         # Realizando a abertura do arquivo raster e coletando as informações referentes as dimensões do mesmo
         rst_file_bacia = gdal.Open(file)
+
+        # Lendo os dados raster como um array 
+        dados_lidos_bacia = rst_file_bacia.GetRasterBand(1).ReadAsArray()
         
         # Tratamento de erro: verifica se o arquivo foi aberto corretamente
         if rst_file_bacia is not None:
@@ -213,19 +237,16 @@ class HidroPixel:
             rdc_vars.nlin,rdc_vars.ncol = rst_file_bacia.RasterXSize,rst_file_bacia.RasterYSize
 
             # Determinando o numéro de elementos contidos no arquivo raster
-            num_elements_bacia = len(rst_file_bacia)
+            num_elements_bacia = len(dados_lidos_bacia)
 
             # Tratamento de erros: verifica se o número de elementos (pixel) do arquivo está de acordo com as dimensões da matriz da bacia hidrográfica
             if num_elements_bacia != rdc_vars.nlin * rdc_vars.ncol:
                 print(f"ERROR! As dimensões do arquivo raster ({rdc_vars.nlin},{rdc_vars.ncol}) são diferentes do número total de \
                       de elementos {num_elements_bacia}. Assim, não é possível ler o arquivo raster '{file}' e armazená-lo na matriz destinada.")
             else:
-                # Lendo os dados raster como um array 
-                dados_lidos_bacia = rst_file_bacia.GetRasterBand(1).ReadAsArray()
-
                 # Reorganizando os dados lidos da bacia em uma nova matriz chamada bacia.
-                global_vars.bacia = dados_lidos_bacia
-
+                # global_vars.bacia = dados_lidos_bacia
+                global_vars.bacia = str(dados_lidos_bacia)
                 # Fechando o dataset GDAL
                 rst_file_bacia = None
         else:
@@ -233,13 +254,15 @@ class HidroPixel:
 
         return global_vars.bacia
         
-    def leh_caracteristica_dRios(self):
+    def leh_caracteristica_dRios(self, arquivo):
         """Esta função é utilizada para ler as informações acerca da característica dos rios de uma bacia hidrográfica (texto .txt)"""
         # Criando instâncias das classes
         global_vars = GlobalVariables()
 
         # Abrindo o arquivo de texto (.txt) com as informações acerca das classes dos rios
-        file = self.carregaArquivos()
+        file = arquivo
+
+        # Abrindo arquivo com as características dos rios da bacia hidrográfica
         with open(file, 'r', encoding='utf-8') as arquivo_txt:
             #  Atualizando as variáveis que dependem
             arquivo_txt.readline()
@@ -271,34 +294,34 @@ class HidroPixel:
         return global_vars.j, global_vars.Sclasse, global_vars.Mannclasse, global_vars.Rhclasse
     
 
-    def leh_classes_rios(self):
+    def leh_classes_rios(self, arquivo):
         """Esta função é utilizada para ler as informações acerca da classe dos rios da bacia hidrográfica (arquivo raster -  .rst)"""
         # Criando instâncias das classes
         global_vars = GlobalVariables()
         rdc_vars = RDCVariables()
 
         # Obtendo o arquivo referente as calasses dos rios da bacia hidrográfica
-        file = self.carregaArquivos()
+        file = arquivo
 
          # Realizando a abertura do arquivo raster e coletando as informações referentes as dimensões do mesmo
         rst_file_claRIO = gdal.Open(file)
         
+        # Lendo os dados raste como um array 
+        dados_lidos_raster_claRIO = rst_file_claRIO.GetRasterBand(1).ReadAsArray()
+
         #  Tratamento de erros: verifica se o arquivo raster foi aberto corretamente
         if rst_file_claRIO is not None:
             # Lendo as dimensões do arquivo raster
             rdc_vars.nlin, rdc_vars.ncol = rst_file_claRIO.RasterXSize, rst_file_claRIO.RasterYSize
 
             # Determinando o número de elementos (pixel) do arquivo raster
-            num_elements_claRIOS = len(rst_file_claRIO)
+            num_elements_claRIOS = len(dados_lidos_raster_claRIO)
 
             # Tratamento de erros: verifica se o número de elementos do arquivo raster está consoante as dimensões da matriz das classes dos rios
             if num_elements_claRIOS != rdc_vars.nlin * rdc_vars.ncol:
                 print(f"ERROR! As dimensões do arquivo raster ({rdc_vars.nlin},{rdc_vars.ncol}) são diferentes do número total de \
                       de elementos {num_elements_claRIOS}. Assim, não é possível ler o arquivo raster '{file}' e armazená-lo na matriz destinada." )
             else:
-                # Lendo os dados raste como um array 
-                dados_lidos_raster_claRIO = rst_file_claRIO.GetRasterBand(1).ReadAsArray()
-
                 # Reorganizando os dados lidos em uma nova matriz, essa possui as informações sobre as classes dos rios
                 global_vars.classerio = dados_lidos_raster_claRIO
 
@@ -322,7 +345,10 @@ class HidroPixel:
         rdc_vars = RDCVariables()
 
         # Obtendo o arquivo referente as calasses dos rios da bacia hidrográfica
-        file = self.carregaArquivos() #será alterado!!
+        file = self.carregaArquivos() 
+
+        # Lendo os dados raster como um array
+        dados_lidos_drenagem = rst_file_drenagem.GetRasterBand(1).ReadAsArruy()
 
         # Abrindo o arquivo raster com as informações acerda do sistema de drenagem da bacia hidrográfica
         rst_file_drenagem = gdal.Open(file)
@@ -331,9 +357,6 @@ class HidroPixel:
         if rst_file_drenagem is not None:
             # Lendo as dimensões do arquivo raster (linhas, colunas)
             global_vars.nlin, global_vars.ncol = rst_file_drenagem.RasteXSize, rst_file_drenagem.RasterYSize 
-
-            # Lendo os dados raster como um array
-            dados_lidos_drenagem = rst_file_drenagem.GetRasterBand(1).ReadAsArruy()
 
             # Determinando a quantidade de elementos (pixel) no arquivo raster
             num_elementos_rst_dren = len(dados_lidos_drenagem)
@@ -367,22 +390,22 @@ class HidroPixel:
         # Realizando a abertura do arquivo raster e coletando as informações referentes as dimensões do mesmo
         rst_file_MDE = gdal.Open(file)
 
+        # Lendo os dados raster como um array
+        dados_lidos_MDE = rst_file_MDE.GetRasterBand(1).ReadAsArray()
+
         #  Tratamento de erros: verifica se o arquivo raster foi aberto corretamente
         if rst_file_MDE is not None:
             # Lendo as dimensões do arquivo raster ligado ao MDE da bacia hidrgráfica
             rdc_vars.nlin, rdc_vars.ncol = rst_file_MDE.RasterYSize, rst_file_MDE.RasterXSize
 
             # Determinando o número de elementos (pixel) do arquivo raster
-            num_elements_MNT = len(rst_file_MDE)
+            num_elements_MNT = len(dados_lidos_MDE)
 
             # Tratamento de erros: verifica se o número de elementos do arquivo está de acordo com as dimensões da matriz ligada ao MNT
             if num_elements_MNT != rdc_vars.nlin * rdc_vars.ncol:
                 print(f"ERROR! As dimensões do arquivo raster ({rdc_vars.nlin},{rdc_vars.ncol}) são diferentes do número total de \
                       de elementos {num_elements_MNT}. Assim, não é possível ler o arquivo raster '{file}' e armazená-lo na matriz destinada." )
             else:
-                # Lendo os dados raster como um array
-                dados_lidos_MDE = rst_file_MDE.GetRasterBand(1).ReadAsArray()
-
                 # Reoganizando os dados lidos em uma nova matriz que possuirá os dados ligados ao MDE da baica hidrográfica
                 global_vars.MDE = dados_lidos_MDE
                 
@@ -420,13 +443,13 @@ class HidroPixel:
         # Abrindo o arquivo raster com as informações acerda do uso do solo da bacia hidrográfica
         rst_file_usoSolo = gdal.Open(file)
 
+        # Lendo os dados do arquivo raster como um array
+        dados_lidos_usoSolo = rst_file_usoSolo.GetRasterBand(1).ReadAsArray()
+
         # Tratamento de erros: verifica se o arquivo raster foi aberto corretamente
         if rst_file_usoSolo is not None:
             # Lendo as dimensões do arquivo raster (linhas, colunas)
             rdc_vars.nlin, rdc_vars.ncol = rst_file_usoSolo.RasterXSize, rst_file_usoSolo.RasterYSize
-
-            # Lendo os dados do arquivo raster como um array
-            dados_lidos_usoSolo = rst_file_usoSolo.GetRasterBand(1).ReadAsArray()
 
             # Determinando a quantidade de elementos (pixel) no arquivo raster lido
             num_elementos_raster_usoSolo = len(dados_lidos_usoSolo)
@@ -455,29 +478,38 @@ class HidroPixel:
                             if global_vars.usosolo[l, c] > global_vars.Nusomax:
                                 # Atualiza a variável que armazena os maiores valores dos pixels do uso do solo
                                 global_vars.Nusomax = global_vars.usosolo[l, c]
-            
+
+            self.iface.messageBar().pushMessage('Success', "Execution successful!", level=Qgis.Info)
         else:
             """Caso o arquivo raster apresente erros durante a abertura, ocorrerá um erro"""
             print(f"Failde to open the raster file: {file}")
 
         return global_vars.Nusomax
 
-    def leh_uso_manning (self):
+    def leh_uso_manning (self,arquivo):
         """Esta função é utilizada para ler as informações acerca do uso do solo e o coeficiente de rugosidade de Manning (arquivo texto - .txt)"""
         # Criando instâncias das classes
         global_vars = GlobalVariables()
         rdc_vars = RDCVariables()
-        # Onbtendo o arquivo de texto (.txt) com as informações acerca dos coeficientes De Manning para as zonas da bacia hidrográfica
-        file = self.carregaArquivos()
+
+        # Tratamento de erros: verifica se o arquivo foi corretamente atribuido
+        if self.abrir_arquivo == "":
+            # Obtendo o arquivo de texto (.txt) com as informações acerca dos coeficientes De Manning para as zonas da bacia hidrográfica
+            file = self.abrir_arquivo
+
         # Criando variável extra, para armazenar os tipos de uso e coeficente de Manning
         uso_manning = []
         coef_maning = []
+
         # Abrindo o arquivo que contém o coeficiente de Manning para os diferentes usos do solo
         with open(file, 'r', encoding='utf-8') as arquivo_txt:
+
         #  Ignora a primeira linha, pois ela contém apenas o cabeçalho
             firt_line = arquivo_txt.readline()
+
             # Lê as informações de uso do solo e coeficiente de Manning 
             for line in arquivo_txt:
+
                 # Coletando as informações de cada linha
                 info = line.strip().split()
 
@@ -495,22 +527,49 @@ class HidroPixel:
     def run(self):
         """Run method that performs all the real work"""
 
-        # Create the dialog with elements (after translation) and keep reference
-        # Only create GUI ONCE in callback, so that it will only load when the plugin is started
-        if self.first_start == True:
-            self.first_start = False
-            self.dlg = HidroPixelDialog()
+        # Sempre inicialize self.dlg
+        self.dlg = HidroPixelDialog()
 
-        # show the dialog
+        # Apenas mostre a janela se for a primeira vez que o plugin é iniciado
+        if self.first_start:
+            self.first_start = False
+
+        # Conectando os radioButtons a suas respectivas funções
+        self.dlg.radioButton.clicked.connect(self.carregaArquivos)
+        self.dlg.radioButton_2.clicked.connect(self.carregaArquivos)
+        self.dlg.radioButton_3.clicked.connect(self.carregaArquivos)
+        self.dlg.radioButton_4.clicked.connect(self.carregaArquivos)
+
+        # Dhow the dialog
         self.dlg.show()
         
-        #Funções criadas
-        self.dlg.toolButton.clicked.connect(self.carregaArquivos)
-        
+        # Ativa a função que carrega o arquivo selecionado
+        # self.dlg.toolButton.clicked.connect(self.carregaArquivos)
+
         # Run the dialog event loop
         result = self.dlg.exec_()
+
         # See if OK was pressed
         if result:
-            # Do something useful here - delete the line containing pass and
-            # substitute with your code. I will
-            pass
+            # Verifica se o botão foi clicado, caso verdade, será executada a função referente a ele se o arquivo for o correto
+            if self.dlg.radioButton.isChecked():
+                self.leh_bacia(self.abrir_arquivo)
+                self.iface.messageBar().pushMessage('Success', "Execution successful!", level=Qgis.Info)
+
+            # Verifica se o botão foi clicado, caso verdade, será executada a função referente a ele se o arquivo for o correto
+            elif self.dlg.radioButton_2.isChecked():
+                self.leh_caracteristica_dRios(self.abrir_arquivo)
+                self.iface.messageBar().pushMessage('Success', "Execution successful!", level=Qgis.Info)  
+
+            # Verifica se o botão foi clicado, caso verdade, será executada a função referente a ele se o arquivo for o correto
+            elif self.dlg.radioButton_3.isChecked():
+                self.leh_classes_rios(self.abrir_arquivo)
+                self.iface.messageBar().pushMessage('Success', "Execution successful!", level=Qgis.Info)  
+
+            # Verifica se o botão foi clicado, caso verdade, será executada a função referente a ele se o arquivo for o correto
+            elif self.dlg.radioButton_4.isChecked():
+                self.leh_uso_manning(self.abrir_arquivo)
+                self.iface.messageBar().pushMessage('Success', "Execution successful!", level=Qgis.Info)
+
+            # Fecha a janela de diálogo
+            self.dlg.close()

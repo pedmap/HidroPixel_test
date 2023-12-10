@@ -1,5 +1,6 @@
 import numpy as np
 import os
+from osgeo import gdal
 # from osgeo import gdal
 from modulos_files.RDC_variables import RDCVariables
 from modulos_files.global_variables import GlobalVariables
@@ -44,7 +45,8 @@ def leh_bacia(file):
         dados_lidos_bacia = rst_file.GetRasterBand(1).ReadAsArray()
 
         # Reorganizando os dados lidos da bacia em uma nova matriz chamada bacia.
-        global_vars.bacia = dados_lidos_bacia
+        global_vars.bacia = str(dados_lidos_bacia)
+        print(type(global_vars.bacia))
 
         # Fechando o dataset GDAL
         rst_file = None
@@ -124,7 +126,7 @@ def leh_uso_manning ():
         
     return uso_manning, global_vars.Mann
 # Chamando a função
-resultado_bacia = leh_uso_manning()
+resultado_bacia = leh_bacia(file)
 print(resultado_bacia)
 
 # for global_vars.tt in range(1, global_vars.Nusomax + 1):
