@@ -69,10 +69,6 @@ class GlobalVariables:
         self.dcol = np.empty((128), dtype = int)
         
         # string's declaration
-        self.texto1= ""
-        self.texto2= ""
-        self.texto7 = ""
-        self.texto8 = ""
         self.subtipodecliv = ""
         self.unidaderef3 = ""
 
@@ -111,7 +107,6 @@ class GlobalVariables:
         self.cc = 0
         self.pixel_ref_dren = 0
         self.numtreauxmax = 0
-
 
         # Real varibles declaration
         self.xmin = 0.0

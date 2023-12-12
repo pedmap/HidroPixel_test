@@ -38,11 +38,9 @@ from pathlib import Path
 from hidropixel.modulos_files.RDC_variables import RDCVariables
 from hidropixel.modulos_files.global_variables import GlobalVariables
 
-from osgeo import ogr, gdal
-
 # Importing libs
 import numpy as np
-
+from osgeo import ogr, gdal
 
 class HidroPixel:
     """QGIS Plugin Implementation."""
@@ -211,6 +209,7 @@ class HidroPixel:
             self.extensao = Path(self.abrir_arquivo).suffix.lower()
             return self.abrir_arquivo
         else:
+            # Caso o usuário não selecione algum arquivo
             result ="Nenhum arquivo foi selecionado!"
             QMessageBox.warning(None, "ERROR!", result)
 
@@ -221,8 +220,14 @@ class HidroPixel:
         global_vars = GlobalVariables()
         rdc_vars = RDCVariables()
 
-        # Recebendo o arquivo enviado através do usuário
-        file = arquivo
+        # Tratamento de erros: verifica se o arquivo foi corretamente enviado
+        if arquivo:
+            # Recebendo o arquivo enviado através do usuário
+            file = arquivo
+        else:
+            # Exibe uma mensagem de erro
+            result ="Nenhum arquivo foi selecionado!"
+            QMessageBox.warning(None, "ERROR!", result)
 
         # Realizando a abertura do arquivo raster e coletando as informações referentes as dimensões do mesmo
         rst_file_bacia = gdal.Open(file)
@@ -237,12 +242,13 @@ class HidroPixel:
             rdc_vars.nlin,rdc_vars.ncol = rst_file_bacia.RasterXSize,rst_file_bacia.RasterYSize
 
             # Determinando o numéro de elementos contidos no arquivo raster
-            num_elements_bacia = len(dados_lidos_bacia)
+            num_elements_bacia = dados_lidos_bacia.size
 
             # Tratamento de erros: verifica se o número de elementos (pixel) do arquivo está de acordo com as dimensões da matriz da bacia hidrográfica
             if num_elements_bacia != rdc_vars.nlin * rdc_vars.ncol:
-                print(f"ERROR! As dimensões do arquivo raster ({rdc_vars.nlin},{rdc_vars.ncol}) são diferentes do número total de \
-                      de elementos {num_elements_bacia}. Assim, não é possível ler o arquivo raster '{file}' e armazená-lo na matriz destinada.")
+                result = f"ERROR! As dimensões do arquivo raster ({rdc_vars.nlin},{rdc_vars.ncol}) são diferentes do número total de \
+                      elementos {num_elements_bacia}. Assim, não é possível ler o arquivo raster '{file}' e armazená-lo na matriz destinada."
+                QMessageBox.warning(None, "ERROR!", result)
             else:
                 # Reorganizando os dados lidos da bacia em uma nova matriz chamada bacia.
                 # global_vars.bacia = dados_lidos_bacia
@@ -250,7 +256,9 @@ class HidroPixel:
                 # Fechando o dataset GDAL
                 rst_file_bacia = None
         else:
-            print(f"Failed to open the raster file: {file}")
+            """Caso o arquivo raster apresente erros durante a abertura, ocorrerá um erro"""
+            resulte = f"Failde to open the raster file: {file}"
+            QMessageBox.warning(None, "ERROR!", resulte)
 
         return global_vars.bacia
         
@@ -259,8 +267,14 @@ class HidroPixel:
         # Criando instâncias das classes
         global_vars = GlobalVariables()
 
-        # Abrindo o arquivo de texto (.txt) com as informações acerca das classes dos rios
-        file = arquivo
+         # Tratamento de erros: verifica se o arquivo foi corretamente enviado
+        if arquivo:
+            # Abrindo o arquivo de texto (.txt) com as informações acerca das classes dos rios
+            file = arquivo
+        else:
+            # Exibe uma mensagem de erro
+            result ="Nenhum arquivo foi selecionado!"
+            QMessageBox.warning(None, "ERROR!", result)
 
         # Abrindo arquivo com as características dos rios da bacia hidrográfica
         with open(file, 'r', encoding='utf-8') as arquivo_txt:
@@ -300,8 +314,14 @@ class HidroPixel:
         global_vars = GlobalVariables()
         rdc_vars = RDCVariables()
 
-        # Obtendo o arquivo referente as calasses dos rios da bacia hidrográfica
-        file = arquivo
+        # Tratamento de erros: verifica se o arquivo foi corretamente enviado
+        if arquivo:
+            # Obtendo o arquivo referente as classes dos rios da bacia hidrográfica
+            file = arquivo
+        else:
+            # Exibe uma mensagem de erro
+            result ="Nenhum arquivo foi selecionado!"
+            QMessageBox.warning(None, "ERROR!", result)
 
          # Realizando a abertura do arquivo raster e coletando as informações referentes as dimensões do mesmo
         rst_file_claRIO = gdal.Open(file)
@@ -315,12 +335,13 @@ class HidroPixel:
             rdc_vars.nlin, rdc_vars.ncol = rst_file_claRIO.RasterXSize, rst_file_claRIO.RasterYSize
 
             # Determinando o número de elementos (pixel) do arquivo raster
-            num_elements_claRIOS = len(dados_lidos_raster_claRIO)
+            num_elements_claRIOS = dados_lidos_raster_claRIO.size
 
             # Tratamento de erros: verifica se o número de elementos do arquivo raster está consoante as dimensões da matriz das classes dos rios
             if num_elements_claRIOS != rdc_vars.nlin * rdc_vars.ncol:
-                print(f"ERROR! As dimensões do arquivo raster ({rdc_vars.nlin},{rdc_vars.ncol}) são diferentes do número total de \
-                      de elementos {num_elements_claRIOS}. Assim, não é possível ler o arquivo raster '{file}' e armazená-lo na matriz destinada." )
+                result = f"ERROR! As dimensões do arquivo raster ({rdc_vars.nlin},{rdc_vars.ncol}) são diferentes do número total de \
+                      de elementos {num_elements_claRIOS}. Assim, não é possível ler o arquivo raster '{file}' e armazená-lo na matriz destinada."
+                QMessageBox.warning(None, "ERROR!", result)
             else:
                 # Reorganizando os dados lidos em uma nova matriz, essa possui as informações sobre as classes dos rios
                 global_vars.classerio = dados_lidos_raster_claRIO
@@ -328,54 +349,192 @@ class HidroPixel:
                 # Fechando o dataset GDAL referente ao arquivo raster
                 rst_file_claRIO = None
         else:
-            print(f"Failed to open the raster file: {file}")
+            """Caso o arquivo raster apresente erros durante a abertura, ocorrerá um erro"""
+            resulte = f"Failde to open the raster file: {file}"
+            QMessageBox.warning(None, "ERROR!", resulte)
 
         return global_vars.classerio
 
            
-    def leh_direcao_rios(self):
+    def leh_direcoes_de_fluxo(self):
         """Esta função é utilizada para ler as informações acerca da direção de escoamento dos rios (arquivo raster - .rst)"""
-        # será desenvolvida...
-        return
+        # Criando instâncias das classes
+        global_vars = GlobalVariables()
+        rdc_vars = RDCVariables()
+
+        # Definindo a numeração das direções
+        global_vars.A, global_vars.B, global_vars.C, global_vars.D = 1, 2, 4, 8
+        global_vars.E, global_vars.F, global_vars.G, global_vars.H = 16, 32, 64, 128
+
+        # Definindo a posição relativa dos pixels vizinhos
+        # lin viz = lin centro + dlin(i)
+        # col viz = col centro + dcol(i)
+        dlin = [-1, 0, 1, 1, 1, 0, -1, 1]
+        dcol = [1, 1, 1, 0, -1, -1, -1, 0]
+       
+        # ATENÇÃO PARA O VALOR NUMÉRICO DAS DIRECÕES
+        # ---------------------------------------------------------
+        # - G  H  A      ArcView:  32 64 128    MGB-IPH:  64  128  1 -
+        # - F  *  B                16  *  1               32   *   2 -
+        # - E  D  C                 8  4  2               16   8   4 -
+
+        # Recebendo os arquivos necessários
+        rdc_vars.nomeRST = self.carregaArquivos()
+        rdc_vars.nomeRDC = self.carregaArquivo()
+
+        # Abrindo o arquivo RDC
+        file = rdc_vars.nomeRDC
+        with open(file, 'r') as rdc_file:
+            # Separando os dados do arquivo RDC em função das linhas que contém alguma das palavras abaixo
+            k_words = ["columns", "rows", "ref. system", "ref. units", "min. X", "max. X", "min. Y", "max. Y", "resolution"]
+            lines_RDC = [line.strip() for line in rdc_file.readlines() if any(word in line for word in k_words)]
+            
+            # Iterando sobre a lista de lines_rdc para guardas as informações das palavras da lista (k_words) nas ruas respectivas variáveis
+            for line in lines_RDC:
+                # Separando as linhas de acordo com o refencial (:)
+                split_line = line.split(":")
+                # Armazenando o primeiro valor da linha (antes do sinal ":")em uma variável 
+                # e retirando os espaços (caracter) do inicio e fim da linha repartida
+                key = split_line[0].strip()
+                # Armazenando o segundo valor da linha (antes do sinal ":") em uma variáveis 
+                # e retirando os espaços (caracter) do inicio e fim da linha repartida
+                value = split_line[-1].strip()
+
+                # Estrutura condicional para verificar quais são as informações de cada linha e armazenando elas em suas respectivas variáveis
+                if key == "rows":
+                    rdc_vars.nlin = int(value)
+                elif key == "columns":
+                    rdc_vars.ncol = int(value)
+                elif key == "ref. system":
+                    rdc_vars.sistemaref = value
+                elif key == "ref. units":
+                    rdc_vars.unidaderef3 = value
+                elif key == "min. X":
+                    rdc_vars.xmin = float(value)
+                elif key == "max. X":
+                    rdc_vars.xmax = float(value)
+                elif key == "min. Y":
+                    rdc_vars.ymin = float(value)
+                elif key == "max. Y":
+                    rdc_vars.ymax = float(value)
+                elif key == "resolution":
+                    rdc_vars.dx = float(value)
+        
+        # Atualizando algumas variáveis com as informações coletadas do arquivo RDC
+        rdc_vars.dx3 = rdc_vars.dx
+        rdc_vars.Xres2 = rdc_vars.dx
+        rdc_vars.Xres = float(rdc_vars.Xres2)
+        rdc_vars.Xres = rdc_vars.Yres
+
+        # Abrindo o arquivo raster 
+        rst_file_dir = gdal.Open(rdc_vars.nomeRST)
+
+        # Lendo os dados raster como um array
+        dados_lidos_direcoes = rst_file_dir.GetRasterBand(1).ReadAsArruy()
+
+        # Tratamento de erros: verifica se o arquivo raster foi aberto corretamente
+        if rst_file_dir is not None:
+            # Determinando a quantidade de elementos (pixel) no arquivo raster
+            num_elementos_rst_dir = dados_lidos_direcoes.size
+
+            # Tratamento de erros: verifica se as dimensões do arquivo raster estão consoante o numéro de elementos (pixel)
+            if num_elementos_rst_dir != global_vars.nlin * global_vars.ncol:
+                result = f"ERROR! As dimensões do arquivo raster ({rdc_vars.nlin},{rdc_vars.ncol}) são diferentes do número total de \
+                      de elementos {num_elementos_rst_dir}. Assim, não é possível ler o arquivo raster e armazená-lo na matriz destinada."
+                QMessageBox.warning(None, "ERROR!", result)
+            else:
+                """Se os o número de elementos (pixel) estiver de acordo com as dimensões do arquivo raster, não ocorrerão erros."""
+                # Reorganizando os dados lidos na matriz destinadas às informações da drenagem da bacia hidrográfica
+                global_vars.dir = dados_lidos_direcoes
+
+            # Fechando o dataset GDAL referente ao arquivo raster
+            rst_file_dir = None
+        else:
+            """Caso o arquivo raster apresente erros durante a abertura, ocorrerá um erro"""
+            resulte = f"Failde to open the raster file: {rdc_vars.nomeRST}"
+            QMessageBox.warning(None, "ERROR!", resulte)
+
+        # Códigos de direções de fluxos
+        global_vars.maxdir = -10000000
+
+        # Iniciando a iterações com base nas linhas e colunas 
+        for l in range(1, rdc_vars.nlin +1):
+            for c in range(1, rdc_vars.ncol +1):
+                # Verifica se o valor atual do elemento (i,j) da matriz é maior que o valor maxdir
+                if global_vars.dir[l-1,c-1] > global_vars.maxdir:
+                    # Atualiza a variável maxdir de acordo com o novo maior valor da matriz dir
+                    global_vars.maxdir = global_vars.dir[l-1,c-1]
+
+        # Verificação do valor da variável maxdir (?)
+        if global_vars.maxdir > 128:
+            # Mapeamento das direções de fluxo do tipo idrisi 
+            idrisi_map = {
+                45: 1,
+                90: 2,
+                135: 4,
+                180: 8,
+                225: 16,
+                270: 32,
+                315: 64,
+                360: 128
+            }
+
+            # Atualizando os valores da matriz das direções de fluxo com base no mapeamento feito
+            for lin in range(1, rdc_vars.nlin + 1):
+                for col in range(1, rdc_vars.ncol + 1):
+                    # Verifica se o valor atual da variável maxdir está presente no mapeamento
+                    if global_vars.dir[lin - 1, col - 1] in idrisi_map:
+                        # Atualiza o valor do elemento atual da matriz dir de acordo com os novos valores
+                        global_vars.dir[lin - 1, col - 1] = idrisi_map[dir[lin - 1, col - 1]]
+        
+        # Tratamento das direções na borda
+        global_vars.dir[0, :] = 128
+        global_vars.dir[-1, :] = 8
+        global_vars.dir[:, 0] = 32
+        global_vars.dir[:, -1] = 2
+
+        return global_vars.dir
 
     def leh_drenagem(self):
         """Esta função é utilizada para ler as informações acerca da drenagem dos rios (arquivo raster - .rst)"""
         # Criando instâncias das classes
         global_vars = GlobalVariables()
         rdc_vars = RDCVariables()
-
+    
         # Obtendo o arquivo referente as calasses dos rios da bacia hidrográfica
         file = self.carregaArquivos() 
-
-        # Lendo os dados raster como um array
-        dados_lidos_drenagem = rst_file_drenagem.GetRasterBand(1).ReadAsArruy()
 
         # Abrindo o arquivo raster com as informações acerda do sistema de drenagem da bacia hidrográfica
         rst_file_drenagem = gdal.Open(file)
         
+        # Lendo os dados raster como um array
+        dados_lidos_drenagem = rst_file_drenagem.GetRasterBand(1).ReadAsArruy()
+
         # Tratamento de erros: verifica se o arquivo raster foi aberto corretamente
         if rst_file_drenagem is not None:
             # Lendo as dimensões do arquivo raster (linhas, colunas)
             global_vars.nlin, global_vars.ncol = rst_file_drenagem.RasteXSize, rst_file_drenagem.RasterYSize 
 
             # Determinando a quantidade de elementos (pixel) no arquivo raster
-            num_elementos_rst_dren = len(dados_lidos_drenagem)
+            num_elementos_rst_dren = dados_lidos_drenagem.size
 
             # Tratamento de erros: verifica se as dimensões do arquivo raster estão consoante o numéro de elementos (pixel)
             if num_elementos_rst_dren != global_vars.nlin * global_vars.ncol:
-                print(f"ERROR! As dimensões do arquivo raster ({rdc_vars.nlin},{rdc_vars.ncol}) são diferentes do número total de \
-                      de elementos {num_elementos_rst_dren}. Assim, não é possível ler o arquivo raster e armazená-lo na matriz destinada." )    
+                result = f"ERROR! As dimensões do arquivo raster ({rdc_vars.nlin},{rdc_vars.ncol}) são diferentes do número total de \
+                      de elementos {num_elementos_rst_dren}. Assim, não é possível ler o arquivo raster e armazená-lo na matriz destinada."
+                QMessageBox.warning(None, "ERROR!", result)
             else:
                 """Se os o número de elementos (pixel) estiver de acordo com as dimensões do arquivo raster, não ocorrerão erros."""
                 # Reorganizando os dados lidos na matriz destinadas às informações da drenagem da bacia hidrográfica
                 global_vars.dren = dados_lidos_drenagem
 
-            # Fechando o dataset GEDAl referente ao arquivo raster
+            # Fechando o dataset GDAl referente ao arquivo raster
             rst_file_drenagem = None
         else:
             """Caso o arquivo raster apresente erros durante a abertura, ocorrerá um erro"""
-            print(f"Failde to open the raster file: {file}")
-          
+            resulte = f"Failde to open the raster file: {file}"
+            QMessageBox.warning(None, "ERROR!", resulte)
+
         return global_vars.dren
 
     def leh_modelo_numerico_dTerreno(self):
@@ -399,18 +558,24 @@ class HidroPixel:
             rdc_vars.nlin, rdc_vars.ncol = rst_file_MDE.RasterYSize, rst_file_MDE.RasterXSize
 
             # Determinando o número de elementos (pixel) do arquivo raster
-            num_elements_MNT = len(dados_lidos_MDE)
+            num_elements_MNT = dados_lidos_MDE.size
 
             # Tratamento de erros: verifica se o número de elementos do arquivo está de acordo com as dimensões da matriz ligada ao MNT
             if num_elements_MNT != rdc_vars.nlin * rdc_vars.ncol:
-                print(f"ERROR! As dimensões do arquivo raster ({rdc_vars.nlin},{rdc_vars.ncol}) são diferentes do número total de \
-                      de elementos {num_elements_MNT}. Assim, não é possível ler o arquivo raster '{file}' e armazená-lo na matriz destinada." )
+                result = f"ERROR! As dimensões do arquivo raster ({rdc_vars.nlin},{rdc_vars.ncol}) são diferentes do número total de \
+                      de elementos {num_elements_MNT}. Assim, não é possível ler o arquivo raster '{file}' e armazená-lo na matriz destinada."
+                QMessageBox.warning(None, "ERROR!", result)
             else:
                 # Reoganizando os dados lidos em uma nova matriz que possuirá os dados ligados ao MDE da baica hidrográfica
                 global_vars.MDE = dados_lidos_MDE
                 
-                # Fechando o 
-                rst_file_MDE
+                # Fechando o dataset GDAL
+                rst_file_MDE = None
+        else:
+            """Caso o arquivo raster apresente erros durante a abertura, ocorrerá um erro"""
+            resulte = f"Failde to open the raster file: {file}"
+            QMessageBox.warning(None, "ERROR!", resulte)
+
         return global_vars.MDE
 
     def leh_precipitacao_24h(self):
@@ -452,12 +617,13 @@ class HidroPixel:
             rdc_vars.nlin, rdc_vars.ncol = rst_file_usoSolo.RasterXSize, rst_file_usoSolo.RasterYSize
 
             # Determinando a quantidade de elementos (pixel) no arquivo raster lido
-            num_elementos_raster_usoSolo = len(dados_lidos_usoSolo)
+            num_elementos_raster_usoSolo = dados_lidos_usoSolo.size
 
             # Tratamento de erros: verifica se a quantidade de elementos do arquivo raster está consoante as suas dimensões
             if num_elementos_raster_usoSolo != rdc_vars.nlin * rdc_vars.ncol:
-                print(f"ERROR! As dimensões do arquivo raster ({rdc_vars.nlin},{rdc_vars.ncol}) são diferentes do número total de \
-                      de elementos {num_elementos_raster_usoSolo}. Assim, não é possível ler o arquivo raster '{file}' e armazená-lo na matriz destinada." )    
+                result = f"ERROR! As dimensões do arquivo raster ({rdc_vars.nlin},{rdc_vars.ncol}) são diferentes do número total de \
+                      de elementos {num_elementos_raster_usoSolo}. Assim, não é possível ler o arquivo raster '{file}' e armazená-lo na matriz destinada."
+                QMessageBox.warning(None, "ERROR!", result)  
             else:
                 """Se os o número de elementos (pixel) estiver de acordo com as dimensões do arquivo raster, não ocorrerão erros."""
                 # Reorganizando os dados lidos na matriz destinadas às informações da drenagem da bacia hidrográfica
@@ -473,29 +639,27 @@ class HidroPixel:
                     for c in range(1, rdc_vars.ncol + 1):
                         # Estrutura condicional para coletar apenas os valores maiores que zero, 
                         # ou seja, aqueles presentes na delimitação da bacia hidrográfica 
-                        if bacia_rst[l, c] > 0:
+                        if bacia_rst[l-1, c-1] > 0:
                             # Determina os valores valores dos pixels da matriz com os dados do uso do solo
-                            if global_vars.usosolo[l, c] > global_vars.Nusomax:
+                            if global_vars.usosolo[l-1, c-1] > global_vars.Nusomax:
                                 # Atualiza a variável que armazena os maiores valores dos pixels do uso do solo
-                                global_vars.Nusomax = global_vars.usosolo[l, c]
+                                global_vars.Nusomax = global_vars.usosolo[l-1, c-1]
 
-            self.iface.messageBar().pushMessage('Success', "Execution successful!", level=Qgis.Info)
         else:
             """Caso o arquivo raster apresente erros durante a abertura, ocorrerá um erro"""
-            print(f"Failde to open the raster file: {file}")
+            resulte = f"Failde to open the raster file: {file}"
+            QMessageBox.warning(None, "ERROR!", resulte)
 
         return global_vars.Nusomax
 
-    def leh_uso_manning (self,arquivo):
+    def leh_uso_manning (self):
         """Esta função é utilizada para ler as informações acerca do uso do solo e o coeficiente de rugosidade de Manning (arquivo texto - .txt)"""
         # Criando instâncias das classes
         global_vars = GlobalVariables()
         rdc_vars = RDCVariables()
 
-        # Tratamento de erros: verifica se o arquivo foi corretamente atribuido
-        if self.abrir_arquivo == "":
-            # Obtendo o arquivo de texto (.txt) com as informações acerca dos coeficientes De Manning para as zonas da bacia hidrográfica
-            file = self.abrir_arquivo
+        # Recebendo o arquivo
+        file = self.carregaArquivo()
 
         # Criando variável extra, para armazenar os tipos de uso e coeficente de Manning
         uso_manning = []

@@ -1,3 +1,2 @@
-arquivo_txt.readline()
-        global_vars.nclasses = int(arquivo_txt.readline().strip())  # com base no arquivo fornecido, o número de classes está na segunda linha!! (X)
-        arquivo_txt.readline()
+from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication
+# from qgis.PyQt.QtGui import QIcon
