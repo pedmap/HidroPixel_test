@@ -178,7 +178,7 @@ class Test():
             
         return uso_manning, global_vars.Mann
     # Chamando a função
-    resultado_bacia = leh_uso_manning()
+    resultado_bacia = leh_bacia(file)
     print(resultado_bacia)
 
     # for global_vars.tt in range(1, global_vars.Nusomax + 1):

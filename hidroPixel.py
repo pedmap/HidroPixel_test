@@ -694,7 +694,7 @@ class HidroPixel:
         # Sempre inicialize self.dlg
         self.dlg = HidroPixelDialog()
 
-        # Apenas mostre a janela se for a primeira vez que o plugin é iniciado
+        # Apenas mostra a janela se for a primeira vez que o plugin é iniciado
         if self.first_start:
             self.first_start = False
 
