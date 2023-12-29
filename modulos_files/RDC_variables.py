@@ -18,7 +18,6 @@ class RDCVariables:
         """
         This method is responsible for creating the RDC's variables necessary for the HidroPixel Plugin operation.
         """
-
         # Matrix's declaration
         self.Var2D = np.empty((0,0), dtype=float)
         self.xx = np.empty((0,0), dtype=float)
@@ -33,12 +32,6 @@ class RDCVariables:
         self.iauxchar2 = ""
         self.ichar = ""
         self.cabecalho = ""
-        self.texto10 = ""
-        self.texto20 = ""
-        self.texto30 = ""
-        self.texto40 = ""
-        self.texto50 = ""
-        self.texto60 = ""
         self.textoaux = ""
         self.nomeRST = ""
         self.nomeRDC = ""
@@ -65,6 +58,8 @@ class RDCVariables:
         self.tipodado = 0
         self.tamnum = 0
         self.num = 0
+        self.cont = 0
+        self.cont1 = 0
         self.tipoMM = 0
         self.TipoAnaliseFaixa = 0
         self.i3 = 0
@@ -74,6 +69,10 @@ class RDCVariables:
         self.linst = 0
         self.gerasrack = 0
         self.metrordc = 0
+        self.tipo = 0
+        self.tipo1 = 0
+        self.tipo2 = 0
+         
 
         # Real varibles declaration
         self.coordxie = 0.0
@@ -89,6 +88,4 @@ class RDCVariables:
         self.Varmin = 0.0
         self.Varmax = 0.0
         self.varaux = 0.0
-       
-
 

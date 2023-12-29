@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>324</width>
-    <height>392</height>
+    <width>311</width>
+    <height>351</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -90,7 +90,7 @@ rgb:213, 213, 213;</string>
          <string notr="true">font: 90 11pt &quot;Segoe UI&quot;;</string>
         </property>
         <property name="text">
-         <string>Select the file:</string>
+         <string>File URL:</string>
         </property>
        </widget>
       </item>
