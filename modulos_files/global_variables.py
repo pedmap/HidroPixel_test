@@ -1,5 +1,5 @@
 """
-\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ MODULE FOR CREATION OF GENERAL VARIABLES \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\ MODULE FOR CREATION OF GENERAL VARIABLES \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 
 Objective: This file is responsible for creating the general variables necessary for the HidroPixel Plugin operation.
 Author: João Vitor Dias
@@ -19,7 +19,7 @@ class GlobalVariables:
         This method is responsible for creating the general variables necessary for the HidroPixel Plugin operation.
         """
         # Matrix's declaration
-        self.dir = np.empty((0,0), dtype = np.int16)
+        self.direcoes = np.empty((0,0), dtype = np.int16)
         self.dren = np.empty((0,0), dtype = np.int16)   
         self.MDEint = np.empty((0,0), dtype = np.int16)
         self.cabeceira = np.empty((0,0), dtype = np.int16)
@@ -36,6 +36,7 @@ class GlobalVariables:
         self.MDE = np.empty((0,0), dtype = np.float64)
         self.DIST = np.empty((0,0), dtype = np.float64) # !
         self.DISTtre = np.empty((0,0), dtype = np.float64)# !
+        self.DISTult = np.empty((0,0), dtype = np.float64)# !
         self.TS = np.empty((0,0), dtype = np.float64)
         self.TScabe = np.empty((0,0), dtype = np.float64)
         self.TScabe2d = np.empty((0,0), dtype = np.float64)
@@ -54,25 +55,32 @@ class GlobalVariables:
         self.DECLIVpixjus = np.empty((0,0),dtype = np.float64)
         self.TSpix = np.empty((0,0), dtype = np.float64)
         self.TSpixacum = np.empty((0,0), dtype = np.float64)
-
+        self.Ltre = np.empty((0,0), dtype = np.float64)
+        self.cotaini = np.empty((0,0), dtype = np.float64)
+        self.cotafim = np.empty((0,0), dtype = np.float64)
+        self.Stre = np.empty((0,0), dtype = np.float64)
+        self.usotre = np.empty((0,0), dtype = np.float64)
+        self.Somaaux = np.empty((0,0), dtype = np.float64)
+        self.Somaauxpond = np.empty((0,0), dtype = np.float64)        
+        self.SomaauxDist = np.empty((0,0), dtype = np.float64)
+        self.contaaux = np.empty((0,0), dtype = np.float64)
+        
         # vector's declaration
-        self.lincontadren = np.array([], dtype = np.int16)
-        self.colcontadren = np.empty([], dtype = np.int16)
+        self.lincontadren =  np.empty([], dtype = np.int16)
+        self.colcontadren =  np.empty([], dtype = np.int16)
         self.lincabe = np.empty([], dtype = np.int16)
         self.colcabe = np.empty([], dtype = np.int16)
         self.Sclasse = np.empty([], dtype = np.int16)
         self.usaux = np.empty([], dtype = np.int16)
+        self.usaux2 = np.empty([], dtype = np.int16)
         self.Mann = np.empty([], dtype = np.int16)
         self.Mannclasse = np.empty([], dtype = np.int16)
         self.Rhclasse = np.empty([], dtype = np.int16)
+        self.numtre = np.empty([], dtype = np.int16)
         self.dlin = np.empty((128), dtype = int)
         self.dcol = np.empty((128), dtype = int)
         
         # string's declaration
-        self.texto1= ""
-        self.texto2= ""
-        self.texto7 = ""
-        self.texto8 = ""
         self.subtipodecliv = ""
         self.unidaderef3 = ""
 
@@ -86,6 +94,8 @@ class GlobalVariables:
         self.linaux2 = 0
         self.colaux2 = 0
         self.linaux3 = 0
+        self.caminho = 0
+        self.numcabeaux = 0
         self.A = 0
         self.B = 0
         self.C = 0
@@ -99,8 +109,7 @@ class GlobalVariables:
         self.cont = 0
         self.t = 0
         self.tt = 0
-        self.Nusomax = 0
-        self.tipo = 0    
+        self.Nusomax = 0 
         self.maxdir = 0
         self.Ntre = 0
         self.metro = 0
@@ -110,8 +119,12 @@ class GlobalVariables:
         self.ll = 0
         self.cc = 0
         self.pixel_ref_dren = 0
+        self.diraux = 0
         self.numtreauxmax = 0
-
+        self.numtreaux = 0
+        self.numtreaux2 = 0
+        self.tipo_decliv = 0
+        self.sda = 0
 
         # Real varibles declaration
         self.xmin = 0.0
@@ -127,6 +140,7 @@ class GlobalVariables:
         self.Yres = 0.0
         self.Xres2 = 0.0
         self.diagonal = 0.0
+        self.dist_2 = 0.0
         self.lado = 0.0
         self.auxdist = 0.0
         self.tamcam = np.float64(0.0)
@@ -140,20 +154,19 @@ class GlobalVariables:
         self.Saux = np.float64(0.0)
         self.Laux = np.float64(0.0)
         self.P24 = np.float64(0.0)
-        self.Taux = np.float64(0.0)        
-        self.DISTtreaux = np.float64(0.0)   
+        self.Taux = np.float64(0.0)
+        self.DISTtreaux = np.float64(0.0)
         self.tamfoz = np.float64(0.0)
         self.Tempoauxac = np.float64(0.0)
-        self.Tempoaux = np.float64(0.0) 
+        self.Tempoaux = np.float64(0.0)
         self.auxTempoCanal = np.float64(0.0)
         self.Streaux2 = np.float64(0.0)
-        self.Difcota = np.float64(0.0)   
+        self.Difcota = np.float64(0.0)
         self.Lincr = np.float64(0.0)
         self.Smin = np.float64(0.0)
-        self.tempocam = np.float64(0.0) 
+        self.tempocam = np.float64(0.0)
         self.Smax = np.float64(0.0)
 
         # Int 4bytes
         self.numncabeaux = np.int32(0)
         self.Ncabec = np.int32(0)
-
