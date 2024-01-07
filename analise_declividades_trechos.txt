@@ -1,0 +1,1 @@
+Num_pixel     Num_trecho    Decliv_1      Decliv_2      Decliv_3      

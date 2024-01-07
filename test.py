@@ -129,21 +129,31 @@ class Test():
     def leh_direcoes_de_fluxo(self):
         """Esta função é utilizada para ler as informações acerca da direção de escoamento dos rios (arquivo raster - .rst)"""
 
-        # Definindo a numeração das direções
-        self.global_vars.A = 1
-        self.global_vars.B = 2
-        self.global_vars.C = 4
-        self.global_vars.D = 8
-        self.global_vars.E = 16
-        self.global_vars.F = 32
-        self.global_vars.G = 64
-        self.global_vars.H = 128
-
+        # Definindo a numeração das direções &
         # Definindo a posição relativa dos pixels vizinhos
         # lin viz = lin centro + dlin(i)
         # col viz = col centro + dcol(i)
-        self.global_vars.dlin = [-1, 0, 1, 1, 1, 0, -1, 1]
-        self.global_vars.dcol = [1, 1, 1, 0, -1, -1, -1, 0]
+
+        self.global_vars.dlin = {
+                            1: -1,
+                            2: 0,
+                            4: 1,
+                            8: 1,
+                            16: 1,
+                            32: 0,
+                            64: -1,
+                            128: 1
+                            }
+        self.global_vars.dcol = {
+                            1: 1,
+                            2: 1,
+                            4: 1,
+                            8: 0,
+                            16: -1,
+                            32: -1,
+                            64: -1,
+                            128: 0
+                            }
 
        
         # ATENÇÃO PARA O VALOR NUMÉRICO DAS DIRECÕES
@@ -205,7 +215,7 @@ class Test():
         # Tratamento de erros: verifica se o arquivo raster foi aberto corretamente
         if rst_file_dir is not None:
             # Reorganizando os dados lidos na matriz destinadas às informações da drenagem da bacia hidrográfica
-            self.global_vars.direcoes =dados_lidos_direcoes
+            self.global_vars.direcoes = dados_lidos_direcoes
 
             # Fechando o dataset GDAL referente ao arquivo raster
             rst_file_dir = None
@@ -395,15 +405,18 @@ class Test():
 
         self.global_vars.dist_2 = dist2
 
-        return self.global_vars.dist_2
+        return dist2
 
-    def comprimento_acumulado(self):
+    def comprimento_acumulado(self,lado):
         """Definir objetivo da função"""
         self.Lfoz = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol), dtype=np.float64)
+        self.Lac = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol), dtype=np.float64)
+        self.global_vars.lado = lado
+        self.global_vars.diagonal = lado*np.sqrt(2.0)
 
         # Iniciando a iteração para varrer todos os elementos da bacia hidrográfica
-        for col in range(self.rdc_vars.ncol):
-            for lin in range(self.rdc_vars.nlin):
+        for col in range(20):
+            for lin in range(20):
                 # Delimitando apenas os elementos que estão presentes na bacia hidrográfica
                 if self.global_vars.bacia[lin,col] == 1:
                     # Coletando as informações referentes ao sistema de drenagem da bacia hidrográfica
@@ -414,10 +427,9 @@ class Test():
                         while self.global_vars.caminho == 0:
                             # Criando condição de parada
                             condicao = self.global_vars.linaux < 1 or self.global_vars.linaux > self.rdc_vars.nlin or self.global_vars.colaux < 1 \
-                                or self.global_vars.colaux > self.rdc_vars.ncol or self.global_vars.bacia[self.global_vars.linaux, self.global_vars.colaux]==1
+                                or self.global_vars.colaux > self.rdc_vars.ncol or self.global_vars.bacia[self.global_vars.linaux, self.global_vars.colaux]==0
                             
                             if condicao:
-                                # Se a condição "condicao" for verdadeira, o valor da variável caminho é alterada
                                 self.global_vars.caminho = 1
 
                             else:
@@ -432,51 +444,60 @@ class Test():
                                 condicao2 = self.global_vars.linaux2 == self.global_vars.linaux or self.global_vars.colaux2 == self.global_vars.colaux
                                 if condicao2:
                                     if self.global_vars.linaux2 == self.global_vars.linaux:
-                                        self.global_vars.tipo = 1 
+                                        self.rdc_vars.tipo = 1
                                     else:
-                                        self.global_vars.tipo = 2
+                                        self.rdc_vars.tipo = 2
                                 else:
-                                    self.global_vars.tipo = 3
+                                    self.rdc_vars.tipo = 3
 
                                 # Deteminando a distância incremental projetada
-                                if self.global_vars.metro == 0:
+                                if self.global_vars.metro == 1:
                                     project = self.project(self.global_vars.Xesq, 
                                                            self.global_vars.Xdir, 
                                                            self.global_vars.Ysup, 
                                                            self.global_vars.Yinf, 
-                                                           self.global_vars.tipo,
+                                                           self.rdc_vars.tipo,
                                                            self.global_vars.auxdist, 
                                                            self.global_vars.lado, 
                                                            self.global_vars.diagonal)
+                                    print(f'O valor da distância final calculada foi: {project}')
+
                                 else:
-                                    if self.global_vars.tipo == 1 or self.global_vars.tipo ==2:
+                                    if self.rdc_vars.tipo == 1 or self.rdc_vars.tipo == 2:
                                         self.global_vars.auxdist = self.global_vars.dx*self.global_vars.lado
+                                        print(self.global_vars.auxdist)
+
                                     else:
                                         self.global_vars.auxdist = self.global_vars.dx*self.global_vars.diagonal
-                                
+                                        print(self.global_vars.auxdist)
                                 # Atualizando o comprimento do rio desde o pixel inicial
                                 self.global_vars.tamcam += self.global_vars.auxdist
                                 self.global_vars.tamfoz = self.global_vars.tamcam
 
                                 # Condição para verificar se o tamanho do rio é mair que o armazenameto do pixel
-                                condicao3 = self.global_vars.tamcam > self.global_vars.Lac[self.global_vars.linaux, self.global_vars.colaux]
+                                condicao3 = self.global_vars.tamcam > self.Lac[self.global_vars.linaux, self.global_vars.colaux]
                                 if condicao3:
                                     # O valor do pixel é armazenado em um novo rio
-                                    self.global_vars.Lac[self.global_vars.linaux, self.global_vars.colaux] = self.global_vars.tamcam
+                                    self.Lac[self.global_vars.linaux, self.global_vars.colaux] = self.global_vars.tamcam
                                 
                                 # Armazena o pixel contabilizado
                                 self.global_vars.linaux2 = self.global_vars.linaux
                                 self.global_vars.colaux2 = self.global_vars.colaux
 
                                 # determina o próximo píxel do caminho
-                                self.global_vars.diraux = self.global_vars.dren[self.global_vars.linaux, self.global_vars.colaux]
+                                # if self.global_vars.direcoes[self.global_vars.linaux, self.global_vars.colaux] != -1:
+                                self.global_vars.diraux = self.global_vars.direcoes[self.global_vars.linaux, self.global_vars.colaux]                               
                                 self.global_vars.caminho = 0
                                 self.global_vars.linaux += self.global_vars.dlin[self.global_vars.diraux]
-                                self.global_vars.colaux += self.global_vars.dcol[self.global_vars.diraux] 
+                                self.global_vars.colaux += self.global_vars.dcol[self.global_vars.diraux]
                                 self.global_vars.sda = 0
 
                         # Atulizando a variável lfoz
                         self.Lfoz[lin, col] = self.global_vars.tamfoz
+                        
+        print("foi aqui", np.count_nonzero(self.Lfoz))
+        print(self.rdc_vars.tipo)
+        print(self.Lfoz)
 
     def numera_pixel(self):
         '''
@@ -485,6 +506,8 @@ class Test():
         self.lincontadren = np.zeros(self.global_vars.dren.shape[0], dtype=np.int16)
         self.colcontadren = np.zeros(self.global_vars.dren.shape[1], dtype=np.int16)
         self.cabeceira = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol), dtype=np.int32)
+        self.contadren = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol), dtype=np.float64)
+        self.numcabe = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol), dtype=np.float64)
         guarda_numLinha = []
         cont = 0
         # loop para numerar os píxels pertencentes à rede de drenagem
@@ -504,12 +527,13 @@ class Test():
                     # Iterando sob a rede de drenagem da bacia hidrográfica
                     if self.global_vars.dren[lin][col] == 1:
                         self.rdc_vars.cont1 += 1
+                        self.rdc_vars.cont1 -= 1
                         self.contadren[lin][col] = self.rdc_vars.cont1
 
                         # ARPlidar: guarda lin e col desse em funcao do numero do pixel da drenagem
                         # (para otimizar calculo TempoTotal)
-                        self.lincontadren[lin] = lin
-                        self.colcontadren[col] = col
+                        self.lincontadren[self.rdc_vars.cont1] = lin
+                        self.colcontadren[self.rdc_vars.cont1] = col
 
         # Nomeração dos píxels internos a bacia: 
         # São chamados de cabeceira, pois o caminho do fluxo iniciado 
@@ -533,12 +557,12 @@ class Test():
                             # Caso algum vizinho drenar para o pixel central em análise, 
                             # ele não é de cabeceira
                             if self.global_vars.linaux2 == lin and self.global_vars.colaux2 == col:
-                                self.global_vars.cabeceira[lin][col] = 0
+                                self.cabeceira[lin][col] = 0
 
-                    if self.global_vars.cabeceira[lin][col] == 1:
+                    if self.cabeceira[lin][col] == 1:
                         self.global_vars.numcabeaux += 1
-                        self.global_vars.numcabe[lin][col] = self.global_vars.numcabeaux
-        print(self.cabeceira)                
+                        self.numcabe[lin][col] = self.global_vars.numcabeaux
+        self.global_vars.numcabe = self.numcabe
         self.global_vars.Ncabec = self.global_vars.numcabeaux
 
     def dist_drenagem(self):
@@ -546,9 +570,8 @@ class Test():
         self.contadren = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol), dtype=np.float64)
         # iterando sobre os elementos do arquivo raster
         for col in range(self.rdc_vars.ncol):
-            if col % 50 == 0:
-                print(f'col = {col}')
-    
+            # if col % 50 == 0:
+            #     # print(f'col = {col}')
             for lin in range(self.rdc_vars.nlin):
                 # Relaizando operações no apenas na região da bacia hidográfica
                 if self.global_vars.bacia[lin][col] == 1:
@@ -599,11 +622,11 @@ class Test():
                                     condicao3 = self.global_vars.linaux2 == self.global_vars.linaux or self.global_vars.colaux2 == self.global_vars.colaux
                                     if condicao3:
                                         if self.global_vars.linaux2 == self.global_vars.linaux:
-                                            self.global_vars.tipo = 1
+                                            self.rdc_vars.tipo = 1
                                         else:
-                                            self.global_vars.tipo = 2
+                                            self.rdc_vars.tipo = 2
                                     else:
-                                        self.global_vars.tipo = 3
+                                        self.rdc_vars.tipo = 3
 
                                     # Determinando a distância incremental projetada
                                     if self.global_vars.metro == 1:
@@ -611,12 +634,12 @@ class Test():
                                                            self.global_vars.Xdir,
                                                            self.global_vars.Ysup,
                                                            self.global_vars.Yinf,
-                                                           self.global_vars.tipo,
+                                                           self.rdc_vars.tipo,
                                                            self.global_vars.auxdist,
                                                            self.global_vars.lado,
                                                            self.global_vars.diagonal)
                                     else:
-                                        condicao4 = self.global_vars.tipo == 1 or self.global_vars.tipo == 2
+                                        condicao4 = self.rdc_vars.tipo == 1 or self.rdc_vars.tipo == 2
                                         if  condicao4:
                                             self.global_vars.auxdist = self.global_vars.dx * self.global_vars.lado
                                         else:
@@ -656,7 +679,7 @@ class Test():
         for col in range(1, self.rdc_vars.ncol -1 ):
             for lin in range(1, self.rdc_vars.nlin - 1):
                 # Ações realizadas apenas na região da bacia
-                if self.global_vars.bacia == 1:
+                if self.global_vars.bacia[lin][col] == 1:
                     # ARPlidar
                     if self.global_vars.numcabe[lin][col] > 0:
                         self.global_vars.numcabeaux = self.global_vars.numcabe[lin][col]
@@ -715,8 +738,8 @@ class Test():
         self.global_vars.refcabtre = 0
         
         for col in range(1, self.rdc_vars.ncol - 1):
-            if col % 50 == 0:
-                print(col)
+            # if col % 50 == 0:
+                # print(f'col = {col}')
             for lin in range(1, self.rdc_vars.nlin -1):
                 # Verificando os elementos da região da bacia
                 if self.global_vars.numcabe[lin][col] > 0:
@@ -799,8 +822,8 @@ class Test():
         self.global_vars.DECLIVpix = 0
         # Percorrendo os elementos da bacia hidrográfica
         for col in range(1, self.rdc_vars.ncol - 1):
-            if col % 50 == 0:
-                print(Col)
+            # if col % 50 == 0:
+                # print(f'col = {col}')
             for lin in range(self.rdc_vars.nlin - 1):
                 # Os cálculos são executados apenas na região da bacia hidrográfica
                 if self.global_vars.bacia[lin][col] == 1:
@@ -883,16 +906,16 @@ class Test():
                                 self.global_vars.DECLIVpix[self.global_vars.linaux2][self.global_vars.colaux2] =  g1/h2
         
         for col in range(1, self.rdc_vars.ncol - 1):
-            if col % 50 == 0:
-                print(f'col = {col}')
-            for lin in range(1, self.global_vars.nlin - 1):
+            # if col % 50 == 0:
+                # print(f'col = {col}')
+            for lin in range(1, self.rdc_vars.nlin - 1):
                 # Os cálculo são realizados apenas na região da baica hidrográficia 
                 if self.global_vars.bacia[lin][col] == 1:
                     # ARPlidar
                     if self.global_vars.numcabe[lin][col] > 0:
                         self.global_vars.numcabeaux = self.global_vars.numcabe[lin][col]
                         if self.global_vars.numcabeaux == 1882:
-                            print(self.global_vars.numcabeaux)
+                            print(f'Aqui 1: {self.global_vars.numcabeaux}')
                         self.global_vars.linaux = lin
                         self.global_vars.colaux = col
                         self.global_vars.linaux2 = lin
@@ -966,7 +989,7 @@ class Test():
         
         with open('analise_declividades_trechos.txt', 'w') as arquivo_txt:
             # Escrevendo o cabeçalho do arquivo
-            arquivo_txt.white('{:<14}{:<14}{:<14}{:<14}{:<14}\n'.format('Num_pixel', 'Num_trecho', 'Decliv_1', 'Decliv_2', 'Decliv_3'))
+            arquivo_txt.write('{:<14}{:<14}{:<14}{:<14}{:<14}\n'.format('Num_pixel', 'Num_trecho', 'Decliv_1', 'Decliv_2', 'Decliv_3'))
             
             for self.global_vars.numcabeaux in range(self.global_vars.Ncabec):
                 self.global_vars.numcabeaux = self.global_vars.numtre[self.global_vars.numcabeaux]
@@ -990,8 +1013,8 @@ class Test():
         condicao2 = None
         self.classerio_aux = np.zeros((self.rdc_vars.nlin,self.rdc_vars.ncol))
         for col in range(self.rdc_vars.ncol):
-            if col  % 50 == 0:
-                print(f'col = {col}')
+            # if col  % 50 == 0:
+                # print(f'col = {col}')
             for lin in range(self.rdc_vars.nlin):
                 # O cáclulos são executados apenas na região da bacia
                 if self.global_vars.bacia[lin][col] == 1:
@@ -999,10 +1022,10 @@ class Test():
                     if  self.global_vars.dren[lin][col] == 1:
                         self.global_vars.linaux = lin
                         self.global_vars.colaux = col
+                        self.global_vars.linaux1 = lin
+                        self.global_vars.colaux1 = col
                         self.global_vars.linaux2 = lin
                         self.global_vars.colaux2 = col
-                        self.global_vars.linaux3 = lin
-                        self.global_vars.colaux3 = col
                         self.global_vars.caminho = 0
                         self.global_vars.Tempoauxac = 0
 
@@ -1010,14 +1033,14 @@ class Test():
                         self.classerio_aux = self.global_vars.classerio[lin][col]
 
                         while self.global_vars.caminho == 0:
-                            condicao = self.global_vars.linaux < 1 or self.global_vars.linaux > self.global_vars.nlin or self.global_vars.colaux < 1 or self.global_vars.colaux > self.global_vars.ncol    
+                            condicao = self.global_vars.linaux < 1 or self.global_vars.linaux > self.rdc_vars.nlin or self.global_vars.colaux < 1 or self.global_vars.colaux > self.rdc_vars.ncol    
                             
                             if condicao:
                                 self.global_vars.caminho = 1
 
                                 # Contabilizando o último trecho
-                                self.global_vars.Lfozaux1 = self.global_vars.Lfoz[self.global_vars.linaux1][self.global_vars.colaux1]
-                                self.global_vars.Lfozaux2 = self.global_vars.Lfoz[self.global_vars.linaux2][self.global_vars.colaux2]
+                                self.global_vars.Lfozaux1 = self.Lfoz[self.global_vars.linaux1][self.global_vars.colaux1]
+                                self.global_vars.Lfozaux2 = self.Lfoz[self.global_vars.linaux2][self.global_vars.colaux2]
                                 # Determina a diferença entre o píxel do Lfoz inicial e o do final
                                 self.global_vars.Laux = self.global_vars.Lfozaux1 - self.global_vars.Lfozaux2
                                 
@@ -1048,9 +1071,9 @@ class Test():
                             else:
                                 condicao2 = self.global_vars.classerio[self.global_vars.linaux][self.global_vars.colaux] != self.classerio_aux
                                 # Checando se o caminho ainda está no trecho de mesma classe
-                                if  condicao2:
-                                    self.global_vars.Lfozaux1 = self.global_vars.Lfoz[self.global_vars.linaux1][self.global_vars.colaux1]
-                                    self.global_vars.Lfozaux2 = self.global_vars.Lfoz[self.global_vars.linaux2][self.global_vars.colaux2]
+                                if condicao2:
+                                    self.global_vars.Lfozaux1 = self.Lfoz[self.global_vars.linaux1][self.global_vars.colaux1]
+                                    self.global_vars.Lfozaux2 = self.Lfoz[self.global_vars.linaux2][self.global_vars.colaux2]
                                     # Determina a diferença entre o píxel do Lfoz inicial e o do final
                                     self.global_vars.Laux = self.global_vars.Lfozaux1 - self.global_vars.Lfozaux2
                                     
@@ -1060,6 +1083,7 @@ class Test():
                                     self.global_vars.Rhaux = self.global_vars.Rhclasse[self.classerio_aux]
 
                                     # Determinando a velocidade do percurso
+                                    condicao1 = self.global_vars.linaux2 == self.global_vars.linaux and self.global_vars.colaux2 == self.global_vars.colaux1
                                     if condicao1:
                                         self.global_vars.Velaux = 0
                                         self.global_vars.Tempoaux = 0
@@ -1120,8 +1144,8 @@ class Test():
             self.global_vars.TScabe2d[lin1][col1] = self.global_vars.TScabe[self.global_vars.numcabeaux]
         
         for lin in range(self.rdc_vars.nlin):
-            if lin % 50 == 0:
-                print(f'lin = {lin}')
+            # if lin % 50 == 0:
+                # print(f'lin = {lin}')
             for col in range(self.rdc_vars.ncol):
                 # As ações são baseadas na região da bacia hidrográfica
                 if self.global_vars.bacia[lin][col]:
@@ -1166,8 +1190,8 @@ class Test():
             self.global_vars.TScabe = None
 
             for col in range(self.rdc_vars.ncol):
-                if col % 50 == 0:
-                    print(f'col = {col}')
+                # if col % 50 == 0:
+                    # print(f'col = {col}')
                 for lin in range(self.rdc_vars.nlin):
                     # Exclindo a região fora da bacia
                     self.global_vars.linaux = lin
@@ -1206,8 +1230,8 @@ class Test():
         Esta função determina o tempo total de escoamento (tempo de concentração) da bacia hidrográfica
         '''
         for col in range(self.rdc_vars.ncol):
-            if col % 50 == 0:
-                print(f'col = {col}')
+            # if col % 50 == 0:
+                # print(f'col = {col}')
             
             for lin in range(self.rdc_vars.nlin):
                 # Os procedimentos são realizados ao longo da bacia hidrográfica
@@ -1292,6 +1316,14 @@ cla_test.leh_modelo_numerico_dTerreno()
 cla_test.leh_precipitacao_24h()
 cla_test.leh_uso_do_solo()
 cla_test.leh_uso_manning()
-cla_test.comprimento_acumulado()
-cla_test.dist_drenagem()
-cla_test.numera_pixel()
+cla_test.comprimento_acumulado(1)
+# cla_test.numera_pixel()
+# cla_test.dist_drenagem()
+# cla_test.dist_trecho()
+# cla_test.tempo_canal()
+# cla_test.tempo_sup()
+# cla_test.tempo_total()
+# cla_test.min_max()
+# cla_test.tamanho_numero()
+
+

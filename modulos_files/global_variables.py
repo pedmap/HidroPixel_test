@@ -86,14 +86,15 @@ class GlobalVariables:
 
         # Int's variables declaration
         self.linaux = 0
-        self.linhaux1 = 0
-        self.linhaux0 = 0
         self.colaux = 0
-        self.colaux1 = 0
+        self.linaux0 = 0
         self.colaux0 = 0
+        self.linaux1 = 0
+        self.colaux1 = 0
         self.linaux2 = 0
         self.colaux2 = 0
         self.linaux3 = 0
+        self.colaux3 = 0
         self.caminho = 0
         self.numcabeaux = 0
         self.A = 0
@@ -109,9 +110,9 @@ class GlobalVariables:
         self.cont = 0
         self.t = 0
         self.tt = 0
-        self.Nusomax = 0 
+        self.Nusomax = 0
         self.maxdir = 0
-        self.Ntre = 0
+        self.Ntre = 100
         self.metro = 0
         self.Ttreaux = 0
         self.casserioaux = 0
@@ -123,7 +124,7 @@ class GlobalVariables:
         self.numtreauxmax = 0
         self.numtreaux = 0
         self.numtreaux2 = 0
-        self.tipo_decliv = 0
+        self.tipo_decliv = 4
         self.sda = 0
 
         # Real varibles declaration
