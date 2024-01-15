@@ -70,6 +70,7 @@ class RDCVariables:
         self.gerasrack = 0
         self.metrordc = 0
         self.tipo = 0
+        self.tipo_dado = 0
         self.tipo1 = 0
         self.tipo2 = 0
          

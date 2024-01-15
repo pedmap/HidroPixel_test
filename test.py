@@ -415,8 +415,8 @@ class Test():
         self.global_vars.diagonal = lado*np.sqrt(2.0)
 
         # Iniciando a iteração para varrer todos os elementos da bacia hidrográfica
-        for col in range(20):
-            for lin in range(20):
+        for col in range(self.rdc_vars.ncol):
+            for lin in range(self.rdc_vars.nlin):
                 # Delimitando apenas os elementos que estão presentes na bacia hidrográfica
                 if self.global_vars.bacia[lin,col] == 1:
                     # Coletando as informações referentes ao sistema de drenagem da bacia hidrográfica
@@ -451,25 +451,24 @@ class Test():
                                     self.rdc_vars.tipo = 3
 
                                 # Deteminando a distância incremental projetada
-                                if self.global_vars.metro == 1:
-                                    project = self.project(self.global_vars.Xesq, 
-                                                           self.global_vars.Xdir, 
-                                                           self.global_vars.Ysup, 
-                                                           self.global_vars.Yinf, 
-                                                           self.rdc_vars.tipo,
-                                                           self.global_vars.auxdist, 
-                                                           self.global_vars.lado, 
-                                                           self.global_vars.diagonal)
-                                    print(f'O valor da distância final calculada foi: {project}')
+                                if self.global_vars.metro == 0:
+                                    self.global_vars.auxdist = self.project(self.global_vars.Xesq,
+                                                                        self.global_vars.Xdir,
+                                                                        self.global_vars.Ysup,
+                                                                        self.global_vars.Yinf,
+                                                                        self.rdc_vars.tipo,
+                                                                        self.global_vars.auxdist,
+                                                                        self.global_vars.lado,
+                                                                        self.global_vars.diagonal)
+                                    
 
                                 else:
                                     if self.rdc_vars.tipo == 1 or self.rdc_vars.tipo == 2:
                                         self.global_vars.auxdist = self.global_vars.dx*self.global_vars.lado
-                                        print(self.global_vars.auxdist)
 
                                     else:
                                         self.global_vars.auxdist = self.global_vars.dx*self.global_vars.diagonal
-                                        print(self.global_vars.auxdist)
+                                        
                                 # Atualizando o comprimento do rio desde o pixel inicial
                                 self.global_vars.tamcam += self.global_vars.auxdist
                                 self.global_vars.tamfoz = self.global_vars.tamcam
@@ -485,16 +484,18 @@ class Test():
                                 self.global_vars.colaux2 = self.global_vars.colaux
 
                                 # determina o próximo píxel do caminho
-                                # if self.global_vars.direcoes[self.global_vars.linaux, self.global_vars.colaux] != -1:
-                                self.global_vars.diraux = self.global_vars.direcoes[self.global_vars.linaux, self.global_vars.colaux]                               
-                                self.global_vars.caminho = 0
-                                self.global_vars.linaux += self.global_vars.dlin[self.global_vars.diraux]
-                                self.global_vars.colaux += self.global_vars.dcol[self.global_vars.diraux]
-                                self.global_vars.sda = 0
+                                if self.global_vars.direcoes[self.global_vars.linaux, self.global_vars.colaux] != -1:
+                                    self.global_vars.diraux = self.global_vars.direcoes[self.global_vars.linaux, self.global_vars.colaux]                             
+                                    self.global_vars.caminho = 0
+                                    self.global_vars.linaux += self.global_vars.dlin[self.global_vars.diraux]
+                                    self.global_vars.colaux += self.global_vars.dcol[self.global_vars.diraux]
+                                    self.global_vars.sda = 0
+                                else:
+                                    self.global_vars.direcoes[self.global_vars.linaux, self.global_vars.colaux] = -1
 
                         # Atulizando a variável lfoz
                         self.Lfoz[lin, col] = self.global_vars.tamfoz
-                        
+                   
         print("foi aqui", np.count_nonzero(self.Lfoz))
         print(self.rdc_vars.tipo)
         print(self.Lfoz)
@@ -630,7 +631,7 @@ class Test():
 
                                     # Determinando a distância incremental projetada
                                     if self.global_vars.metro == 1:
-                                        project = self.project(self.global_vars.Xesq,
+                                        self.global_vars.auxdist = self.project(self.global_vars.Xesq,
                                                            self.global_vars.Xdir,
                                                            self.global_vars.Ysup,
                                                            self.global_vars.Yinf,
@@ -931,12 +932,12 @@ class Test():
                         self.global_vars.numtreaux2 = 1
 
                         # Para o cálculo da média aritmética
-                        self.global_vars.Somaaux[self.global_variables.numcabeaux][self.global_variables.numcabeaux2] += self.global_vars.DECLIVpix[lin][col]
-                        self.global_vars.contaaux[self.global_variables.numcabeaux][self.global_variables.numcabeaux2] = self.global_vars.Somaaux[self.global_variables.numcabeaux][self.global_variables.numcabeaux2] + 1
+                        self.global_vars.Somaaux[self.global_vars.numcabeaux][self.global_vars.numcabeaux2] += self.global_vars.DECLIVpix[lin][col]
+                        self.global_vars.contaaux[self.global_vars.numcabeaux][self.global_vars.numcabeaux2] = self.global_vars.Somaaux[self.global_vars.numcabeaux][self.global_vars.numcabeaux2] + 1
 
                         # Para o cálculo da média ponderada
-                        self.global_vars.Somaauxpond[self.global_variables.numcabeaux][self.global_variables.numcabeaux2] += self.global_vars.DECLIVpix[lin][col] * self.global_vars.DISTtre[lin][col]
-                        self.global_vars.SomaauxDist[self.global_variables.numcabeaux][self.global_variables.numcabeaux2] += self.global_vars.DISTtre[lin][col]
+                        self.global_vars.Somaauxpond[self.global_vars.numcabeaux][self.global_vars.numcabeaux2] += self.global_vars.DECLIVpix[lin][col] * self.global_vars.DISTtre[lin][col]
+                        self.global_vars.SomaauxDist[self.global_vars.numcabeaux][self.global_vars.numcabeaux2] += self.global_vars.DISTtre[lin][col]
 
                         while self.global_vars.caminho == 0:
                             self.global_vars.diraux = self.global_vars.direcoes[self.global_vars.linaux][self.global_vars.colaux]
@@ -1257,34 +1258,34 @@ class Test():
         self.rdc_vars.Varmin = 1.0e7
 
         if self.rdc_vars.tipoMM == 2:
-            for col in range(self.rdc_vars.ncol):
-                for lin in range(self.rdc_vars.nlin):
+            for col in range(self.rdc_vars.ncol3):
+                for lin in range(self.rdc_vars.nlin3):
                     if self.rdc_vars.VarMM2[lin][col] > self.rdc_vars.Varmax:
                         self.rdc_vars.Varmax = self.rdc_vars.VarMM2[lin][col]
                     
                     elif self.rdc_vars.VarMM2[lin][col] < self.rdc_vars.Varmin:
                         self.rdc_vars.Varmin = self.rdc_vars.VarMM2[lin][col]
 
-            for col in range(self.rdc_vars.ncol):
-                for lin in range(self.rdc_vars.nlin):
+            for col in range(self.rdc_vars.ncol3):
+                for lin in range(self.rdc_vars.nlin3):
                     if self.rdc_vars.VarMM3[lin][col][self.rdc_vars.i3] > self.rdc_vars.Varmax:
                         self.rdc_vars.Varmax = self.rdc_vars.VarMM3[lin][col][self.rdc_vars.i3]
                         
                     elif self.rdc_vars.VarMM3[lin][col][self.rdc_vars.i3] < self.rdc_vars.Varmin:
                         self.rdc_vars.Varmin = self.rdc_vars.VarMM3[lin][col][self.rdc_vars.i3]
     
-    def tamanho_numero(self):
+    def tamanho_numero(self, varaux, num):
         '''
         Esta função
         '''
         negativo, nzeros, pp, varaux2, limsup = None
         
-        if self.global_vars.varaux < 0:
+        if varaux < 0:
             negativo = 1
         else:
             negativo = 0
         
-        varaux2 = np.abs(self.global_vars.varaux)
+        varaux2 = np.abs(varaux)
         
         for pp in range(11):
             limsup = 10.0**pp
@@ -1292,9 +1293,9 @@ class Test():
                 nzeros = pp
                 break
         # Se o valor for inteiro
-        if self.rdc_vars == 1:
+        if num == 1:
             if nzeros == 0:
-                self.global_vars.tamnum = 1 + negativo
+                tamnum = 1 + negativo
             else:
                 self.global_vars.tamnum = nzeros + negativo
         # Se o valor for real
@@ -1303,6 +1304,244 @@ class Test():
                 self.global_vars.tamnum = 8 + 1 + negativo
             else:
                 self.global_vars.tamnum = 8 + nzeros + negativo     
+
+        return self.global_vars.tamnum
+
+    def aux_RDC(self, file, textoaux, varaux, tamnum):
+        """
+        Esta função é responsável por formatar as informações dos arquivos de saida do programa
+        """
+        if tamnum == 1:
+            file.write(f'{textoaux:14s}{varaux:1d}\n')
+            return file
+        elif tamnum == 2:
+            file.write(f'{textoaux:14s}{varaux:2d}\n')
+            return file
+        elif tamnum == 3:
+            file.write(f'{textoaux:14s}{varaux:3d}\n')
+            return file
+        elif tamnum == 4:
+            file.write(f'{textoaux:14s}{varaux:4d}\n')
+            return file
+        elif tamnum == 5:
+            file.write(f'{textoaux:14s}{varaux:5d}\n')
+            return file
+        elif tamnum == 6:
+            file.write(f'{textoaux:14s}{varaux:7d}\n')
+            return file
+        elif tamnum == 8:
+            file.write(f'{textoaux:14s}{varaux:8d}\n')
+            return file
+        elif tamnum == 9:
+            file.write(f'{textoaux:14s}{varaux:9.7f}\n')
+            return file
+        elif tamnum == 10:
+            file.write(f'{textoaux:14s}{varaux:10.7f}\n')
+            return file
+        elif tamnum == 11:
+            file.write(f'{textoaux:14s}{varaux:11.7f}\n')
+            return file
+        elif tamnum == 12:
+            file.write(f'{textoaux:14s}{varaux:12.7f}\n')
+            return file
+        elif tamnum == 13:
+            file.write(f'{textoaux:14s}{varaux:13.7f}\n')
+            return file
+        elif tamnum == 14:
+            file.write(f'{textoaux:14s}{varaux:14.7f}\n')
+            return file
+        elif tamnum == 15:
+            file.write(f'{textoaux:14s}{varaux:15.7f}\n')
+            return file
+        elif tamnum == 16:
+            file.write(f'{textoaux:14s}{varaux:16.7f}\n')
+            return file
+        elif tamnum == 17:
+            file.write(f'{textoaux:14s}{varaux:17.7f}\n')
+            return file
+        elif tamnum == 18:
+            file.write(f'{textoaux:14s}{varaux:18.7f}\n')
+            return file
+        elif tamnum == 19:
+            file.write(f'{textoaux:14s}{varaux:19.7f}\n')
+            return file
+
+    def escreve_RDC(self, nome_RST):
+        """
+        Esta função constrói os arquivos de saída das diferentes funcionalidades do programa
+        """
+        # Identifica a posição da extensão no arquivo .rst
+        pos_ext = nome_RST.find('.rst')
+
+        # Atribui o nome do arquivo .rst ao novo arquivo .rdc
+        nome_rdc = nome_RST[:pos_ext] + '.rdc'
+
+        # Abrindo o arquivo 
+        with open(nome_rdc, 'w') as rdc_file:
+            # Escreve linha com formato do arquivo
+            rdc_file.write(f'file format : IDRISI Raster A.1\n')
+            # Escreve linha com o título do arquivo
+            rdc_file.write(f'File title  : \n')
+
+            # Escreve linha com tipo de dado
+            if self.rdc_vars.tipo_dado == 1:
+                rdc_file.write(f'data type   : integer\n')
+            elif self.rdc_vars.tipo_dado == 2:
+                rdc_file.write(f'data type   : real\n')
+
+            # Escreve a linha com o tipo de arquivo
+            rdc_file.write(f'file type   : binary\n')
+
+            # Escreve a linha com o número de colunas
+            self.global_vars.varaux = self.rdc_vars.ncol3
+            self.rdc_vars.num = 1
+            textoaux = 'columns     : ' 
+            tamnum = self.tamanho_numero(self.global_vars.varaux, self.rdc_vars.num)
+            self.aux_RDC(rdc_file, textoaux, self.global_vars.varaux, tamnum)
+
+            # Escreve a linha com o número de linhas
+            self.global_vars.varaux = self.rdc_vars.nlin3
+            self.rdc_vars.num = 1 # num = 1 : integer
+            textoaux = 'rows        : ' 
+            tamnum = self.tamanho_numero(self.global_vars.varaux, self.rdc_vars.num)
+            self.aux_RDC(rdc_file, textoaux, self.global_vars.varaux, tamnum)
+
+            # Escreve a linha com o sistema de referência
+            rdc_file.write(f'ref. system : {self.rdc_vars.sistemaref}\n')
+
+            # Escreve a linha com a unidade de referência
+            if self.global_vars.metro == 1:
+                rdc_file.write(f'ref. units  : m\n')
+            else:
+                rdc_file.write(f'ref. units  : deg\n')
+            
+            # Escreve linha com distância unitária de referência
+            rdc_file.write(f'unit dist.  : {1.0:<9.7f}\n')
+
+            # Escreve a linha com o valor mínimo dos dados
+            self.global_vars.varaux = self.rdc_vars.Varmin
+            self.rdc_vars.num = 2 # num = 2 : real
+            textoaux = 'min. value  : '
+            tamnum = self.tamnum(self.global_vars.varaux, self.rdc_vars.num)
+            self.aux_RDC(rdc_file, testoaux,self.global_vars.varaux, tamnum)
+
+            # Escreve a linha com o valor máximo dos dados
+            self.global_vars.varaux = self.rdc_vars.Varmax
+            self.rdc_vars.num = 2 # num = 2 : real
+            textoaux = 'max. value  : '
+            tamnum = self.tamnum(self.global_vars.varaux, self.rdc_vars.num)
+            self.aux_RDC(rdc_file, testoaux,self.global_vars.varaux, tamnum)
+
+            # Escreve a linha com o valor mínimo de exebição
+            self.global_vars.varaux = self.rdc_vars.Varmin
+            self.rdc_vars.num = 2 # num = 2 : real
+            textoaux = 'display min : '
+            tamnum = self.tamnum(self.global_vars.varaux, self.rdc_vars.num)
+            self.aux_RDC(rdc_file, testoaux,self.global_vars.varaux, tamnum) 
+
+            #  Escreve a linha com o valor máximo para exibição 
+            self.global_vars.varaux = self.rdc_vars.Varmax
+            self.rdc_vars.num = 2 # num = 2 : real
+            textoaux = 'display max : '
+            tamnum = self.tamnum(self.global_vars.varaux, self.rdc_vars.num)
+            self.aux_RDC(rdc_file, testoaux,self.global_vars.varaux, tamnum)
+
+            # Escreve a linha com a unidade dos dados
+            rdc_file.write(f'value units : unspecified\n')
+
+            # Escreve a linha com o valor do erro dos dados
+            rdc_file.write(f'value error : unknown\n')
+
+            # Escreve a linha com a definição do sinalizador
+            rdc_file.write(f'flag value  : {0:1d}\n')
+
+            # Escreve a linha com o número de categorias da legenda
+            rdc_file.write(f'legend cats : {0:1d}')
+
+            # Escreve a linha sobre a criação da imagem
+            rdc_file.write(f'lineage     : This file was created automatically by an ARP and JVD PYTHON program')
+        
+        return nome_rdc
+    def escreve_comprimento_acumulado(self):
+        """
+        Esta função é responsável por formular os arquivos de saída (tanto o raster (.rst), quanto sua documentação (.rdc))
+        para os dados referentes aos comprimentos da rede de drenagem da bacia hidrográfica
+        """
+
+        # Abrindo o arquivo(fn : file name) para escrita dos resultados
+        fn_comp_acum = 'ComprimAcu.rst'
+        # Possivelmente será alterado, a depender dos resultados das variáveis LAc e Lfoz
+        with open(fn_cump_acum, 'wb') as arquivo1:
+            # Escrevendo o resultado do comprimento da rede de drenagem
+            for lin in range(self.rdc_vars.nlin):
+                dados_comp_acum = [float(self.global_vars.LAc[lin][col]) for col in range(self.rdc_vars.ncol)]
+                arquivo1.write(dados_comp_acum.tobytes())
+
+        # Alocando as variáveis para escrita da documentação do arquivo rdc para o comprimento da rede de drenagem
+        self.rdc_vars.nlin3 = self.rdc_vars.nlin
+        self.rdc_vars.ncol3 = self.rdc_vars.ncol
+        self.rdc_vars.tipo_dado = 2
+        self.rdc_vars.tipoMM = 2
+        self.global_vars.VarMM2 = float(self.global_vars.LAc)
+        self.rdc_vars.i3 = 0 
+        self.rdc_vars.Xmin3 = self.rdc_vars.xmin
+        self.rdc_vars.Xmax3 = self.rdc_vars.xmax
+        self.rdc_vars.Ymin3 = self.rdc_vars.ymin
+        self.rdc_vars.Ymin3 = self.rdc_vars.ymax
+        nomeRST = fn_comp_acum
+        self.global_vars.metrordc = self.global_vars.metro
+        self.escreve_RDC(nomeRST)
+
+        # Escrevendo o resultado do comprimento da rede de drenagem
+        fn_comp_foz = 'ComprimFoz.rst'
+        with open(fn_comp_foz, 'wb') as arquivo2:
+            for lin in range(self.rdc_vars.nlin):
+                dados_comp_foz = [float(self.global_vars.Lfoz[lin][col]) for col in range(self.rdc_vars.ncol)]
+                arquivo2.write(dados_comp_foz.tobytes())
+        # Alocando as variáveis para escrita da documentação do arquivo rdc para o comprimento da foz da bacia hidrográfica
+        self.global_vars.VarMM2 = float(self.global_vars.Lfoz)
+        nomeRST = fn_comp_foz
+        self.escreve_RDC(nomeRST)
+
+    def escreve_conectividade(self):
+        """
+        Esta função é responsável por formular os arquivos de saída (tanto o raster (.rst), quanto sua documentação (.rdc))
+        para os dados referentes ao mapa de conectividade das cabeceiras da bacia hidrográfica
+        """
+               # Abrindo o arquivo(fn : file name) para escrita dos resultados
+        fn_cab_pix = 'CABEpix.rst'
+        # Possivelmente será alterado, a depender dos resultados das variáveis LAc e Lfoz
+        with open(fn_cump_acum, 'wb') as arquivo1:
+            # Escrevendo o resultado do comprimento da rede de drenagem
+            for lin in range(self.rdc_vars.nlin):
+                dados_cab_pix = [float(self.global_vars.CABEpix[lin][col]) for col in range(self.rdc_vars.ncol)]
+                arquivo1.write(dados_cab_pix.tobytes())
+
+        # Alocando as variáveis para escrita da documentação do arquivo rdc para o comprimento da rede de drenagem
+        self.rdc_vars.nlin3 = self.rdc_vars.nlin
+        self.rdc_vars.ncol3 = self.rdc_vars.ncol
+        self.rdc_vars.tipo_dado = 2
+        self.rdc_vars.tipoMM = 2
+        self.global_vars.VarMM2 = float(self.global_vars.CABEpix)
+        self.rdc_vars.i3 = 0 
+        self.rdc_vars.Xmin3 = self.rdc_vars.xmin
+        self.rdc_vars.Xmax3 = self.rdc_vars.xmax
+        self.rdc_vars.Ymin3 = self.rdc_vars.ymin
+        self.rdc_vars.Ymin3 = self.rdc_vars.ymax
+        nomeRST = fn_cab_pix
+        self.global_vars.metrordc = self.global_vars.metro
+        self.escreve_RDC(nomeRST)
+
+        # Escrevendo o resultado do mapa de conectividade dos pixels da superficie a rede de drenagem
+        fn_n_conect_dren = 'num_conexao_drenagem.rst'
+        with open(fn_comp_foz, 'wb') as arquivo2:
+            for lin in range(self.rdc_vars.nlin):
+                dados_n_conect_dren = [float(self.global_vars.pixeldren[lin][col]) for col in range(self.rdc_vars.ncol)]
+                arquivo2.write(dados_n_conect_dren.tobytes())
+        # Alocando as variáveis para escrita da documentação do arquivo rdc para o comprimento da foz da bacia hidrográfica
+        self.global_vars.VarMM2 = float(self.global_vars.pixeldren)
+        nomeRST = fn_n_conect_dren
+        self.escreve_RDC(nomeRST)
 
 
 
