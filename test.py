@@ -255,6 +255,8 @@ class Test():
         self.global_vars.direcoes[:, 0] = 32
         self.global_vars.direcoes[:, -1] = 2
 
+
+
     def leh_drenagem(self):
         """Esta função é utilizada para ler as informações acerca da drenagem dos rios (arquivo raster - .rst)"""
         # Obtendo o arquivo referente as calasses dos rios da bacia hidrográfica
@@ -416,7 +418,7 @@ class Test():
         self.Lac = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol), dtype=np.float64)
         self.global_vars.lado = lado
         self.global_vars.diagonal = lado*np.sqrt(2.0)
-
+        
         # Iniciando a iteração para varrer todos os elementos da bacia hidrográfica
         for col in range(self.rdc_vars.ncol):
             for lin in range(self.rdc_vars.nlin):
@@ -489,18 +491,13 @@ class Test():
                                 self.global_vars.colaux2 = self.global_vars.colaux
 
                                 # determina o próximo píxel do caminho
-                                if self.global_vars.direcoes[self.global_vars.linaux, self.global_vars.colaux] != -1:
-
-                                    self.global_vars.diraux = self.global_vars.direcoes[self.global_vars.linaux, self.global_vars.colaux]
-                                    self.global_vars.linaux += self.global_vars.dlin[self.global_vars.diraux]
-                                    self.global_vars.colaux += self.global_vars.dcol[self.global_vars.diraux]
-                                    # JVD: alocação redundante(caminho = 0)
-                                    self.global_vars.sda = 0
-                                else:
-                                    self.global_vars.direcoes[self.global_vars.linaux, self.global_vars.colaux] = -1
+                                self.global_vars.diraux = self.global_vars.direcoes[self.global_vars.linaux, self.global_vars.colaux]
+                                self.global_vars.linaux += self.global_vars.dlin[self.global_vars.diraux]
+                                self.global_vars.colaux += self.global_vars.dcol[self.global_vars.diraux]
+                                # JVD: alocação redundante(caminho = 0)
+                                self.global_vars.sda = 0
 
                         # Atulizando a variável lfoz
-                        # print(f'lin: {lin} \n col: {col}')
                         self.Lfoz[lin, col] = self.global_vars.tamfoz
                         
         print("foi aqui", np.count_nonzero(self.Lfoz))
@@ -511,67 +508,65 @@ class Test():
         '''
         Esta função enumera os píxels presentes na rede de drenagem
         '''
-        self.lincontadren = np.zeros(self.global_vars.dren.shape[0], dtype=np.int16)
-        self.colcontadren = np.zeros(self.global_vars.dren.shape[1], dtype=np.int16)
         self.cabeceira = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol), dtype=np.int32)
         self.contadren = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol), dtype=np.float64)
         self.numcabe = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol), dtype=np.float64)
-        guarda_numLinha = []
-        cont = 0
-        # loop para numerar os píxels pertencentes à rede de drenagem
-        for lin in range(self.rdc_vars.nlin):
-            for col in range(self.rdc_vars.ncol):
-                # As operações serão executadas apenas na região da bacia hidrográfica
-                if self.global_vars.bacia[lin][col] == 1:
-                    # Iterando sob a rede de drenagem da bacia hidrográfica
-                    if self.global_vars.dren[lin][col] == 1:
-                        self.rdc_vars.cont += 1
+        self.global_vars.numcabeaux = 0
+        self.global_vars.diraux = 0
+        # JVDfunc: processamento desnecessário, redundância no
+        # As operações serão executadas apenas na região da bacia hidrográfica
+        pixel_bacia = np.where(self.global_vars.bacia == 1)
+        pixel_dren = np.where(self.global_vars.dren == 1)
 
-        # ARPlidar: loop extra para guardar lincontadren e colcontradren
-        for lin in range(self.rdc_vars.nlin):
-            for col in range(self.rdc_vars.ncol):
-                # As operações serão executadas apenas na região da bacia hidrográfica
-                if self.global_vars.bacia[lin][col] == 1:
-                    # Iterando sob a rede de drenagem da bacia hidrográfica
-                    if self.global_vars.dren[lin][col] == 1:
-                        self.rdc_vars.cont1 += 1
-                        self.rdc_vars.cont1 -= 1
-                        self.contadren[lin][col] = self.rdc_vars.cont1
+        # Verificando os píxels que vazem parte tanto da bacia quanto da rede de drenagem
+        pixels_bacia_dren = np.intersect1d(pixel_bacia[0], pixel_dren[0]), np.intersect1d(pixel_bacia[1], pixel_dren[1])
+        self.lincontadren = np.zeros(pixels_bacia_dren[0].size, dtype=np.int16)
+        self.colcontadren = np.zeros(pixels_bacia_dren[1].size, dtype=np.int16)
 
-                        # ARPlidar: guarda lin e col desse em funcao do numero do pixel da drenagem
-                        # (para otimizar calculo TempoTotal)
-                        self.lincontadren[self.rdc_vars.cont1] = lin
-                        self.colcontadren[self.rdc_vars.cont1] = col
+        # ARPlidar: loop para guardar lincontadren e colcontradren
+        self.rdc_vars.cont = 0
+        for lin, col in zip(pixels_bacia_dren[0], pixels_bacia_dren[1]):
+            self.rdc_vars.cont += 1
+            self.contadren[lin][col] = self.rdc_vars.cont
+            # ARPlidar: guarda lin e col desse em função do número do pixel da drenagem
+            # (para otimizar o cálculo TempoTotal)
+            self.lincontadren[self.rdc_vars.cont - 1] = lin
+            self.colcontadren[self.rdc_vars.cont - 1] = col
+        
 
-        # Nomeração dos píxels internos a bacia: 
-        # São chamados de cabeceira, pois o caminho do fluxo iniciado 
-        # a partir de cada um deles é anaisado posteriormente
-        for lin in range(1, self.rdc_vars.nlin - 1):
-            for col in range(1, self.rdc_vars.ncol - 1):
+        # Numeração dos píxels internos a bacia:
+        # São chamados de cabeceira, pois o caminho do fluxo é iniciado
+        # a partir de cada um deles
+        for lin in range(1, self.rdc_vars.nlin):
+            for col in range(1,self.rdc_vars.ncol):
                 # Iterando apenas na região da bacia hidrográfica
                 if self.global_vars.bacia[lin][col] == 1:
                     # A principio, é cabeceira
-                    self.cabeceira[lin][col] == 1
+                    self.cabeceira[lin][col] = 1
                     
-                    # Loop na vizinha 3x3
-                    for linauxi in range(lin - 1, lin + 1):
-                        for colauxi in range(col - 1, col + 1):
-                            # Para cada vizinho, vê a direção de fluxo dele e
-                            # para qual pixel ele drena
+                    # Criando uma vizinhança 3x3 para verificar o sentido de drenagem dos píxel
+                    for linauxi in range(lin - 1, lin + 2):
+                        for colauxi in range(lin - 1, lin + 2):
+                            # Para cada vizinho, vê a direção de fluxo dele e para qual pixel ele drena
                             self.global_vars.diraux = self.global_vars.direcoes[linauxi][colauxi]
                             self.global_vars.linaux2 = linauxi + self.global_vars.dlin[self.global_vars.diraux]
                             self.global_vars.colaux2 = colauxi + self.global_vars.dcol[self.global_vars.diraux]
                             
-                            # Caso algum vizinho drenar para o pixel central em análise, 
+                            # Caso algum vizinho drenar para o pixel central em análise,
                             # ele não é de cabeceira
                             if self.global_vars.linaux2 == lin and self.global_vars.colaux2 == col:
                                 self.cabeceira[lin][col] = 0
 
+                    # Contagem dos píxels que são drenagem
                     if self.cabeceira[lin][col] == 1:
                         self.global_vars.numcabeaux += 1
+                        print(self.global_vars.numcabeaux)
                         self.numcabe[lin][col] = self.global_vars.numcabeaux
+        
         self.global_vars.numcabe = self.numcabe
         self.global_vars.Ncabec = self.global_vars.numcabeaux
+        print(self.global_vars.numcabe)
+        print(self.global_vars.Ncabec)
 
     def dist_drenagem(self):
         """Definir objetivo da função"""
@@ -1905,8 +1900,8 @@ cla_test.leh_modelo_numerico_dTerreno()
 cla_test.leh_precipitacao_24h()
 cla_test.leh_uso_do_solo()
 cla_test.leh_uso_manning()
-cla_test.comprimento_acumulado(1)
-# cla_test.numera_pixel()
+# cla_test.comprimento_acumulado(1)
+cla_test.numera_pixel()
 # cla_test.dist_drenagem()
 # cla_test.dist_trecho()
 # cla_test.tempo_canal()

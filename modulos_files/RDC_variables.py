@@ -59,7 +59,6 @@ class RDCVariables:
         self.tamnum = 0
         self.num = 0
         self.cont = 0
-        self.cont1 = 0
         self.tipoMM = 0
         self.TipoAnaliseFaixa = 0
         self.i3 = 0
