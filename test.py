@@ -2,7 +2,7 @@
 import os.path
 import sys, os
 import matplotlib.pyplot as plt
-import datetime
+import time
 # Importing libs
 import numpy as np
 import matplotlib as plt
@@ -23,6 +23,7 @@ class Test():
         self.rdc_vars = RDCVariables()
 
     def leh_bacia(self):
+        self.inicio = time.time()
         """Esta função é utilizada para ler as informações da bacia hidrográfica (arquivo .rst)"""
         arquivo = r"C:\Users\joao1\OneDrive\Área de Trabalho\Calcula_Tc_SCS_decliv_indiv_grandesmatrizes_utm_LL\bacia.rst"
         # Tratamento de erros: verifica se o arquivo foi corretamente enviado
@@ -142,7 +143,7 @@ class Test():
                             16: 1,
                             32: 0,
                             64: -1,
-                            128: 1
+                            128: -1
                             }
         self.global_vars.dcol = {
                             1: 1,
@@ -374,6 +375,7 @@ class Test():
         self.global_vars.usaux = uso_manning_val
         self.global_vars.Mann = coef_maning_val
 
+
     def project(self,x1, x2, y1,y2,tipo2,dist2,lado2,diagonal2):
         """Esta função calcula as distâncias sobre a superfície considerando o elipsóide WGS84"""
         # Definindo as constantes
@@ -506,29 +508,6 @@ class Test():
         print(self.rdc_vars.tipo)
         print(self.Lfoz)
 
-    
-    def pix_cabeceira(self, bacia, direcoes, dlin, dcol, lin, col):
-        '''Verifica se algum pixel vizinho drena para o pixel central em análise'''
-        # Coletando as coordenadas da vizinhança 3x3 para análise das direções de drenagem
-        linaux, colaux = np.meshgrid(np.arange(lin - 1, lin + 2), np.arange(col - 1, col + 2))
-
-        # Coletando os índices dos píxels vizinhos
-        direcoes_vizinhos = []
-        for l, c in zip(linaux.flatten(), colaux.flatten()):
-            direcoes_vizinhos.append(direcoes[l, c])
-            
-        # Atualizando e convertendo em array a lista com as posições dos píxels vizinhos
-        direcoes_vizinhos = np.array(direcoes_vizinhos)
-        
-        # Calculando as coordenadas dos vizinhos drenando para o pixel central em análise
-        for direcao, lin_aux, col_aux in zip(direcoes_vizinhos, linaux.flatten(), colaux.flatten()):
-            linaux2 = lin_aux + dlin[direcao]
-            colaux2 = col_aux + dcol[direcao]
-        
-        # Retornará True se algum vizinho drenar para o central, ou seja, não for de cabeceira
-        return np.any((linaux2 == lin) & (colaux2 == col))
-
-
     def numera_pixel(self):
         '''
         Esta função enumera os píxels presentes na rede de drenagem
@@ -536,11 +515,9 @@ class Test():
         # self.cabeceira = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol), dtype=np.int32)
         self.contadren = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol), dtype=np.float64)
         self.numcabe = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol), dtype=np.float64)
-        self.numcabeaux = 0
         self.cabeceira = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
-        # JVDfunct:
-        print(datetime.datetime.now())
-
+        self.numcabeaux = 0
+        
         # Enumerando os píxels pertencentes à bacia e à rede de drenagem
         pix_bacia_e_dren = (self.global_vars.bacia == 1) & (self.global_vars.dren == 1)
 
@@ -553,12 +530,11 @@ class Test():
         self.colcontadren = np.array(pixel_dren[1])
 
         print(self.lincontadren, self.colcontadren)
-        print(datetime.datetime.now())
 
         # Numeração dos píxels internos a bacia: São chamados de cabeceira, pois o caminho do fluxo é iniciado a partir de cada um deles
-        for lin in range(1, self.rdc_vars.nlin - 1):
-            for col in range(1, self.rdc_vars.ncol - 1):
-
+        for col in range(1, self.rdc_vars.ncol - 1):
+            for lin in range(1, self.rdc_vars.nlin - 1):
+            
                 # Atualizará apenas os píxel que estão na bacia hidrográfica(cabeceira == 1)
                 if self.global_vars.bacia[lin][col] == 1:
                     # A priori, todos os píxels serão considerados de cabeceira
@@ -566,13 +542,14 @@ class Test():
                     # Cria vizinhança 3x3 para estudar a direção de fluxo do píxel central.
                     for linaux in range(lin - 1, lin + 2):
                         for colaux in range(col - 1, col + 2):
+                            # Para cada vizinho, verifica a direção de fluxo dela e para qual pixel ele drena
                             self.global_vars.diraux = self.global_vars.direcoes[linaux][colaux]
                             self.global_vars.linaux2 = linaux + self.global_vars.dlin[self.global_vars.diraux]
                             self.global_vars.colaux2 = colaux + self.global_vars.dcol[self.global_vars.diraux]
 
-                        # Se algum vizinho drenar para o central, este não é de cabeceira
-                        if self.global_vars.linaux2 == lin and self.global_vars.colaux2 == col:
-                            self.cabeceira[lin][col] = 0
+                            # Se algum vizinho drenar para o central em análise, este não é de cabeceira
+                            if self.global_vars.linaux2 == lin and self.global_vars.colaux2 == col:
+                                self.cabeceira[lin][col] = 0
 
                     # Contagem de píxels que são cabeceira
                     if self.cabeceira[lin][col] == 1:
@@ -580,9 +557,6 @@ class Test():
                         self.numcabe[lin][col] = self.numcabeaux
 
         self.global_vars.Ncabec = self.global_vars.numcabeaux
-        print(datetime.datetime.now())
-        print()
-
 
     def dist_drenagem(self):
         """Esta funçao determina a distância incremental percorrida pela água na rede de drenagem,
@@ -627,7 +601,7 @@ class Test():
 
                                 if condicao2:
                                     # Após alocação do pixel da rede de drenagem: encerra o processo de busca
-                                    print(datetime.datetime.now())
+                                    print('passou')
                                     self.global_vars.caminho = 1
                                     self.DIST[lin][col] = self.global_vars.tamcam
                                     self.pixeldren[lin][col] = self.contadren[self.global_vars.linaux][self.global_vars.colaux]
@@ -698,12 +672,15 @@ class Test():
                                         if self.global_vars.Streaux > self.global_vars.Smax:
                                             self.global_vars.Streaux = self.global_vars.Smax
 
-                                        self.global_vars.TSpix = 5.474 * ((self.global_vars.Mann[self.global_vars.usaux] *self.global_vars.Ltreaux)**0.8) \
+                                        # JVD: correção da indexação para o python (inicia no zero)
+                                        self.global_vars.TSpix = 5.474 * ((self.global_vars.Mann[self.global_vars.usaux - 1] *self.global_vars.Ltreaux)**0.8) \
                                             / ((self.global_vars.P24**0.5)*((self.global_vars.Streaux/1000.0)**0.4))
                                     a += 1
                                     if a % 10000 == 0:
                                         print(a)
-        print(datetime.datetime.now())
+        self.fim = time.time()
+        print(self.fim - self.inicio)
+        print()
 
     def dist_trecho(self):
         ''' Definir o objetivo da função'''
@@ -712,8 +689,8 @@ class Test():
         condicao1 = None
         
         #ARPlidar: loop para contar o número máximo de trechos 
-        for col in range(self.rdc_vars.ncol):
-            for lin in range(self.rdc_vars.nlin):
+        for col in range(1, self.rdc_vars.ncol - 1):
+            for lin in range(1, self.rdc_vars.nlin - 1):
                 # Ações realizadas apenas na região da bacia
                 if self.global_vars.bacia[lin][col] == 1:
                     # ARPlidar
