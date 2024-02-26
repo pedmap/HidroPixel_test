@@ -1,5 +1,8 @@
 <RCC>
-    <qresource prefix="/plugins/hidroPixel" >
-        <file>icon.png</file>
-    </qresource>
+  <qresource prefix="/plugins/hidroPixel">
+    <file>folder_icon</file>
+    <file>flowdirs</file>
+    <file>icon.png</file>
+    <file>tip_icon.png</file>
+  </qresource>
 </RCC>

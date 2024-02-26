@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>311</width>
-    <height>351</height>
+    <width>285</width>
+    <height>301</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -24,46 +24,16 @@
      </property>
      <layout class="QGridLayout" name="gridLayout">
       <item row="3" column="0">
-       <widget class="QRadioButton" name="radioButton">
-        <property name="toolTip">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;justify&quot;&gt;Realiza a leitura da delimitação da bacia hidrográfica (arquivo raster).&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-        </property>
-        <property name="styleSheet">
-         <string notr="true">font: 10pt &quot;Segoe UI&quot;;</string>
-        </property>
+       <widget class="QPushButton" name="btn_flow_rout">
         <property name="text">
-         <string>Ler Bacia Hidrográfica</string>
+         <string>FLOW ROUTINE</string>
         </property>
        </widget>
       </item>
-      <item row="9" column="0">
-       <widget class="QDialogButtonBox" name="button_box">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Expanding" vsizetype="Maximum">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="maximumSize">
-         <size>
-          <width>500</width>
-          <height>500</height>
-         </size>
-        </property>
-        <property name="toolTip">
-         <string extracomment="1">&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Press to run or cancel the program!&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-        </property>
-        <property name="styleSheet">
-         <string notr="true">font: 10pt &quot;Segoe UI&quot;;</string>
-        </property>
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-        <property name="standardButtons">
-         <set>QDialogButtonBox::Close|QDialogButtonBox::Ok</set>
-        </property>
-        <property name="centerButtons">
-         <bool>false</bool>
+      <item row="2" column="0">
+       <widget class="QPushButton" name="btn_exes_rain">
+        <property name="text">
+         <string>EXCESS RAINFALL</string>
         </property>
        </widget>
       </item>
@@ -84,81 +54,19 @@ rgb:213, 213, 213;</string>
         </property>
        </widget>
       </item>
-      <item row="7" column="0" alignment="Qt::AlignBottom">
-       <widget class="QLabel" name="label">
-        <property name="styleSheet">
-         <string notr="true">font: 90 11pt &quot;Segoe UI&quot;;</string>
-        </property>
-        <property name="text">
-         <string>File URL:</string>
-        </property>
-       </widget>
-      </item>
       <item row="1" column="0">
-       <widget class="QLabel" name="label_3">
-        <property name="styleSheet">
-         <string notr="true">font: 90 11pt &quot;Segoe UI&quot;;</string>
-        </property>
+       <widget class="QPushButton" name="btn_flow_trav">
         <property name="text">
-         <string>Select one option:</string>
+         <string>FLOW TRAVEL TIME</string>
         </property>
        </widget>
       </item>
       <item row="4" column="0">
-       <widget class="QRadioButton" name="radioButton_2">
-        <property name="toolTip">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;justify&quot;&gt;Realiza a leitura do arquivo com as informações sobre, classe, declividade, etc. dos rios.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-        </property>
-        <property name="styleSheet">
-         <string notr="true">font: 10pt &quot;Segoe UI&quot;;</string>
-        </property>
+       <widget class="QPushButton" name="btn_help">
         <property name="text">
-         <string>Ler Caracterísitcas dos Rios</string>
+         <string>HELP</string>
         </property>
        </widget>
-      </item>
-      <item row="6" column="0">
-       <widget class="QRadioButton" name="radioButton_4">
-        <property name="toolTip">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;justify&quot;&gt;Ler o uso e ocupação do solo da bacia e expressa o coeficiente de rugosidade de Manning para eles.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-        </property>
-        <property name="styleSheet">
-         <string notr="true">font: 10pt &quot;Segoe UI&quot;;</string>
-        </property>
-        <property name="text">
-         <string>Ler o Coef. de Manning</string>
-        </property>
-       </widget>
-      </item>
-      <item row="5" column="0">
-       <widget class="QRadioButton" name="radioButton_3">
-        <property name="toolTip">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;justify&quot;&gt;Ler as diferentes classes dos rios contidos na bacia hidrigráfica em questão.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-        </property>
-        <property name="styleSheet">
-         <string notr="true">font: 10pt &quot;Segoe UI&quot;;</string>
-        </property>
-        <property name="text">
-         <string>Ler Classes dos Rios</string>
-        </property>
-       </widget>
-      </item>
-      <item row="8" column="0">
-       <layout class="QHBoxLayout" name="horizontalLayout">
-        <item>
-         <widget class="QLineEdit" name="lineEdit">
-          <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;justify&quot;&gt;Please, choose only text or raster files!&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-          </property>
-          <property name="inputMask">
-           <string/>
-          </property>
-          <property name="text">
-           <string/>
-          </property>
-         </widget>
-        </item>
-       </layout>
       </item>
      </layout>
     </widget>
@@ -166,38 +74,5 @@ rgb:213, 213, 213;</string>
   </layout>
  </widget>
  <resources/>
- <connections>
-  <connection>
-   <sender>button_box</sender>
-   <signal>accepted()</signal>
-   <receiver>HidroPixelDialogBase</receiver>
-   <slot>accept()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>20</x>
-     <y>20</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>20</x>
-     <y>20</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>button_box</sender>
-   <signal>rejected()</signal>
-   <receiver>HidroPixelDialogBase</receiver>
-   <slot>reject()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>20</x>
-     <y>20</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>20</x>
-     <y>20</y>
-    </hint>
-   </hints>
-  </connection>
- </connections>
+ <connections/>
 </ui>
