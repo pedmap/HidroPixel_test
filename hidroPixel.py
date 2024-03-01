@@ -23,7 +23,7 @@
 from qgis.PyQt import uic
 from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication
 from qgis.PyQt.QtGui import QIcon
-from qgis.PyQt.QtWidgets import QApplication, QMainWindow, QAction, QFileDialog, QMessageBox, QTableWidgetItem, QWidget, QStackedWidget
+from qgis.PyQt.QtWidgets import QApplication, QMainWindow, QAction, QFileDialog, QMessageBox, QTableWidgetItem, QWidget, QStackedWidget, QCloseEvent
 from qgis.core import QgsMessageLog, Qgis
 from qgis.utils import iface
 
@@ -192,7 +192,7 @@ class HidroPixel:
             parent=self.iface.mainWindow())
 
         # will be set False in run()
-        self.first_start = True
+        self.first_start = False
 
 
     def unload(self):
@@ -208,9 +208,9 @@ class HidroPixel:
         # Inicializa as variáveis
         abrir_arquivo = None
         options = QFileDialog.Options()
-
+        diretorio = self.dlg_flow_tt.le_13_pg1.text()
         if qtd == 2:
-            abrir_arquivo, _ = QFileDialog.getOpenFileNames(caption="Escolha os arquivos!", filter="Raster or RDC file (*.tif *.rst *.rdc)", options = options)
+            abrir_arquivo, _ = QFileDialog.getOpenFileNames(None, caption="Escolha os arquivos!",directory = diretorio, filter="Raster or RDC file (*.tif *.rst *.rdc)", options = options)
             # Dúvida: leitura do arquivo com os metadados do raster => a extensão do arquivo é apenas .rdc?
             if abrir_arquivo:
                 files.setPlainText("\n".join(abrir_arquivo))
@@ -223,12 +223,12 @@ class HidroPixel:
         else:
             # Janela de diálogo com o Usuário
             if file_type == "raster".lower():
-                self.abrir_arquivo,_ = QFileDialog.getOpenFileName(caption="Escolha um arquivo!", filter="Raster (*.tif *.rst)", options = options)
+                self.abrir_arquivo,_ = QFileDialog.getOpenFileName(None, caption="Escolha os arquivos!",directory = diretorio, filter="Raster (*.tif *.rst)", options = options)
             elif file_type == "text".lower():
-                self.abrir_arquivo,_ = QFileDialog.getOpenFileName(caption="Escolha um arquivo!", filter="Text (*.txt)", options = options)
+                self.abrir_arquivo,_ = QFileDialog.getOpenFileName(None, caption="Escolha os arquivos!",directory = diretorio, filter="Text (*.txt)", options = options)
 
             # Verificar se algum arquivo foi selecionado
-            if self.abrir_arquivo != "":
+            if self.abrir_arquivo is not None:
                 # Adiciona o arquivo selecionado a lineEdit
                 files.setText(self.abrir_arquivo)
 
@@ -282,7 +282,57 @@ class HidroPixel:
             result ="Nenhum arquivo foi selecionado!"
             QMessageBox.warning(None, "ERROR!", result)
 
-        
+    def leh_valore_table_1(self):
+        '''Esta função coleta as informações adicionadas nos itens da tabela em questão e adiciona em suas variáveis'''
+
+        # Verifica a dimensão da tabela
+        nlin_tb = self.dlg_flow_tt.tbw_1_pg2.rowCount()
+        ncol_tb = self.dlg_flow_tt.tbw_1_pg2.columnCount()
+
+        # Define variáveis para obtenção das informações
+        id_class = []
+        slope_class = []
+        mann_coef_class = []
+        hydraul_rad_class = []
+        item = 0
+
+        # Itera sobre os itens da tabela
+        for col in range(ncol_tb):
+            for lin in range(nlin_tb):
+                item_tb = self.dlg_flow_tt.tbw_1_pg2.item(lin,col).text()
+
+                if item_tb is not None:
+                    # coleta o item da celula atual e tenta converter para float
+                    try:
+                        item_tb = float(self.dlg_flow_tt.tbw_1_pg2.item(lin,col).text())
+
+                    except ValueError:
+                        result = f'The value(s) {item_tb} is not a valid number! Please, add a valid information'
+                        QMessageBox.warning(None, "ERROR!", result)
+                        break
+
+                    # coleta o id das classes
+                    if col == 0:
+                        id_class.append(item_tb)
+
+                    # coleta a inclinação
+                    elif col == 1:
+                        slope_class.append(item_tb)
+                    
+                    # coleta o coeficiente de Manning
+                    elif col == 2:
+                        mann_coef_class.append(item_tb)
+                    
+                    # coleta o raio hidráulico
+                    elif col == 3:
+                        hydraul_rad_class.append(item_tb)
+
+        # atualiza as variáveis globais com os valores enviados
+        self.global_vars.j = np.array(id_class)
+        self.global_vars.Sclasse = np.array(slope_class)
+        self.global_vars.Mannclasse = np.array(mann_coef_class)
+        self.global_vars.Rhclasse = np.array(hydraul_rad_class)
+
     def leh_caracteristica_dRios(self):
         """Esta função é utilizada para ler as informações acerca da característica dos rios de uma bacia hidrográfica (texto .rst)"""
 
@@ -292,7 +342,7 @@ class HidroPixel:
             with open(arquivo, 'r', encoding='utf-8') as arquivo_txt:
                 #  Atualizando as variáveis que dependem
                 arquivo_txt.readline()
-                self.global_vars.nclasses =int(arquivo_txt.readline().strip())
+                self.global_vars.nclasses = int(arquivo_txt.readline().strip())
                 arquivo_txt.readline()
                 # Inicializando as listas
                 j_list = []
@@ -476,10 +526,9 @@ class HidroPixel:
                 idrisi_map = {}
                 for chave, valor in zip(chaves, valores):
                     try:
-                        idrisi_map[chave] = int(valor)
+                        idrisi_map[chave] = int(valor) #devem ser diferentes entre si, i+1 != i e i-1
                     except ValueError:
                         result = f'The value(s) "{value_error}" is(are) not (a) valid integer number(s)!'
-                        # Os valores das direções de fluxo são apenas inteiros?
                         QMessageBox.warning(None, "ERROR!", result)
                 
                 for lin in range(self.rdc_vars.nlin):
@@ -549,18 +598,8 @@ class HidroPixel:
     def leh_precipitacao_24h(self):
         """Esta função é utilizada para ler as informações acerca da precipitação das últimas 24 horas, P24 (arquivo texto - .txt)"""
 
-        # Coledando os arquivo fornecido
-        # button
-        # if self.dlg.flow_tt.btn_read_rainf_2.cli
-        arquivo2 = flaot(self.dlg_flow_tt.le_6_pg2.text())
- 
-        # lendo os arquivos acerda da precipitação das últimas 24 horas
-        with open(arquivo, 'r', encoding = 'utf-8') as arquivo_txt:
-            arquivo_txt.readline()
-            dados_lidos_P24 = float(arquivo_txt.read()) # considerando que no arquivo só possui um valor de precipitação
-
         # Armazenando o valor da precipitação de 24 horas em uma variável específica
-        self.global_vars.P24 = dados_lidos_P24
+        self.global_vars.P24 = float(self.dlg_flow_tt.le_6_pg2.text())
 
     def leh_uso_do_solo(self):
         """Esta função é utilizada para ler as informações acerca do uso do solo (arquivo raster - .rst)"""
@@ -587,12 +626,60 @@ class HidroPixel:
             resulte = f"Failde to open the raster file: {arquivo}"
             QMessageBox.warning(None, "ERROR!", resulte)
 
+                  
+    def leh_valores_table_2(self):
+        '''Esta função coleta as informações adicionadas nos itens da tabela em questão e adiciona em suas variáveis'''
+        # Verifica a dimensão da tabela
+        nlin_tb = self.dlg_flow_tt.tbw_2_pg2.rowCount()
+        ncol_tb = self.dlg_flow_tt.tbw_2_pg2.columnCount()
+
+        # Cria variáveis necessárias
+        uso_manning_val = []
+        coef_maning_val = []
+
+        # Itera sobre os itens da tabela
+        for col in range(ncol_tb):
+            for lin in range(nlin_tb):
+                item_tb = self.dlg_flow_tt.tbw_2_pg2.item(lin,col).text()
+
+                if item_tb is not None:
+                    
+                    # Coleta os ID's das classes
+                    if col == 0:
+                        # coleta o item da celula atual e tenta converter para int
+                        try:
+                            item_tb = int(self.dlg_flow_tt.tbw_2_pg2.item(lin,col).text())
+
+                        except ValueError:
+                            result = f'The value(s) {item_tb} is not a valid number! Please, add a valid information'
+                            QMessageBox.warning(None, "ERROR!", result)
+                            break
+
+                        # Armazena o valor do ID em sua variável
+                        uso_manning_val.append(item_tb)
+                    
+                    # Coleta os valores dos coeficiente de Mannning por classe
+                    if col == 2:
+                        # coleta o item da celula atual e tenta converter para float
+                        try:
+                            item_tb = float(self.dlg_flow_tt.tbw_2_pg2.item(lin,col).text())
+
+                        except ValueError:
+                            result = f'The value(s) {item_tb} is not a valid number! Please, add a valid information'
+                            QMessageBox.warning(None, "ERROR!", result)
+                            break
+
+                        # Armazena o valor do coef. de Manning em sua variável
+                        coef_maning_val.append(item_tb)   
+        # Adicionando cada valor às suas respectivas variáveis
+        self.global_vars.usaux = uso_manning_val
+        self.global_vars.Mann = coef_maning_val
 
     def leh_uso_manning(self):
         """Esta função é utilizada para ler as informações acerca do uso do solo e o coeficiente de rugosidade de Manning (arquivo texto - .txt)"""
 
-        # Onbtendo o arquivo de texto (.txt) com as informações acerca dos coeficientes De Manning para as zonas da bacia hidrográfica
-        arquivo = None
+        # Obtendo o arquivo  com as informações acerca dos coeficientes De Manning para as zonas da bacia hidrográfica
+        arquivo = self.dlg_flow_tt.le_8_pg2.text()
 
         # Criando variável extra, para armazenar os tipos de uso e coeficente de Manning
         uso_manning = []
@@ -2131,16 +2218,85 @@ class HidroPixel:
         nomeRST = fn_temp_pix_jus
         self.escreve_RDC(nomeRST)
 
-    def save_to_file(self):
-        '''Esta função gera o arquivo com as infomações enviadas por meio do usuário por página'''
-        # Atribuindo o nome do arquivo(fn : file name) para escrita dos resultados
-        ftt_config = 'flow_travel_time_config.txt'
-        with open(ftt_config, 'w') as arquivo_txt:
-            arquivo_txt.write(f'Flow Travel Time - Configuration: \n')
-            arquivo_txt.write(f'')
+    def save_to_file(self,page):
+        '''Esta função gera o arquivo com as infomações enviadas por meio do usuário por página
+           Page: variável que identifica a página do arquivo que será escrito
+                page == 1: Configurations;
+                page == 2: Input Data;
+                page == 3: Data Validation;
+                page == 4: 
+        '''
 
+        if page == 1:
 
-        return fn_config
+            # Atribuindo o nome do arquivo(fn : file name) para escrita dos resultados da página 1
+            ftt_config = 'flow_travel_time_configuration.txt'
+            with open(ftt_config, 'w') as arquivo_txt:
+                arquivo_txt.write(f'Flow Travel Time - Configuration: \n')
+                arquivo_txt.write(f'\n')
+                arquivo_txt.write(f'Minimum slope surface travel time determination (m/km):\n')
+                arquivo_txt.write(f'{self.dlg_flow_tt.le_1_pg1.text()}\n')
+                arquivo_txt.write(f'Maximum slope for surface travel time determination (m/km):\n')
+                arquivo_txt.write(f'{self.dlg_flow_tt.le_2_pg1.text()}\n')
+                arquivo_txt.write(f'Orthogonal step for distance computation (dx):\n')
+                arquivo_txt.write(f'{self.dlg_flow_tt.le_3_pg1.text()}\n')
+                arquivo_txt.write(f'Diagonal step for distance computation (dx):\n')
+                arquivo_txt.write(f'{self.dlg_flow_tt.le_4_pg1.text()}\n')
+                arquivo_txt.write(f'\n')              
+                arquivo_txt.write(f'Flow direction code: \n')
+                arquivo_txt.write(f'A = {self.dlg_flow_tt.le_5_pg1.text()}\n')
+                arquivo_txt.write(f'B = {self.dlg_flow_tt.le_6_pg1.text()}\n')
+                arquivo_txt.write(f'C = {self.dlg_flow_tt.le_7_pg1.text()}\n')
+                arquivo_txt.write(f'D = {self.dlg_flow_tt.le_8_pg1.text()}\n')
+                arquivo_txt.write(f'E = {self.dlg_flow_tt.le_9_pg1.text()}\n')
+                arquivo_txt.write(f'F = {self.dlg_flow_tt.le_10_pg1.text()}\n')
+                arquivo_txt.write(f'G = {self.dlg_flow_tt.le_11_pg1.text()}\n')
+                arquivo_txt.write(f'H = {self.dlg_flow_tt.le_12_pg1.text()}\n')
+                arquivo_txt.write(f'lineage: This file was created automatically by an ARP and JVD QGIS plugin')
+
+        elif page == 2:
+            
+            # Atribuindo o nome do arquivo(fn : file name) para escrita dos resultados da página 1
+            ftt_input_data = 'flow_travel_time_input_data.txt'
+            with open(ftt_input_data, 'w') as arquivo_txt:
+                arquivo_txt.write(f'Flow Travel Time - Input Data: \n')
+                arquivo_txt.write(f'\n')
+
+    def salvar_dados(self):
+        '''Esta função é usada para salvar as informações adiconadas'''
+        return True
+
+    def close_gui(self):
+        '''Está função é usada para torna nulo (limpar) as informações adicionadas nos diferentes objetos da janela flow travel time'''
+        self.dlg.flow_tt.le_1_pg1.setText('')
+        self.dlg.flow_tt.le_2_pg1.setText('')
+        self.dlg.flow_tt.le_3_pg1.setText('')
+        self.dlg.flow_tt.le_4_pg1.setText('')
+        self.dlg.flow_tt.le_5_pg1.setText('')
+        self.dlg.flow_tt.le_6_pg1.setText('')
+        self.dlg.flow_tt.le_7_pg1.setText('')
+        self.dlg.flow_tt.le_8_pg1.setText('')
+        self.dlg.flow_tt.le_9_pg1.setText('')
+        self.dlg.flow_tt.le_10_pg1.setText('')
+        self.dlg.flow_tt.le_11_pg1.setText('')
+        self.dlg.flow_tt.le_12_pg1.setText('')
+
+    def closeEvent(self,event):
+        '''Esta função verifica a situação atual do plugin antes de encerrar a execução da GUI'''
+        # Se o usuário fechar a página diretamente (ou seja, sem clicar no botão close) sem salvar, será mostrado uma mensagem de aviso
+        if self.dlg_flow_tt.btn_save_pg1.clicked.connect(self.salvar_dados):
+            # Se o botão salvar for clicado, ele encerra a janela flow travel time
+            event.accept()
+        else:
+            condicao = QMessageBox.question(self, 'Close windown',
+            "Are you sure you want to close the window without saving?", 
+            QMessageBox.Yes | QMessageBox.No)
+
+            if condicao == QMessageBox.Yes:
+                self.close_gui()
+                event.accept()
+            else:
+                event.ignore()
 
     def run(self):
         """Run method that performs all the real work"""
@@ -2176,6 +2332,5 @@ class HidroPixel:
         self.dlg_flow_tt.btn_close_pg4.clicked.connect(lambda: self.dlg_flow_tt.close())
 
         # Run the dialog event loop
-        result = self.dlg_hidro_pixel.exec_()
-        if result:
-            pass
+        self.dlg_hidro_pixel.exec_()
+        self.dlg_flow_tt.exec_()
