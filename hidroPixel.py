@@ -43,6 +43,8 @@ from .resources import *
 # Importing libs
 import numpy as np
 from osgeo import ogr, gdal
+import pandas as pd
+
 
 class HidroPixel:
     """QGIS Plugin Implementation."""
@@ -231,7 +233,6 @@ class HidroPixel:
 
         if qtd == 2:
             abrir_arquivo, _ = QFileDialog.getOpenFileNames(None, caption="Select the files!", directory = directory, filter="Raster or RDC file (*.tif *.rst *.rdc)", options = options)
-            # Dúvida: leitura do arquivo com os metadados do raster => a extensão do arquivo é apenas .rdc?
             if abrir_arquivo:
                 files.setPlainText("\n".join(abrir_arquivo))
                 self.rdc_vars.nomeRDC = abrir_arquivo[0] if abrir_arquivo else None
@@ -2282,7 +2283,47 @@ class HidroPixel:
                     arquivo_txt.write(f'Flow Travel Time - Input Data: \n')
                     arquivo_txt.write(f'\n')
 
+    def save_table_to_file(self, table):
+        '''Esta função lê as informações adicionadas as tabelas e as armazena em um arquivo'''
+        # Solicita um local de salvamento para o usuário
+        file_, _ = QFileDialog.getSaveFileName(None, "Save the file", "RDN classes", "Text Files or CSV or XLSX (*.txt *.csv *.xlsx)")
 
+        # selciona as dimensões da tabela
+        nlin_tb1 = self.dlg_flow_tt.tbw_1_pg2.rowCount()
+        ncol_tb1 = self.dlg_flow_tt.tbw_1_pg2.columnCount()
+        
+        # Define o cabeçalho do arquivo de saída
+        header = []
+        for col in range(ncol_tb1):
+            label = self.dlg_flow_tt.tbw_1_pg2.horizontalHeaderItem(col).text()
+            header.append(label)
+
+        # Armazena os item das células da tabela
+        data = []
+
+        for lin in range(nlin_tb1):
+            data_rw = [] 
+            for col in range(ncol_tb1):
+                item = self.dlg_flow_tt.tbw_1_pg2.item(lin,col)
+                if item is not None:
+                    data_rw.append(item.text())
+                else:
+                    data_rw.append(None)
+            data.append(data_rw)
+        
+        # Cria um dataframe pandas para armazenar o arquivo em csv ou xlsx
+        dataframe = pd.DataFrame(data, columns = header)
+
+        # Determina e salva o arquivo com base na extensão escolhida pelo usuário
+        exten = Path(file_).suffix.lower()
+
+        # Salva como arquivo Excel
+        if exten == '.xlsx':
+            dataframe.to_excel(file_)
+        elif exten ==".csv":
+            dataframe.to_csv(file_)
+
+        
     def read_from_file(self, page):
         '''Esta função é responsável por obter as informações a partir dos arquivos enviados pelo usuário
         Page: variável que identifica a página do arquivo que será escrito
