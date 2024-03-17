@@ -43,7 +43,7 @@ from .resources import *
 # Importing libs
 import numpy as np
 from osgeo import ogr, gdal
-import pandas as pd
+
 
 
 class HidroPixel:
@@ -85,7 +85,7 @@ class HidroPixel:
         self.global_vars = GlobalVariables()
         self.rdc_vars = RDCVariables()
             
-        # Conectando os botões da tela inicial as suas respectivas funções
+        # Inicia a interface gráfica da rotina flow travel time
         file_path = os.path.dirname(__file__)
         ui_file = os.path.join(file_path,'hidroPixel_dialog_flow_tt.ui')
 
@@ -224,39 +224,43 @@ class HidroPixel:
 
         return pasta
 
-    def carrega_arquivos(self,files,file_type = "raster", qtd = 1):
+    def carrega_arquivos(self, lineEdit, file_type="raster", qtd=1):
         """Esta função é utilizada para adicionar os arquivos enviados pelo usuário ao plugin"""
         # Define as variáveis e configurações da janela de escolha do arquivo
-        abrir_arquivo = None
+        file_ = None
         options = QFileDialog.Options()
         directory = self.dlg_flow_tt.le_13_pg1.text()
 
-        if qtd == 2:
-            abrir_arquivo, _ = QFileDialog.getOpenFileNames(None, caption="Select the files!", directory = directory, filter="Raster or RDC file (*.tif *.rst *.rdc)", options = options)
-            if abrir_arquivo:
-                files.setPlainText("\n".join(abrir_arquivo))
-                self.rdc_vars.nomeRDC = abrir_arquivo[0] if abrir_arquivo else None
-                self.rdc_vars.nomeRST = abrir_arquivo[1] if len(abrir_arquivo) > 1 else None
-                return abrir_arquivo
+        while True:  # Loop até que o usuário selecione um arquivo ou cancele
+            if qtd == 2:
+                file_, _ = QFileDialog.getOpenFileNames(None, caption="Select the files!", directory=directory, filter="Raster or RDC file (*.tif *.rst *.rdc)", options=options)
+                if file_:
+                    lineEdit.setPlainText("\n".join(file_))
+                    self.rdc_vars.nomeRDC = file_[0] if file_ else None
+                    self.rdc_vars.nomeRST = file_[1] if len(file_) > 1 else None
+                    return file_
+                else:
+                    result = "Wait! You did not select any file."
+                    reply = QMessageBox.warning(None, "No file selected", result, QMessageBox.Ok | QMessageBox.Cancel)
+                    if reply == QMessageBox.Cancel:
+                        break  
             else:
-                result ="Wait! You did not select any file."
-                QMessageBox.warning(None, "No file selected", result)
-        else:
-            # Janela de diálogo com o Usuário
-            if file_type == "raster".lower():
-                abrir_arquivo,_ = QFileDialog.getOpenFileName(None, caption="Select a file!", directory = directory, filter="Raster Files (*.tif *.rst)", options = options)
-            elif file_type == "text".lower():
-                abrir_arquivo,_ = QFileDialog.getOpenFileName(None, caption="Select a file!", directory = directory, filter="Text Files (*.txt)", options = options)
+                # Janela de diálogo com o Usuário
+                if file_type == "raster".lower():
+                    file_, _ = QFileDialog.getOpenFileName(None, caption="Select a file!", directory=directory, filter="Raster Files (*.tif *.rst)", options=options)
+                elif file_type == "text".lower():
+                    file_, _ = QFileDialog.getOpenFileName(None, caption="Select a file!", directory=directory, filter="Text Files (*.txt)", options=options)
 
-            # Verificar se algum arquivo foi selecionado
-            if abrir_arquivo:
-                # Adiciona o arquivo selecionado a lineEdit
-                files.setText(abrir_arquivo)
-
-                return abrir_arquivo
-            else:
-                result ="Wait! You did not select any file."
-                QMessageBox.warning(None, "No files selected", result)
+                # Verificar se algum arquivo foi selecionado
+                if file_:
+                    # Adiciona o arquivo selecionado a lineEdit
+                    lineEdit.setText(file_)
+                    return file_
+                else:
+                    result = "Wait! You did not select any file."
+                    reply = QMessageBox.warning(None, "No files selected", result, QMessageBox.Ok | QMessageBox.Cancel)
+                    if reply == QMessageBox.Cancel:
+                        break 
 
     def leh_bacia(self):
         """Esta função é utilizada para ler as informações da bacia hidrográfica (arquivo .rst)"""
@@ -2247,83 +2251,47 @@ class HidroPixel:
                 page == 3: Data Validation;
                 page == 4: Run
         '''
+        # Seleciona o arquivo enviado pelo usuário
+        while True:
+            # Obtendo o caminho do arquivo a ser salvo usando um diálogo de arquivo
+            file_name, _ = QFileDialog.getSaveFileName(None, "Save the file", "ftt_configuration", "Text Files (*.txt)")
 
-        # Obtendo o caminho do arquivo a ser salvo usando um diálogo de arquivo
-        file_, _ = QFileDialog.getSaveFileName(None, "Save the file", "ftt_configuration", "Text Files (*.txt)")
-
-        if file_:  # Verifica se o usuário selecionou um arquivo
-            with open(file_, 'w') as arquivo_txt:
-                arquivo_txt.write(f'Flow Travel Time - Configuration\n')
-                arquivo_txt.write(f'\n')
-                arquivo_txt.write(f'Minimum slope surface travel time determination (m/km):\n')
-                arquivo_txt.write(f'=> {self.dlg_flow_tt.le_1_pg1.text()}\n')
-                arquivo_txt.write(f'Maximum slope for surface travel time determination (m/km):\n')
-                arquivo_txt.write(f'=> {self.dlg_flow_tt.le_2_pg1.text()}\n')
-                arquivo_txt.write(f'Orthogonal step for distance computation (dx):\n')
-                arquivo_txt.write(f'=> {self.dlg_flow_tt.le_3_pg1.text()}\n')
-                arquivo_txt.write(f'Diagonal step for distance computation (dx):\n')
-                arquivo_txt.write(f'=> {self.dlg_flow_tt.le_4_pg1.text()}\n')
-                arquivo_txt.write(f'\n')
-                arquivo_txt.write(f'Flow direction code: \n')
-                arquivo_txt.write(f'A = {self.dlg_flow_tt.le_5_pg1.text()}\n')
-                arquivo_txt.write(f'B = {self.dlg_flow_tt.le_6_pg1.text()}\n')
-                arquivo_txt.write(f'C = {self.dlg_flow_tt.le_7_pg1.text()}\n')
-                arquivo_txt.write(f'D = {self.dlg_flow_tt.le_8_pg1.text()}\n')
-                arquivo_txt.write(f'E = {self.dlg_flow_tt.le_9_pg1.text()}\n')
-                arquivo_txt.write(f'F = {self.dlg_flow_tt.le_10_pg1.text()}\n')
-                arquivo_txt.write(f'G = {self.dlg_flow_tt.le_11_pg1.text()}\n')
-                arquivo_txt.write(f'H = {self.dlg_flow_tt.le_12_pg1.text()}\n')
-                arquivo_txt.write(f'\nlineage: This file was created automatically by an ARP and JVD QGIS plugin')
-
-        elif page == 2:
-                
-                # Atribuindo o nome do arquivo(fn : file name) para escrita dos resultados da página 1
-                ftt_input_data = 'flow_travel_time_input_data.txt'
-                with open(ftt_input_data, 'w') as arquivo_txt:
-                    arquivo_txt.write(f'Flow Travel Time - Input Data: \n')
+            if file_name:  # Verifica se o usuário selecionou um arquivo
+                with open(file_name, 'w') as arquivo_txt:
+                    arquivo_txt.write(f'Flow Travel Time - Configuration\n')
                     arquivo_txt.write(f'\n')
-
-    def save_table_to_file(self, table):
-        '''Esta função lê as informações adicionadas as tabelas e as armazena em um arquivo'''
-        # Solicita um local de salvamento para o usuário
-        file_, _ = QFileDialog.getSaveFileName(None, "Save the file", "RDN classes", "Text Files or CSV or XLSX (*.txt *.csv *.xlsx)")
-
-        # selciona as dimensões da tabela
-        nlin_tb1 = self.dlg_flow_tt.tbw_1_pg2.rowCount()
-        ncol_tb1 = self.dlg_flow_tt.tbw_1_pg2.columnCount()
-        
-        # Define o cabeçalho do arquivo de saída
-        header = []
-        for col in range(ncol_tb1):
-            label = self.dlg_flow_tt.tbw_1_pg2.horizontalHeaderItem(col).text()
-            header.append(label)
-
-        # Armazena os item das células da tabela
-        data = []
-
-        for lin in range(nlin_tb1):
-            data_rw = [] 
-            for col in range(ncol_tb1):
-                item = self.dlg_flow_tt.tbw_1_pg2.item(lin,col)
-                if item is not None:
-                    data_rw.append(item.text())
-                else:
-                    data_rw.append(None)
-            data.append(data_rw)
-        
-        # Cria um dataframe pandas para armazenar o arquivo em csv ou xlsx
-        dataframe = pd.DataFrame(data, columns = header)
-
-        # Determina e salva o arquivo com base na extensão escolhida pelo usuário
-        exten = Path(file_).suffix.lower()
-
-        # Salva como arquivo Excel
-        if exten == '.xlsx':
-            dataframe.to_excel(file_)
-        elif exten ==".csv":
-            dataframe.to_csv(file_)
-
-        
+                    arquivo_txt.write(f'Minimum slope surface travel time determination (m/km):\n')
+                    arquivo_txt.write(f'=> {self.dlg_flow_tt.le_1_pg1.text()}\n')
+                    arquivo_txt.write(f'Maximum slope for surface travel time determination (m/km):\n')
+                    arquivo_txt.write(f'=> {self.dlg_flow_tt.le_2_pg1.text()}\n')
+                    arquivo_txt.write(f'Orthogonal step for distance computation (dx):\n')
+                    arquivo_txt.write(f'=> {self.dlg_flow_tt.le_3_pg1.text()}\n')
+                    arquivo_txt.write(f'Diagonal step for distance computation (dx):\n')
+                    arquivo_txt.write(f'=> {self.dlg_flow_tt.le_4_pg1.text()}\n')
+                    arquivo_txt.write(f'\n')
+                    arquivo_txt.write(f'Flow direction code: \n')
+                    arquivo_txt.write(f'A = {self.dlg_flow_tt.le_5_pg1.text()}\n')
+                    arquivo_txt.write(f'B = {self.dlg_flow_tt.le_6_pg1.text()}\n')
+                    arquivo_txt.write(f'C = {self.dlg_flow_tt.le_7_pg1.text()}\n')
+                    arquivo_txt.write(f'D = {self.dlg_flow_tt.le_8_pg1.text()}\n')
+                    arquivo_txt.write(f'E = {self.dlg_flow_tt.le_9_pg1.text()}\n')
+                    arquivo_txt.write(f'F = {self.dlg_flow_tt.le_10_pg1.text()}\n')
+                    arquivo_txt.write(f'G = {self.dlg_flow_tt.le_11_pg1.text()}\n')
+                    arquivo_txt.write(f'H = {self.dlg_flow_tt.le_12_pg1.text()}\n')
+                    arquivo_txt.write(f'\nlineage: This file was created automatically by an ARP and JVD QGIS plugin')
+            else:
+                result = "Wait! You did not select any file."
+                reply = QMessageBox.warning(None, "No files selected", result, QMessageBox.Ok | QMessageBox.Cancel)
+                if reply == QMessageBox.Cancel:
+                    break 
+            # elif page == 2:
+                    
+            #         # Atribuindo o nome do arquivo(fn : file name) para escrita dos resultados da página 1
+            #         ftt_input_data = 'flow_travel_time_input_data.txt'
+            #         with open(ftt_input_data, 'w') as arquivo_txt:
+            #             arquivo_txt.write(f'Flow Travel Time - Input Data: \n')
+            #             arquivo_txt.write(f'\n')
+    
     def read_from_file(self, page):
         '''Esta função é responsável por obter as informações a partir dos arquivos enviados pelo usuário
         Page: variável que identifica a página do arquivo que será escrito
@@ -2332,44 +2300,185 @@ class HidroPixel:
                 page == 3: Data Validation;
                 page == 4: Run
         '''
+        # Seleciona o arquivo enviado pelo usuário
+        while True:
+            options = QFileDialog.Options()
+            directory = self.dlg_flow_tt.le_13_pg1.text()
+            file_, _ = QFileDialog.getOpenFileName(None, caption="Select a file!", directory = directory, filter="Text Files (*.txt)", options = options)
+            cont = 0
+            if page == 1 and file_ != '':
+                with open(file_, 'r', encoding='utf-8') as arquivo_txt:
+
+                    # Armazena as informações do arquivo enviado em uma lista
+                    values = []
+                    for line in arquivo_txt:
+                        # Buscará as flag adicionada "=>" ou "="
+                        if "=>" in line or '=' in line:
+                            # Os primeiros 5 objetos são baseados na primeira flag
+                            if cont < 4:
+                                value = line.replace('=>', '').strip()
+                                values.append(value)
+                            # As direções de fluxo são baseadas na segunda flag
+                            elif cont >= 4:
+                                value_ = line.split("=")[1].strip()
+                                values.append(value_)
+                            cont += 1
+                # Adiciona as informações lidas nas suas respectivas lineEdits
+                self.dlg_flow_tt.le_1_pg1.setText(str(values[0]))
+                self.dlg_flow_tt.le_2_pg1.setText(str(values[1]))
+                self.dlg_flow_tt.le_3_pg1.setText(str(values[2]))
+                self.dlg_flow_tt.le_4_pg1.setText(str(values[3]))
+                self.dlg_flow_tt.le_5_pg1.setText(str(values[4]))
+                self.dlg_flow_tt.le_6_pg1.setText(str(values[5]))
+                self.dlg_flow_tt.le_7_pg1.setText(str(values[6]))
+                self.dlg_flow_tt.le_8_pg1.setText(str(values[7]))
+                self.dlg_flow_tt.le_9_pg1.setText(str(values[8]))
+                self.dlg_flow_tt.le_10_pg1.setText(str(values[9]))
+                self.dlg_flow_tt.le_11_pg1.setText(str(values[10]))
+                self.dlg_flow_tt.le_12_pg1.setText(str(values[11]))
+            else:
+                result = "Wait! You did not select any file."
+                reply = QMessageBox.warning(None, "No files selected", result, QMessageBox.Ok | QMessageBox.Cancel)
+                if reply == QMessageBox.Cancel:
+                    break 
+
+    def save_table_to_file(self, table):
+        '''Esta função lê as informações adicionadas às tabelas e as armazena em um arquivo'''
+        while True:
+            if table == 1:
+                # Solicita um local de salvamento para o usuário
+                file_name, _ = QFileDialog.getSaveFileName(None, "Save the file", "RDN classes", "Text Files (*.txt)")
+                if file_name:
+                
+                    self.dlg_flow_tt.le_7_pg2.setText(file_name)
+                    # seleciona as dimensões da tabela
+                    nlin_tb1 = self.dlg_flow_tt.tbw_1_pg2.rowCount()
+                    ncol_tb1 = self.dlg_flow_tt.tbw_1_pg2.columnCount()
+
+                    # Escreve o arquivo de saída
+                    with open(file_name, 'w', encoding='utf-8') as arquivo_txt:
+                        arquivo_txt.write(f'Class ID; Slope(m/m); Manning Coef; Hydraulic radius\n')
+                        # Adicionando as informações das linhas e colunas ao arquivo de saída
+                        for lin in range(nlin_tb1):
+                            for col in range(ncol_tb1):
+                                item = self.dlg_flow_tt.tbw_1_pg2.item(lin, col)
+                                # Verifica se o item existe
+                                if item is not None:  
+                                    arquivo_txt.write(f'{item.text()}')
+                                arquivo_txt.write('; ')  
+                            arquivo_txt.write('\n')
+                    break
+                else:
+                    result = "Wait! You did not select any file."
+                    reply = QMessageBox.warning(None, "No files selected", result, QMessageBox.Ok | QMessageBox.Cancel)
+                    if reply == QMessageBox.Cancel:
+                        break 
+
+            elif table ==2:
+                file_name, _ = QFileDialog.getSaveFileName(None, "Save the file", "Manning roughness coef for each LULC", "Text Files (*.txt)")
+                if file_name:
+                    self.dlg_flow_tt.le_8_pg2.setText(file_name)
+                    # seleciona as dimensões da tabela
+                    nlin_tb1 = self.dlg_flow_tt.tbw_2_pg2.rowCount()
+                    ncol_tb1 = self.dlg_flow_tt.tbw_2_pg2.columnCount()
+
+                    # Escreve o arquivo de saída
+                    with open(file_name, 'w', encoding='utf-8') as arquivo_txt:
+                        arquivo_txt.write(f'Class ID; Class Name; Manning Coef\n')
+                        # Adicionando as informações das linhas e colunas ao arquivo de saída
+                        for lin in range(nlin_tb1):
+                            for col in range(ncol_tb1):
+                                item = self.dlg_flow_tt.tbw_2_pg2.item(lin, col)
+                                # Verifica se o item existe
+                                if item is not None:  
+                                    arquivo_txt.write(f'{item.text()}')
+                                    arquivo_txt.write('; ')  
+                            arquivo_txt.write('\n')
+                    break
+                else:
+                    result = "Wait! You did not select any file."
+                    reply = QMessageBox.warning(None, "No files selected", result, QMessageBox.Ok | QMessageBox.Cancel)
+                    if reply == QMessageBox.Cancel:
+                        break 
+
+    def read_tb_from_file(self, table,lineEdit):
+        '''Esta função adiciona os valores do arquivo enviado pelo usuário à respectiva tabela'''
+        # Seleciona o arquivo enviado pelo usuário
         options = QFileDialog.Options()
         directory = self.dlg_flow_tt.le_13_pg1.text()
-        file_, _ = QFileDialog.getOpenFileName(None, caption="Select a file!", directory = directory, filter="Text Files (*.txt)", options = options)
-        cont = 0
-        if page == 1 and file_ != '':
-            with open(file_, 'r', encoding='utf-8') as arquivo_txt:
 
-                # Armazena as informações do arquivo enviado em uma lista
-                values = []
-                for line in arquivo_txt:
-                    # Buscará as flag adicionada "=>" ou "="
-                    if "=>" in line or '=' in line:
-                        # Os primeiros 5 objetos são baseados na primeira flag
-                        if cont < 4:
-                            value = line.replace('=>', '').strip()
-                            values.append(value)
-                        # As direções de fluxo são baseadas na segunda flag
-                        elif cont >= 4:
-                            value_ = line.split("=")[1].strip()
-                            values.append(value_)
-                        cont += 1
-            # Adiciona as informações lidas nas suas respectivas lineEdits
-            self.dlg_flow_tt.le_1_pg1.setText(str(values[0]))
-            self.dlg_flow_tt.le_2_pg1.setText(str(values[1]))
-            self.dlg_flow_tt.le_3_pg1.setText(str(values[2]))
-            self.dlg_flow_tt.le_4_pg1.setText(str(values[3]))
-            self.dlg_flow_tt.le_5_pg1.setText(str(values[4]))
-            self.dlg_flow_tt.le_6_pg1.setText(str(values[5]))
-            self.dlg_flow_tt.le_7_pg1.setText(str(values[6]))
-            self.dlg_flow_tt.le_8_pg1.setText(str(values[7]))
-            self.dlg_flow_tt.le_9_pg1.setText(str(values[8]))
-            self.dlg_flow_tt.le_10_pg1.setText(str(values[9]))
-            self.dlg_flow_tt.le_11_pg1.setText(str(values[10]))
-            self.dlg_flow_tt.le_12_pg1.setText(str(values[11]))
+        while True:
+            file_, _ = QFileDialog.getOpenFileName(None, caption="Select a file!", directory=directory, filter="Text Files (*.txt)", options=options)
+            
+            if file_:
+                lineEdit.setText(file_)
+                # Abre o arquivo e processa as linhas
+                with open(file_, 'r', encoding='utf-8') as arquivo_txt:
+                    # Lê a linha de cabeçalho
+                    header = arquivo_txt.readline()
+                    lines = header.strip().split(';')
+                    num_columns = len(lines)
+
+                    # Armazena as dimensões da tabela
+                    nlin = table.rowCount()
+                    ncol = table.columnCount()
+
+                    # Itera sobre as linhas do arquivo enviado
+                    row = 0
+                    for line in arquivo_txt:
+                        line = line.strip() 
+                        values = line.split(';')  
+
+                        # Adiciona mais linhas à tabela, se necessário
+                        if row >= nlin:
+                            table.setRowCount(row + 1)
+
+                        # Adiciona os valores à tabela
+                        for col in range(num_columns):
+                            item = QTableWidgetItem(values[col])
+                            table.setItem(row, col, item)
+                        # Atualiza a linha
+                        row += 1
+                break
+            else:
+                result = "Wait! You did not select any file."
+                reply = QMessageBox.warning(None, "No files selected", result, QMessageBox.Ok | QMessageBox.Cancel)
+                if reply == QMessageBox.Cancel:
+                    break 
+
+    def add_new_row(self,table):
+        '''Está função adiciona uma linha a uma tabela relecionada'''
+        last_row = table.rowCount()
+        table.insertRow(last_row)
+    
+    def delete_row(self,table):
+        '''Esta função deleta uma linha de uma referida tabela'''
+        selected_row = table.currentRow()
+        if selected_row >= 0:
+            table.removeRow(selected_row)
+        else:
+            QMessageBox.warning(None, "Warning", "You did not select any row.")
 
     def salvar_dados(self):
         '''Esta função é usada para salvar as informações adiconadas'''
         self.save_result = True
+
+    def verifica_dir_value(self, line_edit,values_les):
+        '''Esta função trata erros de repetição e códigos para a seção das direções de fluxo'''
+        # Cria o fitro de valores
+        validator = QIntValidator(0,999)
+        # Aplica o filtro a line edit em questão
+        line_edit.setValidator(validator)
+        value_le = line_edit.text()
+        self.values_les = values_les
+        # Compara a line edit atual com os valores anteriores
+
+        if value_le in values_les and value_le != '':
+            # O usuário enviou 2 valores semelhantes, será mostrado uma mensagem de erro
+            QMessageBox.warning(self.dlg_flow_tt, 'Warning', f'The value "{value_le}" was sent before! The direction codes might be different.')
+            line_edit.clear()
+        else:
+            self.values_les.append(value_le)
 
     def close_gui(self):
         '''Está função é usada para torna nulo (limpar) as informações adicionadas nos diferentes objetos da janela flow travel time'''
@@ -2435,40 +2544,6 @@ class HidroPixel:
             self.values_les.clear()
             self.dlg_flow_tt.close()
 
-    def closeEvent(self, event):
-        '''Esta função verifica a situação atual do plugin antes de encerrar a execução da GUI'''
-        # Se o usuário fechar a página diretamente (ou seja, sem clicar no botão close) sem salvar, será mostrado uma mensagem de aviso
-        # if self.dlg_flow_tt.btn_save_pg1.clicked.connect(self.salvar_dados):
-        #     # Se o botão salvar for clicado, ele encerra a janela flow travel time
-        #     event.accept()
-        # else:
-        condicao = QMessageBox.question(self, 'Close windown',
-        "Are you sure you want to close the window without saving?", 
-        QMessageBox.Yes | QMessageBox.No)
-
-        if condicao == QMessageBox.Yes:
-            # self.close_gui()
-            event.accept()
-        else:
-            event.ignore()
-
-    def verifica_dir_value(self, line_edit,values_les):
-        '''Esta função trata erros de repetição e códigos para a seção das direções de fluxo'''
-        # Cria o fitro de valores
-        validator = QIntValidator(0,999)
-        # Aplica o filtro a line edit em questão
-        line_edit.setValidator(validator)
-        value_le = line_edit.text()
-        self.values_les = values_les
-        # Compara a line edit atual com os valores anteriores
-
-        if value_le in values_les and value_le != '':
-            # O usuário enviou 2 valores semelhantes, será mostrado uma mensagem de erro
-            QMessageBox.warning(self.dlg_flow_tt, 'Warning', f'The value "{value_le}" was sent before! The direction codes might be different.')
-            line_edit.clear()
-        else:
-            self.values_les.append(value_le)
-
     def run(self):
         """Run method that performs all the real work"""
 
@@ -2523,8 +2598,20 @@ class HidroPixel:
 
         # Configura botão para ler informações de uma arquivo enviado
         self.dlg_flow_tt.btn_read_pg1.clicked.connect(lambda: self.read_from_file(1))
+
+        # Configura butões das tabelas
+        self.dlg_flow_tt.btn_read_t1.clicked.connect(lambda: self.read_tb_from_file(self.dlg_flow_tt.tbw_1_pg2,self.dlg_flow_tt.le_7_pg2))
+        self.dlg_flow_tt.btn_read_t2.clicked.connect(lambda: self.read_tb_from_file(self.dlg_flow_tt.tbw_2_pg2,self.dlg_flow_tt.le_8_pg2))
+        self.dlg_flow_tt.btn_save_file_t1.clicked.connect(lambda: self.save_table_to_file(1))
+        self.dlg_flow_tt.btn_save_file_t2.clicked.connect(lambda: self.save_table_to_file(2))
+        self.dlg_flow_tt.btn_add_row_1.clicked.connect(lambda: self.add_new_row(self.dlg_flow_tt.tbw_1_pg2))
+        self.dlg_flow_tt.btn_add_row_2.clicked.connect(lambda: self.add_new_row(self.dlg_flow_tt.tbw_2_pg2))
+        self.dlg_flow_tt.btn_del_row_1.clicked.connect(lambda: self.delete_row(self.dlg_flow_tt.tbw_1_pg2))
+        self.dlg_flow_tt.btn_del_row_2.clicked.connect(lambda: self.delete_row(self.dlg_flow_tt.tbw_2_pg2))
+        
         # close the pages
         self.dlg_flow_tt.btn_close_pg4.clicked.connect(lambda: self.close_gui())
+        
         # Run the dialog event loop
         self.dlg_hidro_pixel.exec_()
         self.close_gui()
