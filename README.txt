@@ -1,32 +1,9 @@
-Plugin Builder Results
+PENDÊNCIAS
 
-Your plugin HidroPixel was created in:
-    C:/PyQGIS\hidropixel
-
-Your QGIS plugin directory is located at:
-    C:/Users/joao1/AppData/Roaming/QGIS/QGIS3/profiles/default/python/plugins
-
-What's Next:
-
-  * Copy the entire directory containing your new plugin to the QGIS plugin
-    directory
-
-  * Compile the resources file using pyrcc5
-
-  * Run the tests (``make test``)
-
-  * Test the plugin by enabling it in the QGIS plugin manager
-
-  * Customize it by editing the implementation file: ``hidroPixel.py``
-
-  * Create your own custom icon, replacing the default icon.png
-
-  * Modify your user interface by opening HidroPixel_dialog_base.ui in Qt Designer
-
-  * You can use the Makefile to compile your Ui and resource files when
-    you make changes. This requires GNU make (gmake)
-
-For more information, see the PyQGIS Developer Cookbook at:
-http://www.qgis.org/pyqgis-cookbook/index.html
-
-(C) 2011-2018 GeoApt LLC - geoapt.com
+-> Configurar o botão Cancel da page log
+-> Configurar funções para ler e armazenar valores DIGITADOS nas tabelas (OK)
+-> Configurar o botão save and read to file das páginas
+-> Salvar arquivos (escrever...) em uma pasta forncecida ou na work folder
+-> Configurar radio button para adicionar o arquivo processado ao QGIS
+-> Configurar os chose buttons para selecionar quais arquivos serão gerados
+-> Quando o usuário ler os arquivo da página de input data, o programa deve ser a tabela enviada

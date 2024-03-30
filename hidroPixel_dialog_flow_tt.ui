@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>751</width>
-    <height>642</height>
+    <width>755</width>
+    <height>649</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -66,7 +66,7 @@
         <item row="1" column="0">
          <widget class="QStackedWidget" name="pages_flow_tt">
           <property name="currentIndex">
-           <number>1</number>
+           <number>3</number>
           </property>
           <widget class="QWidget" name="pg1_config">
            <layout class="QGridLayout" name="gridLayout_4">
@@ -87,8 +87,8 @@
                 <rect>
                  <x>0</x>
                  <y>0</y>
-                 <width>689</width>
-                 <height>473</height>
+                 <width>693</width>
+                 <height>480</height>
                 </rect>
                </property>
                <layout class="QGridLayout" name="gridLayout_5">
@@ -97,28 +97,28 @@
                   <item row="0" column="0">
                    <widget class="QPushButton" name="btn_read_pg1">
                     <property name="text">
-                     <string>READ FROM FILE</string>
+                     <string>Read from file</string>
                     </property>
                    </widget>
                   </item>
                   <item row="0" column="1">
                    <widget class="QPushButton" name="btn_save_file_pg1">
                     <property name="text">
-                     <string>SAVE TO FILE</string>
+                     <string>Save to file</string>
                     </property>
                    </widget>
                   </item>
                   <item row="0" column="2">
                    <widget class="QPushButton" name="btn_save_pg1">
                     <property name="text">
-                     <string>SAVE</string>
+                     <string>Save</string>
                     </property>
                    </widget>
                   </item>
                   <item row="0" column="3">
                    <widget class="QPushButton" name="btn_help_pg1">
                     <property name="text">
-                     <string>HELP</string>
+                     <string>Help</string>
                     </property>
                    </widget>
                   </item>
@@ -728,8 +728,8 @@
                <property name="geometry">
                 <rect>
                  <x>0</x>
-                 <y>-71</y>
-                 <width>672</width>
+                 <y>-368</y>
+                 <width>676</width>
                  <height>878</height>
                 </rect>
                </property>
@@ -961,22 +961,6 @@
                          </property>
                         </widget>
                        </item>
-                       <item row="0" column="1">
-                        <widget class="QLineEdit" name="le_3_pg2">
-                         <property name="minimumSize">
-                          <size>
-                           <width>0</width>
-                           <height>24</height>
-                          </size>
-                         </property>
-                         <property name="maximumSize">
-                          <size>
-                           <width>360</width>
-                           <height>24</height>
-                          </size>
-                         </property>
-                        </widget>
-                       </item>
                        <item row="0" column="2">
                         <widget class="QToolButton" name="tbtn_pg2_4">
                          <property name="text">
@@ -1012,6 +996,22 @@
                          </property>
                          <property name="pixmap">
                           <pixmap>tip_icon.png</pixmap>
+                         </property>
+                        </widget>
+                       </item>
+                       <item row="0" column="1">
+                        <widget class="QLineEdit" name="le_3_pg2">
+                         <property name="minimumSize">
+                          <size>
+                           <width>0</width>
+                           <height>24</height>
+                          </size>
+                         </property>
+                         <property name="maximumSize">
+                          <size>
+                           <width>360</width>
+                           <height>24</height>
+                          </size>
                          </property>
                         </widget>
                        </item>
@@ -1155,13 +1155,13 @@
                      </item>
                      <item row="0" column="1">
                       <layout class="QGridLayout" name="gridLayout_33">
-                       <item row="1" column="0" alignment="Qt::AlignTop">
-                        <widget class="QPushButton" name="btn_del_row_1">
+                       <item row="2" column="0" alignment="Qt::AlignTop">
+                        <widget class="QPushButton" name="btn_clear_1">
                          <property name="toolTip">
                           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Chose one line.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                          </property>
                          <property name="text">
-                          <string>Delete row</string>
+                          <string>Clear all</string>
                          </property>
                         </widget>
                        </item>
@@ -1169,6 +1169,16 @@
                         <widget class="QPushButton" name="btn_add_row_1">
                          <property name="text">
                           <string>Add row</string>
+                         </property>
+                        </widget>
+                       </item>
+                       <item row="1" column="0">
+                        <widget class="QPushButton" name="btn_del_row_1">
+                         <property name="toolTip">
+                          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Chose one line.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                         </property>
+                         <property name="text">
+                          <string>Delete row</string>
                          </property>
                         </widget>
                        </item>
@@ -1529,17 +1539,27 @@
                        </item>
                        <item>
                         <layout class="QGridLayout" name="gridLayout_39">
-                         <item row="1" column="0" alignment="Qt::AlignTop">
-                          <widget class="QPushButton" name="btn_del_row_2">
-                           <property name="text">
-                            <string>Delete row</string>
-                           </property>
-                          </widget>
-                         </item>
                          <item row="0" column="0" alignment="Qt::AlignBottom">
                           <widget class="QPushButton" name="btn_add_row_2">
                            <property name="text">
                             <string>Add row</string>
+                           </property>
+                          </widget>
+                         </item>
+                         <item row="2" column="0" alignment="Qt::AlignTop">
+                          <widget class="QPushButton" name="btn_clear_2">
+                           <property name="text">
+                            <string>Clear all</string>
+                           </property>
+                          </widget>
+                         </item>
+                         <item row="1" column="0">
+                          <widget class="QPushButton" name="btn_del_row_2">
+                           <property name="toolTip">
+                            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Chose one line.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                           </property>
+                           <property name="text">
+                            <string>Delete row</string>
                            </property>
                           </widget>
                          </item>
@@ -1798,28 +1818,28 @@
                   <item row="0" column="0">
                    <widget class="QPushButton" name="btn_read_pg2">
                     <property name="text">
-                     <string>READ FROM FILE</string>
+                     <string>Read from file</string>
                     </property>
                    </widget>
                   </item>
                   <item row="0" column="1">
                    <widget class="QPushButton" name="btn_save_file_pg2">
                     <property name="text">
-                     <string>SAVE TO FILE</string>
+                     <string>Save to file</string>
                     </property>
                    </widget>
                   </item>
                   <item row="0" column="2">
                    <widget class="QPushButton" name="btn_save_pg2">
                     <property name="text">
-                     <string>SAVE</string>
+                     <string>Save</string>
                     </property>
                    </widget>
                   </item>
                   <item row="0" column="3">
                    <widget class="QPushButton" name="btn_help_pg2">
                     <property name="text">
-                     <string>HELP</string>
+                     <string>Help</string>
                     </property>
                    </widget>
                   </item>
@@ -1843,8 +1863,8 @@
                 <rect>
                  <x>0</x>
                  <y>0</y>
-                 <width>688</width>
-                 <height>481</height>
+                 <width>693</width>
+                 <height>510</height>
                 </rect>
                </property>
                <layout class="QGridLayout" name="gridLayout_30">
@@ -1892,8 +1912,8 @@
                 <rect>
                  <x>0</x>
                  <y>0</y>
-                 <width>688</width>
-                 <height>481</height>
+                 <width>693</width>
+                 <height>510</height>
                 </rect>
                </property>
                <layout class="QGridLayout" name="gridLayout_48">
@@ -2137,7 +2157,7 @@
                       <item row="0" column="0">
                        <widget class="QLabel" name="label_59">
                         <property name="text">
-                         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;justify&quot;&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;Upstream flow path length:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;justify&quot;&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;Upstream flowpath length:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                         </property>
                        </widget>
                       </item>
@@ -2176,7 +2196,7 @@
                       <item row="0" column="0">
                        <widget class="QLabel" name="label_61">
                         <property name="text">
-                         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;justify&quot;&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;Downstream flow path slope (m/m):&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;justify&quot;&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;Downstream flowpath slope (m/m):&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                         </property>
                        </widget>
                       </item>
@@ -2287,7 +2307,7 @@
                       <item row="0" column="0">
                        <widget class="QLabel" name="label_60">
                         <property name="text">
-                         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;justify&quot;&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;Downstream flow path length:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;justify&quot;&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;Downstream flowpath length:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                         </property>
                        </widget>
                       </item>
@@ -2460,16 +2480,23 @@
                 <item row="3" column="0">
                  <layout class="QHBoxLayout" name="horizontalLayout_15">
                   <item>
+                   <widget class="QPushButton" name="btn_save_file_pg4">
+                    <property name="text">
+                     <string>Save to file</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
                    <widget class="QPushButton" name="btn_save_pg4">
                     <property name="text">
-                     <string>SAVE</string>
+                     <string>Save</string>
                     </property>
                    </widget>
                   </item>
                   <item>
                    <widget class="QPushButton" name="btn_close_pg4">
                     <property name="text">
-                     <string>CLOSE</string>
+                     <string>Close</string>
                     </property>
                    </widget>
                   </item>
@@ -2488,7 +2515,7 @@ color: rgb(0, 0, 0);
                   <item>
                    <widget class="QPushButton" name="btn_help_pg4">
                     <property name="text">
-                     <string>HELP</string>
+                     <string>Help</string>
                     </property>
                    </widget>
                   </item>

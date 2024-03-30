@@ -26,7 +26,7 @@
       <item row="3" column="0">
        <widget class="QPushButton" name="btn_flow_rout">
         <property name="text">
-         <string>FLOW ROUTINE</string>
+         <string>FLOW ROUTING</string>
         </property>
        </widget>
       </item>

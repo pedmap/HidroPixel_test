@@ -24,8 +24,10 @@ class GlobalVariables:
         self.MDEint = np.empty((0,0), dtype = np.int16)
         self.cabeceira = np.empty((0,0), dtype = np.int16)
         self.bacia = np.empty((0,0), dtype = np.int16)
-        self.usosolo = np.empty((0,0), dtype = np.int16)
         self.classerio = np.empty((0,0), dtype = np.int16)
+        self.decliv_pixel = np.empty((0,0), dtype = np.int16)
+        self.decliv_pixel_jus = np.empty((0,0), dtype = np.int16)
+        self.usosolo = np.empty((0,0), dtype = np.int16)
         self.refcabtre = np.empty((0,0), dtype = np.int16)
         self.pixeldren = np.empty((0,0), dtype = np.int16)
         self.contaaux = np.empty((0,0))
@@ -97,6 +99,7 @@ class GlobalVariables:
         self.colaux3 = 0
         self.caminho = 0
         self.numcabeaux = 0
+        self.numcabeaux2 = 0
         self.A = 0
         self.B = 0
         self.C = 0

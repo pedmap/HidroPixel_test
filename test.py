@@ -65,6 +65,8 @@ class Test():
         else:
             result ="Nenhum arquivo foi selecionado!"
             # QMessageBox.warning(None, "ERROR!", result)
+        
+        print(f'Qtd pix bacia: {np.count_nonzero(self.global_vars.bacia)}\nPassou bacia')
 
         
     def leh_caracteristica_dRios(self):
@@ -74,8 +76,7 @@ class Test():
         file = r"C:\Users\joao1\OneDrive\Área de Trabalho\Calcula_Tc_SCS_decliv_indiv_grandesmatrizes_utm_LL\caracteristicas_classes_rios.txt"
         with open(file, 'r', encoding='utf-8') as arquivo_txt:
             #  Atualizando as variáveis que dependem
-            arquivo_txt.readline()
-            self.global_vars.nclasses =int(arquivo_txt.readline().strip())
+            self.global_vars.nclasses =int(arquivo_txt.readline().strip().split(':')[1])
             arquivo_txt.readline()
             # Inicializando as listas
             j_list = []
@@ -99,7 +100,8 @@ class Test():
             self.global_vars.Sclasse = np.array(Sclasse_list)
             self.global_vars.Mannclasse = np.array(Mannclasse_list)
             self.global_vars.Rhclasse = np.array(Rhclasse_list)
-        
+
+
     def leh_classes_rios(self):
         """Esta função é utilizada para ler as informações acerca da classe dos rios da bacia hidrográfica (arquivo raster -  .rst)"""
         arquivo = r"C:\Users\joao1\OneDrive\Área de Trabalho\Calcula_Tc_SCS_decliv_indiv_grandesmatrizes_utm_LL\classes_rios.rst"
@@ -445,7 +447,7 @@ class Test():
                                 # Continuar caminho: determina a contagem das distâncias projetadas (WGS84) e \
                                 # determina as coordenadas verticais do pixel+
 
-                                self.global_vars.Xesq = self.rdc_vars_vars.xmin + (self.global_vars.colaux - 1)*self.global_vars.Xres
+                                self.global_vars.Xesq = self.rdc_vars.xmin + (self.global_vars.colaux - 1)*self.global_vars.Xres
                                 self.global_vars.Xdir = self.global_vars.Xesq + self.global_vars.Xres
                                 self.global_vars.Yinf = self.global_vars.ymax - self.global_vars.linaux*self.global_vars.Yres
                                 self.global_vars.Ysup = self.global_vars.Yinf + self.global_vars.Yres
@@ -461,8 +463,6 @@ class Test():
                                     self.rdc_vars.tipo = 3
 
                                 # Deteminando a distância incremental projetada
-                                'METRO VARIA COM O ARQUIVO DE ENTRADA, PARA O EXEMPLO ATUAL É IGUAL A 1'
-                                self.global_vars.metro = 1
                                 if self.global_vars.metro == 0:
                                     self.global_vars.auxdist = self.project(self.global_vars.Xesq,
                                                                         self.global_vars.Xdir,
@@ -504,10 +504,7 @@ class Test():
                         # Atulizando a variável lfoz
                         self.Lfoz[lin, col] = self.global_vars.tamfoz
                         
-        print("foi aqui", np.count_nonzero(self.Lfoz))
-        print(self.rdc_vars.tipo)
-        print(self.Lfoz)
-
+        print('Passou compri_acumulado')
     def numera_pixel(self):
         '''
         Esta função enumera os píxels presentes na rede de drenagem
@@ -529,7 +526,6 @@ class Test():
         self.lincontadren = np.array(pixel_dren[0])
         self.colcontadren = np.array(pixel_dren[1])
 
-        print(self.lincontadren, self.colcontadren)
 
         # Numeração dos píxels internos a bacia: São chamados de cabeceira, pois o caminho do fluxo é iniciado a partir de cada um deles
         for col in range(1, self.rdc_vars.ncol - 1):
@@ -556,7 +552,10 @@ class Test():
                         self.numcabeaux += 1
                         self.numcabe[lin][col] = self.numcabeaux
 
-        self.global_vars.Ncabec = self.global_vars.numcabeaux
+        # Atualiza variáveis globais
+        self.global_vars.numcabe = self.numcabe
+        self.global_vars.Ncabec = self.numcabeaux
+        print('Passou numera_pix')
 
     def dist_drenagem(self):
         """Esta funçao determina a distância incremental percorrida pela água na rede de drenagem,
@@ -601,7 +600,6 @@ class Test():
 
                                 if condicao2:
                                     # Após alocação do pixel da rede de drenagem: encerra o processo de busca
-                                    print('passou')
                                     self.global_vars.caminho = 1
                                     self.DIST[lin][col] = self.global_vars.tamcam
                                     self.pixeldren[lin][col] = self.contadren[self.global_vars.linaux][self.global_vars.colaux]
@@ -675,12 +673,10 @@ class Test():
                                         # JVD: correção da indexação para o python (inicia no zero)
                                         self.global_vars.TSpix = 5.474 * ((self.global_vars.Mann[self.global_vars.usaux - 1] *self.global_vars.Ltreaux)**0.8) \
                                             / ((self.global_vars.P24**0.5)*((self.global_vars.Streaux/1000.0)**0.4))
-                                    a += 1
-                                    if a % 10000 == 0:
-                                        print(a)
+
         self.fim = time.time()
         print(self.fim - self.inicio)
-        print()
+        print('Passou dist_drenagem')
 
     def dist_trecho(self):
         ''' Definir o objetivo da função'''
@@ -691,6 +687,7 @@ class Test():
         #ARPlidar: loop para contar o número máximo de trechos 
         for col in range(1, self.rdc_vars.ncol - 1):
             for lin in range(1, self.rdc_vars.nlin - 1):
+
                 # Ações realizadas apenas na região da bacia
                 if self.global_vars.bacia[lin][col] == 1:
                     # ARPlidar
@@ -831,10 +828,9 @@ class Test():
         self.global_vars.DISTtre = 0
         self.global_vars.CABEpix = 0
         self.global_vars.DECLIVpix = 0
+
         # Percorrendo os elementos da bacia hidrográfica
         for col in range(self.rdc_vars.ncol):
-            # if col % 50 == 0:
-                # print(f'col = {col}')
             for lin in range(self.rdc_vars.nlin):
                 # Os cálculos são executados apenas na região da bacia hidrográfica
                 if self.global_vars.bacia[lin][col] == 1:
@@ -917,8 +913,6 @@ class Test():
                                 self.global_vars.DECLIVpix[self.global_vars.linaux2][self.global_vars.colaux2] =  g1/h2
         
         for col in range(self.rdc_vars.ncol):
-            # if col % 50 == 0:
-                # print(f'col = {col}')
             for lin in range(self.rdc_vars.nlin):
                 # Os cálculo são realizados apenas na região da baica hidrográficia 
                 if self.global_vars.bacia[lin][col] == 1:
@@ -1012,7 +1006,9 @@ class Test():
                         self.global_vars.Stre[self.global_vars.numcabeaux][t] = self.global_vars.Streaux
                     elif self.global_vars.tipo_decliv == 2:
                         self.global_vars.Stre[self.global_vars.numcabeaux][t] = self.global_vars.Streaux2
-    
+
+        print('Passou dist_trecho')
+        
     def tempo_canal(self):
         '''
         Esta função é responsável por determinar o tempo de derlocamento da foz até o exutório da bacia hidrográfica
@@ -1021,8 +1017,6 @@ class Test():
         condicao2 = None
         self.classerio_aux = np.zeros((self.rdc_vars.nlin,self.rdc_vars.ncol))
         for col in range(self.rdc_vars.ncol):
-            # if col  % 50 == 0:
-                # print(f'col = {col}')
             for lin in range(self.rdc_vars.nlin):
                 # O cáclulos são executados apenas na região da bacia
                 if self.global_vars.bacia[lin][col] == 1:
@@ -1152,8 +1146,6 @@ class Test():
             self.global_vars.TScabe2d[lin1][col1] = self.global_vars.TScabe[self.global_vars.numcabeaux]
         
         for lin in range(self.rdc_vars.nlin):
-            # if lin % 50 == 0:
-                # print(f'lin = {lin}')
             for col in range(self.rdc_vars.ncol):
                 # As ações são baseadas na região da bacia hidrográfica
                 if self.global_vars.bacia[lin][col]:
@@ -1198,8 +1190,6 @@ class Test():
             self.global_vars.TScabe = None
 
             for col in range(self.rdc_vars.ncol):
-                # if col % 50 == 0:
-                    # print(f'col = {col}')
                 for lin in range(self.rdc_vars.nlin):
                     # Exclindo a região fora da bacia
                     self.global_vars.linaux = lin
@@ -1238,9 +1228,6 @@ class Test():
         Esta função determina o tempo total de escoamento (tempo de concentração) da bacia hidrográfica
         '''
         for col in range(self.rdc_vars.ncol):
-            # if col % 50 == 0:
-                # print(f'col = {col}')
-            
             for lin in range(self.rdc_vars.nlin):
                 # Os procedimentos são realizados ao longo da bacia hidrográfica
                 if self.global_vars.bacia[lin][col] == 1:
@@ -1908,14 +1895,30 @@ cla_test.leh_modelo_numerico_dTerreno()
 cla_test.leh_precipitacao_24h()
 cla_test.leh_uso_do_solo()
 cla_test.leh_uso_manning()
-# cla_test.comprimento_acumulado(1)
 cla_test.numera_pixel()
+cla_test.comprimento_acumulado(1)
 cla_test.dist_drenagem()
-# cla_test.dist_trecho()
-# cla_test.tempo_canal()
-# cla_test.tempo_sup()
-# cla_test.tempo_total()
-# cla_test.min_max()
-# cla_test.tamanho_numero()
+cla_test.dist_trecho()
+cla_test.tempo_canal()
+cla_test.tempo_sup()
+cla_test.tempo_total()
+cla_test.min_max()
+cla_test.tamanho_numero()
+cla_test.escreve_RDC()
+cla_test.escreve_comprimento_acumulado()
+cla_test.escreve_conectividade()
+cla_test.escreve_dados_trecho()
+cla_test.escreve_declivi_pixel()
+cla_test.escreve_declivi_pixel_jus()
+cla_test.escreve_dit_rel_trechos()
+cla_test.escreve_num_pix_cabec()
+cla_test.escreve_num_pix_drenagem()
+cla_test.escreve_num_trechos()
+cla_test.escreve_tempo_canal()
+cla_test.escreve_tempo_total()
+cla_test.escreve_tre_cabec()
+cla_test.escreve_trecho_pixel()
+cla_test.escreve_TS_pix_acum()
+
 
 
