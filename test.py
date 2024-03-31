@@ -505,6 +505,7 @@ class Test():
                         self.Lfoz[lin, col] = self.global_vars.tamfoz
                         
         print('Passou compri_acumulado')
+
     def numera_pixel(self):
         '''
         Esta função enumera os píxels presentes na rede de drenagem
@@ -1006,9 +1007,8 @@ class Test():
                         self.global_vars.Stre[self.global_vars.numcabeaux][t] = self.global_vars.Streaux
                     elif self.global_vars.tipo_decliv == 2:
                         self.global_vars.Stre[self.global_vars.numcabeaux][t] = self.global_vars.Streaux2
-
+                        
         print('Passou dist_trecho')
-        
     def tempo_canal(self):
         '''
         Esta função é responsável por determinar o tempo de derlocamento da foz até o exutório da bacia hidrográfica

@@ -66,7 +66,7 @@
         <item row="1" column="0">
          <widget class="QStackedWidget" name="pages_flow_tt">
           <property name="currentIndex">
-           <number>3</number>
+           <number>1</number>
           </property>
           <widget class="QWidget" name="pg1_config">
            <layout class="QGridLayout" name="gridLayout_4">
@@ -704,7 +704,11 @@
                </spacer>
               </item>
               <item row="0" column="2">
-               <widget class="QLineEdit" name="le_13_pg1"/>
+               <widget class="QLineEdit" name="le_13_pg1">
+                <property name="clearButtonEnabled">
+                 <bool>true</bool>
+                </property>
+               </widget>
               </item>
              </layout>
             </item>
@@ -774,6 +778,9 @@
                            <height>24</height>
                           </size>
                          </property>
+                         <property name="clearButtonEnabled">
+                          <bool>true</bool>
+                         </property>
                         </widget>
                        </item>
                        <item row="0" column="2">
@@ -838,6 +845,9 @@
                            <width>360</width>
                            <height>24</height>
                           </size>
+                         </property>
+                         <property name="clearButtonEnabled">
+                          <bool>true</bool>
                          </property>
                         </widget>
                        </item>
@@ -1013,6 +1023,9 @@
                            <height>24</height>
                           </size>
                          </property>
+                         <property name="clearButtonEnabled">
+                          <bool>true</bool>
+                         </property>
                         </widget>
                        </item>
                       </layout>
@@ -1039,6 +1052,9 @@
                            <width>360</width>
                            <height>24</height>
                           </size>
+                         </property>
+                         <property name="clearButtonEnabled">
+                          <bool>true</bool>
                          </property>
                         </widget>
                        </item>
@@ -1208,6 +1224,12 @@
                              <width>16777215</width>
                              <height>24</height>
                             </size>
+                           </property>
+                           <property name="readOnly">
+                            <bool>true</bool>
+                           </property>
+                           <property name="clearButtonEnabled">
+                            <bool>true</bool>
                            </property>
                           </widget>
                          </item>
@@ -1416,6 +1438,9 @@
                            <height>24</height>
                           </size>
                          </property>
+                         <property name="clearButtonEnabled">
+                          <bool>true</bool>
+                         </property>
                         </widget>
                        </item>
                        <item row="0" column="2">
@@ -1592,6 +1617,12 @@
                                  <height>24</height>
                                 </size>
                                </property>
+                               <property name="readOnly">
+                                <bool>true</bool>
+                               </property>
+                               <property name="clearButtonEnabled">
+                                <bool>true</bool>
+                               </property>
                               </widget>
                              </item>
                             </layout>
@@ -1765,6 +1796,9 @@
                            <width>80</width>
                            <height>24</height>
                           </size>
+                         </property>
+                         <property name="clearButtonEnabled">
+                          <bool>true</bool>
                          </property>
                         </widget>
                        </item>
@@ -1970,6 +2004,57 @@
                   </item>
                  </layout>
                 </item>
+                <item row="3" column="0">
+                 <layout class="QHBoxLayout" name="horizontalLayout_15">
+                  <item>
+                   <widget class="QPushButton" name="btn_read_pg4">
+                    <property name="text">
+                     <string>Read from file</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QPushButton" name="btn_save_file_pg4">
+                    <property name="text">
+                     <string>Save to file</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QPushButton" name="btn_save_pg4">
+                    <property name="text">
+                     <string>Save</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QPushButton" name="btn_close_pg4">
+                    <property name="text">
+                     <string>Close</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QPushButton" name="btn_run_2">
+                    <property name="styleSheet">
+                     <string notr="true">background-color: rgb(240, 240, 240);
+color: rgb(0, 0, 0);
+</string>
+                    </property>
+                    <property name="text">
+                     <string>RUN</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QPushButton" name="btn_help_pg4">
+                    <property name="text">
+                     <string>Help</string>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
+                </item>
                 <item row="1" column="0">
                  <layout class="QVBoxLayout" name="verticalLayout_6">
                   <item>
@@ -2029,6 +2114,9 @@
                           <height>24</height>
                          </size>
                         </property>
+                        <property name="clearButtonEnabled">
+                         <bool>true</bool>
+                        </property>
                        </widget>
                       </item>
                       <item row="0" column="2">
@@ -2067,6 +2155,9 @@
                           <width>220</width>
                           <height>24</height>
                          </size>
+                        </property>
+                        <property name="clearButtonEnabled">
+                         <bool>true</bool>
                         </property>
                        </widget>
                       </item>
@@ -2169,6 +2260,9 @@
                           <height>24</height>
                          </size>
                         </property>
+                        <property name="clearButtonEnabled">
+                         <bool>true</bool>
+                        </property>
                        </widget>
                       </item>
                       <item row="0" column="2">
@@ -2239,6 +2333,9 @@
                           <height>24</height>
                          </size>
                         </property>
+                        <property name="clearButtonEnabled">
+                         <bool>true</bool>
+                        </property>
                        </widget>
                       </item>
                       <item row="0" column="2">
@@ -2270,6 +2367,9 @@
                           <width>220</width>
                           <height>24</height>
                          </size>
+                        </property>
+                        <property name="clearButtonEnabled">
+                         <bool>true</bool>
                         </property>
                        </widget>
                       </item>
@@ -2379,6 +2479,9 @@
                           <height>24</height>
                          </size>
                         </property>
+                        <property name="clearButtonEnabled">
+                         <bool>true</bool>
+                        </property>
                        </widget>
                       </item>
                       <item row="0" column="2">
@@ -2417,6 +2520,12 @@
                           <width>220</width>
                           <height>24</height>
                          </size>
+                        </property>
+                        <property name="readOnly">
+                         <bool>false</bool>
+                        </property>
+                        <property name="clearButtonEnabled">
+                         <bool>true</bool>
                         </property>
                        </widget>
                       </item>
@@ -2469,6 +2578,9 @@
                   <property name="orientation">
                    <enum>Qt::Vertical</enum>
                   </property>
+                  <property name="sizeType">
+                   <enum>QSizePolicy::Expanding</enum>
+                  </property>
                   <property name="sizeHint" stdset="0">
                    <size>
                     <width>20</width>
@@ -2476,50 +2588,6 @@
                    </size>
                   </property>
                  </spacer>
-                </item>
-                <item row="3" column="0">
-                 <layout class="QHBoxLayout" name="horizontalLayout_15">
-                  <item>
-                   <widget class="QPushButton" name="btn_save_file_pg4">
-                    <property name="text">
-                     <string>Save to file</string>
-                    </property>
-                   </widget>
-                  </item>
-                  <item>
-                   <widget class="QPushButton" name="btn_save_pg4">
-                    <property name="text">
-                     <string>Save</string>
-                    </property>
-                   </widget>
-                  </item>
-                  <item>
-                   <widget class="QPushButton" name="btn_close_pg4">
-                    <property name="text">
-                     <string>Close</string>
-                    </property>
-                   </widget>
-                  </item>
-                  <item>
-                   <widget class="QPushButton" name="btn_run_2">
-                    <property name="styleSheet">
-                     <string notr="true">background-color: rgb(240, 240, 240);
-color: rgb(0, 0, 0);
-</string>
-                    </property>
-                    <property name="text">
-                     <string>RUN</string>
-                    </property>
-                   </widget>
-                  </item>
-                  <item>
-                   <widget class="QPushButton" name="btn_help_pg4">
-                    <property name="text">
-                     <string>Help</string>
-                    </property>
-                   </widget>
-                  </item>
-                 </layout>
                 </item>
                </layout>
               </widget>

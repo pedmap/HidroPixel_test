@@ -238,7 +238,7 @@ class HidroPixel:
                     lineEdit.setPlainText("\n".join(file_))
                     self.rdc_vars.nomeRDC = file_[0] if file_ else None
                     self.rdc_vars.nomeRST = file_[1] if len(file_) > 1 else None
-                    return file_
+                    break
                 else:
                     result = "Wait! You did not select any file."
                     reply = QMessageBox.warning(None, "No file selected", result, QMessageBox.Ok | QMessageBox.Cancel)
@@ -2168,6 +2168,23 @@ class HidroPixel:
         nomeRST = fn_temp_pix_jus
         self.escreve_RDC(nomeRST)
 
+    def save_buttons(self, line_edit):
+        '''Esta função configura os botões da salvar (criar arquivo)'''
+        # Seleciona o arquivo enviado pelo usuário
+        while True:
+            # Obtendo o caminho do arquivo a ser salvo usando um diálogo de arquivo
+            file_name, _ = QFileDialog.getSaveFileName(None, "Save the file", "Text Files (*.txt)")
+            if file_name:
+                line_edit.setText(file_name)
+                break
+            else:
+                # O usuário não solucionou um arquivo (um caminho para salvar o arquivo de saída)
+                result = "Wait! You did not select any file."
+                reply = QMessageBox.warning(None, "No files selected", result, QMessageBox.Ok | QMessageBox.Cancel)
+                if reply == QMessageBox.Cancel:
+                    break
+
+
     def save_to_file(self, page):
         '''Esta função gera o arquivo com as informações enviadas por meio do usuário por página
         Page: variável que identifica a página do arquivo que será escrito
@@ -2228,7 +2245,9 @@ class HidroPixel:
                             arquivo_txt.write('Digital elevation model:\n')
                             arquivo_txt.write(f'=> {self.dlg_flow_tt.le_2_pg2.text()}\n')
                             arquivo_txt.write('Flow direction (RDC and RST):\n')
-                            arquivo_txt.write(f'=> {self.dlg_flow_tt.te_1_pg2[0].text()}\n=> {self.dlg_flow_tt.te_1_pg2[1].text()}')
+                            linhas_text_edit = self.dlg_flow_tt.te_1_pg2.toPlainText()
+                            linhas = linhas.slip('\n')
+                            arquivo_txt.write(f'=> {linhas[0]}\n=> {linhas[1]}')
                             arquivo_txt.write('River drainage newtwork (RDN):\n')
                             arquivo_txt.write(f'=> {self.dlg_flow_tt.le_3_pg2.text()}\n')
                             arquivo_txt.write('RDN segmentation into classes:\n')
@@ -2300,8 +2319,8 @@ class HidroPixel:
             file_, _ = QFileDialog.getOpenFileName(None, caption="Select a file!", directory = directory, filter="Text Files (*.txt)", options = options)
             cont = 0
             if page == 1 and file_ != '':
+                # Ler as informações da página 1: configuration
                 with open(file_, 'r', encoding='utf-8') as arquivo_txt:
-
                     # Armazena as informações do arquivo enviado em uma lista
                     values = []
                     for line in arquivo_txt:
@@ -2331,6 +2350,52 @@ class HidroPixel:
                 self.dlg_flow_tt.le_12_pg1.setText(str(values[11]))
                 break
 
+            elif page == 2 and file_ != '':
+                # Ler o arquivo da página 2: input dat
+                with open(file_, 'r', encoding='utf-8') as arquivo_txt:
+                    # Armazenará os valores das linhas
+                    values = []
+                    for line in arquivo_txt:
+                        if '=>' in line:
+                            # Substitui o identificador => por uma string fazia e retira os espaços da linha
+                            value = line.replace('=>', '').strip()
+                            values.append(value)
+                
+                # Adiciona as informações lidas à seus respectivos campos
+                self.dlg_flow_tt.le_1_pg2.setText(str(values[0]))
+                self.dlg_flow_tt.le_2_pg2.setText(str(values[1]))
+                self.dlg_flow_tt.te_1_pg2.setPlainText(str(values[2]))
+                self.dlg_flow_tt.te_1_pg2.append(f'\n{str(values[3])}')
+                self.dlg_flow_tt.le_3_pg2.setText(str(values[4]))
+                self.dlg_flow_tt.le_4_pg2.setText(str(values[5]))
+                self.dlg_flow_tt.le_7_pg2.setText(str(values[6]))
+
+                self.dlg_flow_tt.le_5_pg2.setText(str(values[7]))
+                self.dlg_flow_tt.le_6_pg2.setText(str(values[9]))
+                self.dlg_flow_tt.le_8_pg2.setText(str(values[8]))
+                break               
+
+            elif page == 4 and file_ != '':
+                # Ler arquivos página 4
+                with open(file_, 'r', encoding='utf-8') as arquivo_txt:
+                    # Armazenará os valores das linhas
+                    values = []
+                    for line in arquivo_txt:
+                        if '=>' in line:
+                            # Substitui o identificador => por uma string fazia e retira os espaços da linha
+                            value = line.replace('=>', '').strip()
+                            values.append(value)
+
+                # Adiciona as informações lidas à seus respectivos campos            
+                self.dlg_flow_tt.le_1_pg3.setText(str(values[0]))
+                self.dlg_flow_tt.le_2_pg3.setText(str(values[1]))
+                self.dlg_flow_tt.le_3_pg3.setText(str(values[2]))
+                self.dlg_flow_tt.le_4_pg3.setText(str(values[3]))
+                self.dlg_flow_tt.le_5_pg3.setText(str(values[4]))
+                self.dlg_flow_tt.le_6_pg3.setText(str(values[5]))
+                self.dlg_flow_tt.le_7_pg3.setText(str(values[6]))
+                break
+            
             else:
                 result = "Wait! You did not select any file."
                 reply = QMessageBox.warning(None, "No files selected", result, QMessageBox.Ok | QMessageBox.Cancel)
@@ -2405,6 +2470,7 @@ class HidroPixel:
         self.flag_1 = 1
 
         while True:
+            # Solicita o arquivo
             file_, _ = QFileDialog.getOpenFileName(None, caption="Select a file!", directory=directory, filter="Text or CSV Files (*.txt *.csv)", options=options)
             
             if file_:
@@ -2745,17 +2811,17 @@ class HidroPixel:
                     # caso contrário (se metro=0), assume que está graus e faz projeção para metros
                     self.global_vars.metro = 1
                 mensagem_log += f'Processing ComprimAcu...\n'
-                self.comprimento_acumulado()
+                self.comprimento_acumulado(1)
                 mensagem_log += f'Processing NumeraPix...\n'
                 self.numera_pixel()
                 mensagem_log += f'Processing DistDren...\n' #'''AQUIII'''
                 self.dist_drenagem()
                 
                 if self.global_vars.tipo_decliv == 4:
-                    self.esccreve_decliv_pixel_jus()
-                mensagem_log_ += f'Processing DistTrecho...\n'
+                    self.escreve_decliv_pixel_jus()
+                mensagem_log += f'Processing DistTrecho...\n'
                 self.dist_trecho()
-                self.escreve_decliv_pixel()
+                self.escreve_declivi_pixel()
 
                 mensagem_log += f'Processing TempoSup...\n'
                 self.tempo_sup()
@@ -2763,8 +2829,8 @@ class HidroPixel:
                 self.escreve_num_trechos()
                 self.escreve_dist_rel_trechos()
 
-                mensagem_log += f'Processing ComprimAcu...\n'
-                self.comprimento_acumulado()
+                # mensagem_log += f'Processing ComprimAcu...\n'
+                # self.comprimento_acumulado(1)
 
                 mensagem_log += f'Processing TempoCanal...\n'
                 self.tempo_canal()
@@ -2840,6 +2906,15 @@ class HidroPixel:
         self.dlg_flow_tt.tbtn_pg2_5.clicked.connect(lambda: self.carrega_arquivos(self.dlg_flow_tt.le_4_pg2))
         self.dlg_flow_tt.tbtn_pg2_6.clicked.connect(lambda: self.carrega_arquivos(self.dlg_flow_tt.le_5_pg2))
 
+        # Configura os botões da página input data:
+        self.dlg_flow_tt.tbtn_pg4_1.clicked.connect(lambda: self.salva_buttons(self.dlg_flow_tt.le_1_pg4))
+        self.dlg_flow_tt.tbtn_pg4_2.clicked.connect(lambda: self.salva_buttons(self.dlg_flow_tt.le_2_pg4))
+        self.dlg_flow_tt.tbtn_pg4_3.clicked.connect(lambda: self.salva_buttons(self.dlg_flow_tt.le_3_pg4))
+        self.dlg_flow_tt.tbtn_pg4_4.clicked.connect(lambda: self.salva_buttons(self.dlg_flow_tt.le_4_pg4))
+        self.dlg_flow_tt.tbtn_pg4_5.clicked.connect(lambda: self.salva_buttons(self.dlg_flow_tt.le_5_pg4))
+        self.dlg_flow_tt.tbtn_pg4_6.clicked.connect(lambda: self.salva_buttons(self.dlg_flow_tt.le_6_pg4))
+        self.dlg_flow_tt.tbtn_pg4_7.clicked.connect(lambda: self.salva_buttons(self.dlg_flow_tt.le_7_pg4))
+
         # configura botões de salvar e savar para um arquivo
         self.dlg_flow_tt.btn_save_file_pg1.clicked.connect(lambda: self.save_to_file(1))
         self.dlg_flow_tt.btn_save_file_pg2.clicked.connect(lambda: self.save_to_file(2))
@@ -2848,6 +2923,8 @@ class HidroPixel:
 
         # Configura botão para ler informações de uma arquivo enviado
         self.dlg_flow_tt.btn_read_pg1.clicked.connect(lambda: self.read_from_file(1))
+        self.dlg_flow_tt.btn_read_pg2.clicked.connect(lambda: self.read_from_file(2))
+        self.dlg_flow_tt.btn_read_pg4.clicked.connect(lambda: self.read_from_file(4))
 
         # Configura butões das tabelas
         self.dlg_flow_tt.btn_read_t1.clicked.connect(lambda: self.read_tb_from_file(self.dlg_flow_tt.tbw_1_pg2,self.dlg_flow_tt.le_7_pg2, 1)) #argumento
@@ -2874,8 +2951,10 @@ class HidroPixel:
         self.dlg_flow_tt.le_6_pg1.textChanged.connect(lambda: self.changed())
         self.dlg_flow_tt.btn_close_pg4.clicked.connect(lambda: self.close_gui())
         
-        # Conf run button
+        # Configura run button
         self.dlg_flow_tt.btn_run_2.clicked.connect(lambda: self.logging_run_page())
+
+        # Configura botões página de log
 
         # Run the dialog event loop
         self.dlg_hidro_pixel.exec_()
