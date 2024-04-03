@@ -2246,7 +2246,7 @@ class HidroPixel:
                             arquivo_txt.write(f'=> {self.dlg_flow_tt.le_2_pg2.text()}\n')
                             arquivo_txt.write('Flow direction (RDC and RST):\n')
                             linhas_text_edit = self.dlg_flow_tt.te_1_pg2.toPlainText()
-                            linhas = linhas.slip('\n')
+                            linhas = linhas_text_edit.split('\n')
                             arquivo_txt.write(f'=> {linhas[0]}\n=> {linhas[1]}')
                             arquivo_txt.write('River drainage newtwork (RDN):\n')
                             arquivo_txt.write(f'=> {self.dlg_flow_tt.le_3_pg2.text()}\n')
@@ -2369,7 +2369,8 @@ class HidroPixel:
                 self.dlg_flow_tt.le_3_pg2.setText(str(values[4]))
                 self.dlg_flow_tt.le_4_pg2.setText(str(values[5]))
                 self.dlg_flow_tt.le_7_pg2.setText(str(values[6]))
-
+                # Atribui os valores do arquivo enviao a tabela em questão
+                sel
                 self.dlg_flow_tt.le_5_pg2.setText(str(values[7]))
                 self.dlg_flow_tt.le_6_pg2.setText(str(values[9]))
                 self.dlg_flow_tt.le_8_pg2.setText(str(values[8]))

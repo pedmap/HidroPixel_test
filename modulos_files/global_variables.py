@@ -109,13 +109,13 @@ class GlobalVariables:
         self.G = 0
         self.H = 0
         self.j = 0
-        self.resplist =0
+        self.resplist = 0
         self.cont = 0
         self.t = 0
         self.tt = 0
         self.Nusomax = 0
         self.maxdir = 0
-        self.Ntre = 100
+        self.Ntre = 0   
         self.metro = 0
         self.Ttreaux = 0
         self.casserioaux = 0

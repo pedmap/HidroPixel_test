@@ -556,6 +556,8 @@ class Test():
         # Atualiza variáveis globais
         self.global_vars.numcabe = self.numcabe
         self.global_vars.Ncabec = self.numcabeaux
+        self.fim = time.time()
+        print(self.fim - self.inicio)
         print('Passou numera_pix')
 
     def dist_drenagem(self):
@@ -566,7 +568,7 @@ class Test():
         self.pixeldren = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
         self.Difcota = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol)) 
         self.DECLIVpixjus = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
-        self.global_vars.lado = 1 
+        self.global_vars.lado = 1
         self.global_vars.diagonal = np.sqrt(2)
         a = 0
         # iterando sobre os elementos do arquivo raster
@@ -680,17 +682,20 @@ class Test():
         print('Passou dist_drenagem')
 
     def dist_trecho(self):
-        ''' Definir o objetivo da função'''
+        ''' Esta função determina o número dos diferentes trechos que existem na bacia hidrográfica estudada'''
         self.global_vars.numtre = 0
         self.global_vars.numtreauxmax = 0
+        self.global_vars.Ntre
+        self.global_vars.TREpix = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
         condicao1 = None
         
         #ARPlidar: loop para contar o número máximo de trechos 
-        for col in range(1, self.rdc_vars.ncol - 1):
-            for lin in range(1, self.rdc_vars.nlin - 1):
+        for col in range(1, self.rdc_vars.ncol):
+            for lin in range(1, self.rdc_vars.nlin):
 
                 # Ações realizadas apenas na região da bacia
                 if self.global_vars.bacia[lin][col] == 1:
+
                     # ARPlidar
                     if self.global_vars.numcabe[lin][col] > 0:
                         self.global_vars.numcabeaux = self.global_vars.numcabe[lin][col]
@@ -710,21 +715,24 @@ class Test():
                         self.global_vars.numtreaux2 = 1
 
                         while self.global_vars.caminho == 0:
-                            self.global_vars.diraux = self.global_vars.direcoes[lin][col]
+                            self.global_vars.diraux = self.global_vars.direcoes[self.global_vars.linaux][self.global_vars.colaux]
                             self.global_vars.linaux += self.global_vars.dlin[self.global_vars.diraux]
                             self.global_vars.colaux += self.global_vars.dcol[self.global_vars.diraux]
+
 
                             condicao1 = self.global_vars.usaux != self.global_vars.usosolo[self.global_vars.linaux][self.global_vars.colaux]
                             condicao2 = self.global_vars.dren[self.global_vars.linaux][self.global_vars.colaux] == 1
                            
                             if condicao1 or condicao2:
-                                # Mudou o uso do solo ou alcançou a rede de drengem, 
+                                # Mudou o uso do solo ou alcançou a rede de drenagem,
                                 # então terminou um trecho no píxel anterior
                                 self.global_vars.numtreaux += 1
+
                                 if self.global_vars.numtreaux > self.global_vars.numtreauxmax:
                                     self.global_vars.numtreauxmax = self.global_vars.numtreaux
+
                                 # ARPlidar: incluindo o teste da bacia
-                                condicao3 = self.global_vars.dren[self.global_vars.linaux][self.global_vars.colaux] == 1 or self.global_vars.bacia[self.global_vars.linaux][self.global_vars.colaux] == 1
+                                condicao3 = self.global_vars.dren[self.global_vars.linaux][self.global_vars.colaux] == 1 or self.global_vars.bacia[self.global_vars.linaux][self.global_vars.colaux] == 0
                                 if condicao3:
                                     self.global_vars.caminho = 1
                                 else:
@@ -742,8 +750,10 @@ class Test():
                                 self.global_vars.linaux2 = self.global_vars.linaux
                                 self.global_vars.colaux2 = self.global_vars.colaux
                                 self.global_vars.usaux = self.global_vars.usosolo[self.global_vars.linaux][self.global_vars.colaux]
-        
-        self.global_vars.Ntre = self.global_vars.numtreaux + 1
+        self.fim = time.time()
+        print(self.fim - self.inicio)
+        self.global_vars.Ntre = self.global_vars.numtreauxmax + 1
+
         # Percorrendo o caminho desde as cabeceiras e granvando as distâncias relativas de cada trecho de uso do solo contínuo
         self.global_vars.numtre = 0
         self.global_vars.refcabtre = 0
@@ -766,15 +776,16 @@ class Test():
 
                     # ARPdecliv
                     # Grava qual trecho o píxel em questão pertence
-                    self.global_vars.numtreaux2 = 1 
+                    self.global_vars.numtreaux2 = 1
                     self.global_vars.TREpix[self.global_vars.linaux2][self.global_vars.colaux2]
 
                     while self.global_vars.caminho == 0:
-                        self.global_vars.diraux = self.global_vars.direcoes[lin][col]
+                        self.global_vars.diraux = self.global_vars.direcoes[self.global_vars.linaux][self.global_vars.colaux]
                         self.global_vars.linaux += self.global_vars.dlin[self.global_vars.diraux]
                         self.global_vars.colaux += self.global_vars.dcol[self.global_vars.diraux]
 
                         if condicao1 or condicao2:
+                            '''Verificar as variáveis usadas, há incoerências'''
                             # Mudou o tipo de uso do solo ou alcançou a rede de drenagem,
                             # então terminou o trecho no píxel anterior
                             self.global_vars.numtreaux +=1
@@ -877,7 +888,7 @@ class Test():
                                 self.global_vars.usotre[self.global_vars.numcabeaux][self.global_vars.numcabeaux] = self.global_vars.usaux
 
                                 # ARPlidar: adiciona a bacia hidrográfica como uma condição
-                                if self.global_vars.dren[self.global_vars.linaux][self.global_vars.colaux] ==1 or self.global_vars.bacia[self.global_vars.linaux][self.global_vars.colaux] == 1:
+                                if self.global_vars.dren[self.global_vars.linaux][self.global_vars.colaux] ==1 or self.global_vars.bacia[self.global_vars.linaux][self.global_vars.colaux] == 0:
                                     self.global_vars.caminho = 1
                                 else:
                                     # Vai continuar o caminho, porém em um novo trecho
@@ -953,7 +964,7 @@ class Test():
                                 # então terminou um trecho no píxel anterior
                                 self.global_vars.numtreaux += 1
                                  # ARPlidar: adiciona a bacia hidrográfica como uma condição
-                                if self.global_vars.dren[self.global_vars.linaux][self.global_vars.colaux] ==1 or self.global_vars.bacia[self.global_vars.linaux][self.global_vars.colaux] == 1:
+                                if self.global_vars.dren[self.global_vars.linaux][self.global_vars.colaux] == 1 or self.global_vars.bacia[self.global_vars.linaux][self.global_vars.colaux] == 0:
                                     self.global_vars.caminho = 1
                                 else:
                                     # Vai continuar o caminho, porém em um novo trecho
@@ -1896,8 +1907,8 @@ cla_test.leh_precipitacao_24h()
 cla_test.leh_uso_do_solo()
 cla_test.leh_uso_manning()
 cla_test.numera_pixel()
-cla_test.comprimento_acumulado(1)
-cla_test.dist_drenagem()
+# cla_test.comprimento_acumulado(1)
+# cla_test.dist_drenagem()
 cla_test.dist_trecho()
 cla_test.tempo_canal()
 cla_test.tempo_sup()

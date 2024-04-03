@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>755</width>
+    <width>763</width>
     <height>649</height>
    </rect>
   </property>
@@ -66,7 +66,7 @@
         <item row="1" column="0">
          <widget class="QStackedWidget" name="pages_flow_tt">
           <property name="currentIndex">
-           <number>1</number>
+           <number>3</number>
           </property>
           <widget class="QWidget" name="pg1_config">
            <layout class="QGridLayout" name="gridLayout_4">
@@ -732,7 +732,7 @@
                <property name="geometry">
                 <rect>
                  <x>0</x>
-                 <y>-368</y>
+                 <y>0</y>
                  <width>676</width>
                  <height>878</height>
                 </rect>
@@ -1897,8 +1897,8 @@
                 <rect>
                  <x>0</x>
                  <y>0</y>
-                 <width>693</width>
-                 <height>510</height>
+                 <width>254</width>
+                 <height>64</height>
                 </rect>
                </property>
                <layout class="QGridLayout" name="gridLayout_30">
@@ -1946,7 +1946,7 @@
                 <rect>
                  <x>0</x>
                  <y>0</y>
-                 <width>693</width>
+                 <width>701</width>
                  <height>510</height>
                 </rect>
                </property>
@@ -2028,13 +2028,6 @@
                    </widget>
                   </item>
                   <item>
-                   <widget class="QPushButton" name="btn_close_pg4">
-                    <property name="text">
-                     <string>Close</string>
-                    </property>
-                   </widget>
-                  </item>
-                  <item>
                    <widget class="QPushButton" name="btn_run_2">
                     <property name="styleSheet">
                      <string notr="true">background-color: rgb(240, 240, 240);
@@ -2043,6 +2036,16 @@ color: rgb(0, 0, 0);
                     </property>
                     <property name="text">
                      <string>RUN</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QPushButton" name="btn_close_pg4">
+                    <property name="accessibleDescription">
+                     <string notr="true"/>
+                    </property>
+                    <property name="text">
+                     <string>CLOSE</string>
                     </property>
                    </widget>
                   </item>
@@ -2071,7 +2074,7 @@ color: rgb(0, 0, 0);
                       <item row="0" column="0">
                        <widget class="QLabel" name="label_57">
                         <property name="text">
-                         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;justify&quot;&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;Numering pixels part of the river drainage network:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;justify&quot;&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;Numering pixels part of the river drainage network (RDN):&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                         </property>
                        </widget>
                       </item>
@@ -2248,7 +2251,7 @@ color: rgb(0, 0, 0);
                       <item row="0" column="0">
                        <widget class="QLabel" name="label_59">
                         <property name="text">
-                         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;justify&quot;&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;Upstream flowpath length:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;justify&quot;&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;Upstream flow path length (m):&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                         </property>
                        </widget>
                       </item>
@@ -2290,7 +2293,7 @@ color: rgb(0, 0, 0);
                       <item row="0" column="0">
                        <widget class="QLabel" name="label_61">
                         <property name="text">
-                         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;justify&quot;&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;Downstream flowpath slope (m/m):&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;justify&quot;&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;Downstream flow path slope (m/m):&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                         </property>
                        </widget>
                       </item>
@@ -2407,7 +2410,7 @@ color: rgb(0, 0, 0);
                       <item row="0" column="0">
                        <widget class="QLabel" name="label_60">
                         <property name="text">
-                         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;justify&quot;&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;Downstream flowpath length:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;justify&quot;&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;Downstream flow path length (m):&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                         </property>
                        </widget>
                       </item>
@@ -2467,7 +2470,7 @@ color: rgb(0, 0, 0);
                       <item row="0" column="0">
                        <widget class="QLabel" name="label_63">
                         <property name="text">
-                         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;justify&quot;&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;Slope relative to downstream pixel:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;justify&quot;&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;Slope relative to downstream pixel (m/m):&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                         </property>
                        </widget>
                       </item>
