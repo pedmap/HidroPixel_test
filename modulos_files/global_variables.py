@@ -62,9 +62,6 @@ class GlobalVariables:
         self.cotafim = np.empty((0,0), dtype = np.float64)
         self.Stre = np.empty((0,0), dtype = np.float64)
         self.usotre = np.empty((0,0), dtype = np.float64)
-        self.Somaaux = np.empty((0,0), dtype = np.float64)
-        self.Somaauxpond = np.empty((0,0), dtype = np.float64)        
-        self.SomaauxDist = np.empty((0,0), dtype = np.float64)
         self.contaaux = np.empty((0,0), dtype = np.float64)
         
         # vector's declaration

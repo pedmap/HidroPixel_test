@@ -80,6 +80,7 @@ class RDCVariables:
         self.parax = 0.0
         self.paray = 0.0
         self.delta = 0.0
+        self.xmin = 0.0
         self.Xmin3 = 0.0
         self.Xmax3 = 0.0
         self.Ymin3 = 0.0

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>763</width>
-    <height>649</height>
+    <width>770</width>
+    <height>656</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -66,7 +66,7 @@
         <item row="1" column="0">
          <widget class="QStackedWidget" name="pages_flow_tt">
           <property name="currentIndex">
-           <number>3</number>
+           <number>0</number>
           </property>
           <widget class="QWidget" name="pg1_config">
            <layout class="QGridLayout" name="gridLayout_4">
@@ -87,8 +87,8 @@
                 <rect>
                  <x>0</x>
                  <y>0</y>
-                 <width>693</width>
-                 <height>480</height>
+                 <width>708</width>
+                 <height>487</height>
                 </rect>
                </property>
                <layout class="QGridLayout" name="gridLayout_5">
@@ -733,7 +733,7 @@
                 <rect>
                  <x>0</x>
                  <y>0</y>
-                 <width>676</width>
+                 <width>691</width>
                  <height>878</height>
                 </rect>
                </property>
@@ -1897,8 +1897,8 @@
                 <rect>
                  <x>0</x>
                  <y>0</y>
-                 <width>254</width>
-                 <height>64</height>
+                 <width>708</width>
+                 <height>517</height>
                 </rect>
                </property>
                <layout class="QGridLayout" name="gridLayout_30">
@@ -1946,8 +1946,8 @@
                 <rect>
                  <x>0</x>
                  <y>0</y>
-                 <width>701</width>
-                 <height>510</height>
+                 <width>708</width>
+                 <height>517</height>
                 </rect>
                </property>
                <layout class="QGridLayout" name="gridLayout_48">
@@ -1989,7 +1989,7 @@
                     <item>
                      <widget class="QLabel" name="label_64">
                       <property name="text">
-                       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;justify&quot;&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Open file after executuion:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;justify&quot;&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Open file after execution:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                       </property>
                      </widget>
                     </item>
@@ -1997,6 +1997,9 @@
                      <widget class="QRadioButton" name="rb_1_pg4">
                       <property name="text">
                        <string/>
+                      </property>
+                      <property name="checkable">
+                       <bool>false</bool>
                       </property>
                      </widget>
                     </item>
@@ -2074,7 +2077,7 @@ color: rgb(0, 0, 0);
                       <item row="0" column="0">
                        <widget class="QLabel" name="label_57">
                         <property name="text">
-                         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;justify&quot;&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;Numering pixels part of the river drainage network (RDN):&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;justify&quot;&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;Numbering pixels part of the river drainage network (RDN):&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                         </property>
                        </widget>
                       </item>
@@ -2144,26 +2147,6 @@ color: rgb(0, 0, 0);
                     </item>
                     <item>
                      <layout class="QGridLayout" name="gridLayout_58">
-                      <item row="0" column="0">
-                       <widget class="QLabel" name="label_58">
-                        <property name="text">
-                         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;justify&quot;&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;Areas draining directly to each pixel of the RDN:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                        </property>
-                       </widget>
-                      </item>
-                      <item row="0" column="1">
-                       <widget class="QLineEdit" name="le_2_pg4">
-                        <property name="maximumSize">
-                         <size>
-                          <width>220</width>
-                          <height>24</height>
-                         </size>
-                        </property>
-                        <property name="clearButtonEnabled">
-                         <bool>true</bool>
-                        </property>
-                       </widget>
-                      </item>
                       <item row="0" column="3">
                        <widget class="QLabel" name="label_51">
                         <property name="sizePolicy">
@@ -2202,6 +2185,26 @@ color: rgb(0, 0, 0);
                         </property>
                        </widget>
                       </item>
+                      <item row="0" column="0">
+                       <widget class="QLabel" name="label_58">
+                        <property name="text">
+                         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;justify&quot;&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;Areas draining directly to each pixel of the RDN:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                        </property>
+                       </widget>
+                      </item>
+                      <item row="0" column="1">
+                       <widget class="QLineEdit" name="le_2_pg4">
+                        <property name="maximumSize">
+                         <size>
+                          <width>220</width>
+                          <height>24</height>
+                         </size>
+                        </property>
+                        <property name="clearButtonEnabled">
+                         <bool>true</bool>
+                        </property>
+                       </widget>
+                      </item>
                      </layout>
                     </item>
                    </layout>
@@ -2217,6 +2220,20 @@ color: rgb(0, 0, 0);
                     </item>
                     <item>
                      <layout class="QGridLayout" name="gridLayout_50">
+                      <item row="0" column="2">
+                       <widget class="QToolButton" name="tbtn_pg4_3">
+                        <property name="text">
+                         <string>...</string>
+                        </property>
+                       </widget>
+                      </item>
+                      <item row="0" column="0">
+                       <widget class="QLabel" name="label_59">
+                        <property name="text">
+                         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;justify&quot;&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;Upstream flow path length (m):&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                        </property>
+                       </widget>
+                      </item>
                       <item row="0" column="3">
                        <widget class="QLabel" name="label_52">
                         <property name="sizePolicy">
@@ -2248,13 +2265,6 @@ color: rgb(0, 0, 0);
                         </property>
                        </widget>
                       </item>
-                      <item row="0" column="0">
-                       <widget class="QLabel" name="label_59">
-                        <property name="text">
-                         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;justify&quot;&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;Upstream flow path length (m):&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                        </property>
-                       </widget>
-                      </item>
                       <item row="0" column="1">
                        <widget class="QLineEdit" name="le_3_pg4">
                         <property name="maximumSize">
@@ -2265,13 +2275,6 @@ color: rgb(0, 0, 0);
                         </property>
                         <property name="clearButtonEnabled">
                          <bool>true</bool>
-                        </property>
-                       </widget>
-                      </item>
-                      <item row="0" column="2">
-                       <widget class="QToolButton" name="tbtn_pg4_3">
-                        <property name="text">
-                         <string>...</string>
                         </property>
                        </widget>
                       </item>
@@ -2290,10 +2293,10 @@ color: rgb(0, 0, 0);
                     </item>
                     <item>
                      <layout class="QGridLayout" name="gridLayout_52">
-                      <item row="0" column="0">
-                       <widget class="QLabel" name="label_61">
+                      <item row="0" column="2">
+                       <widget class="QToolButton" name="tbtn_pg4_4">
                         <property name="text">
-                         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;justify&quot;&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;Downstream flow path slope (m/m):&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                         <string>...</string>
                         </property>
                        </widget>
                       </item>
@@ -2328,6 +2331,13 @@ color: rgb(0, 0, 0);
                         </property>
                        </widget>
                       </item>
+                      <item row="0" column="0">
+                       <widget class="QLabel" name="label_61">
+                        <property name="text">
+                         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;justify&quot;&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;Downstream flow path slope (m/m):&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                        </property>
+                       </widget>
+                      </item>
                       <item row="0" column="1">
                        <widget class="QLineEdit" name="le_4_pg4">
                         <property name="maximumSize">
@@ -2338,13 +2348,6 @@ color: rgb(0, 0, 0);
                         </property>
                         <property name="clearButtonEnabled">
                          <bool>true</bool>
-                        </property>
-                       </widget>
-                      </item>
-                      <item row="0" column="2">
-                       <widget class="QToolButton" name="tbtn_pg4_4">
-                        <property name="text">
-                         <string>...</string>
                         </property>
                        </widget>
                       </item>
@@ -2363,16 +2366,17 @@ color: rgb(0, 0, 0);
                     </item>
                     <item>
                      <layout class="QGridLayout" name="gridLayout_57">
-                      <item row="0" column="1">
-                       <widget class="QLineEdit" name="le_5_pg4">
-                        <property name="maximumSize">
-                         <size>
-                          <width>220</width>
-                          <height>24</height>
-                         </size>
+                      <item row="0" column="2">
+                       <widget class="QToolButton" name="tbtn_pg4_5">
+                        <property name="text">
+                         <string>...</string>
                         </property>
-                        <property name="clearButtonEnabled">
-                         <bool>true</bool>
+                       </widget>
+                      </item>
+                      <item row="0" column="0">
+                       <widget class="QLabel" name="label_60">
+                        <property name="text">
+                         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;justify&quot;&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;Downstream flow path length (m):&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                         </property>
                        </widget>
                       </item>
@@ -2407,17 +2411,16 @@ color: rgb(0, 0, 0);
                         </property>
                        </widget>
                       </item>
-                      <item row="0" column="0">
-                       <widget class="QLabel" name="label_60">
-                        <property name="text">
-                         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;justify&quot;&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;Downstream flow path length (m):&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                      <item row="0" column="1">
+                       <widget class="QLineEdit" name="le_5_pg4">
+                        <property name="maximumSize">
+                         <size>
+                          <width>220</width>
+                          <height>24</height>
+                         </size>
                         </property>
-                       </widget>
-                      </item>
-                      <item row="0" column="2">
-                       <widget class="QToolButton" name="tbtn_pg4_5">
-                        <property name="text">
-                         <string>...</string>
+                        <property name="clearButtonEnabled">
+                         <bool>true</bool>
                         </property>
                        </widget>
                       </item>

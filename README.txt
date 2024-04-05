@@ -4,8 +4,10 @@ PENDÊNCIAS
 -> Configurar funções para ler e armazenar valores DIGITADOS nas tabelas (OK)
 -> Configurar o botão save and read to file das páginas(OK)
 -> Configurar tool buttons da pagina de run (OK)
--> Quando o usuário ler os arquivo da página de input data, o programa deve ler a tabela enviada (pensado: adptar função read_tb_from_file)
--> Configurar radio button para adicionar o arquivo processado ao QGIS (sabido, falta construir a função: ver lixeira)
--> Salvar arquivos (escrever...) em uma pasta forncecida ou na work folder
--> Configurar os 'check box' para selecionar quais arquivos serão gerados, função run
--> Corrigir o erro na rotina dist trecho (pacialmente feito)
+-> Quando o usuário ler os arquivo da página de input data, o programa deve ler a tabela enviada (_)
+-> Configurar radio button para adicionar o arquivo processado ao QGIS (sabido, falta construir a função: ver lixeira; Após dúvida)
+-> Configurar os 'check box' para selecionar quais arquivos serão gerados, função run (Apenas outputs)
+-> Para a linha 2733: criar uma lista com todas as lineEdits e verificar se uma delas foi modificada
+-> Salvar arquivos (escrever...) em uma pasta forncecida ou na work folder 
+-> Programa corrigido (OK)
+-> Configurar função run: erro nos arquivos
