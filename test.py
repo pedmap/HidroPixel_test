@@ -416,7 +416,8 @@ class Test():
         return dist2
 
     def comprimento_acumulado(self,lado):
-        """Definir objetivo da função"""
+        """Esta função determina o comprimento dos pixels que fazem partes da rede de drenagem da bacia hidrográfica. Da cabeceira ao exutório em questão"""
+
         self.Lfoz = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol), dtype=np.float64)
         self.Lac = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol), dtype=np.float64)
         self.global_vars.lado = lado
@@ -701,7 +702,7 @@ class Test():
 
                     # ARPlidar
                     if self.global_vars.numcabe[lin][col] > 0:
-                        self.global_vars.numcabeaux = self.global_vars.numcabe[lin][col]
+                        self.global_vars.numcabeaux = int(self.global_vars.numcabe[lin][col])
                         self.global_vars.linaux = lin
                         self.global_vars.colaux = col
                         self.global_vars.linaux2 = lin
@@ -760,16 +761,16 @@ class Test():
         # Percorrendo o caminho desde as cabeceiras e granvando as distâncias relativas de cada trecho de uso do solo contínuo
 
         # Redimenciona variáveis necessárias
-        self.global_vars.cotaini = np.zeros((self.global_vars.numcabeaux,self.global_vars.Ntre))
-        self.global_vars.cotafim = np.zeros((self.global_vars.numcabeaux,self.global_vars.Ntre))
-        self.global_vars.Ltre = np.zeros((self.global_vars.numcabeaux,self.global_vars.Ntre))
-        self.global_vars.Stre = np.zeros((self.global_vars.numcabeaux,self.global_vars.Ntre))
-        self.global_vars.usotre = np.zeros((self.global_vars.numcabeaux,self.global_vars.Ntre))
-        self.global_vars.DISTult = np.zeros((self.global_vars.numcabeaux,self.global_vars.Ntre))
-        self.global_vars.refcabtre  = np.zeros((self.rdc_vars.nlin,self.rdc_vars.ncol))
-        self.global_vars.DISTtre  = np.zeros((self.rdc_vars.nlin,self.rdc_vars.ncol))
-        self.global_vars.DECLIVpix  = np.zeros((self.rdc_vars.nlin,self.rdc_vars.ncol))
-        self.global_vars.CABEpix = np.zeros((self.rdc_vars.nlin,self.rdc_vars.ncol))
+        self.global_vars.cotaini = np.reshape(self.global_vars.cotaini, (self.global_vars.numcabeaux,self.global_vars.Ntre))
+        self.global_vars.cotafim = np.reshape(self.global_vars.cotafim,(self.global_vars.numcabeaux,self.global_vars.Ntre))
+        self.global_vars.Ltre = np.reshape(self.global_vars.Ltre, (self.global_vars.numcabeaux,self.global_vars.Ntre))
+        self.global_vars.Stre = np.reshape(self.global_vars.Stre(self.global_vars.numcabeaux,self.global_vars.Ntre))
+        self.global_vars.usotre = np.reshape(self.global_vars.usotre,(self.global_vars.numcabeaux,self.global_vars.Ntre))
+        self.global_vars.DISTult = np.reshape(self.global_vars.DISTult,(self.global_vars.numcabeaux,self.global_vars.Ntre))
+        self.global_vars.refcabtre  = np.reshape(self.global_vars.refcabtre,(self.rdc_vars.nlin,self.rdc_vars.ncol))
+        self.global_vars.DISTtre  = np.reshape(self.global_vars.DISTtre, (self.rdc_vars.nlin,self.rdc_vars.ncol))
+        self.global_vars.DECLIVpix  = np.reshape(self.global_vars.DECLIVpix, (self.rdc_vars.nlin,self.rdc_vars.ncol))
+        self.global_vars.CABEpix = np.reshape(self.global_vars.CABEpix, (self.rdc_vars.nlin,self.rdc_vars.ncol))
 
 
         # Continua o cálculo dos trechos
@@ -777,7 +778,7 @@ class Test():
             for lin in range(self.rdc_vars.nlin):
                 # Verificando os elementos da região da bacia
                 if self.global_vars.numcabe[lin][col] > 0:
-                    self.global_vars.numcabeaux = self.global_vars.numcabe[lin][col]
+                    self.global_vars.numcabeaux = int(self.global_vars.numcabe[lin][col])
                     self.global_vars.linaux = lin
                     self.global_vars.colaux = col
                     self.global_vars.linaux2 = lin
@@ -861,7 +862,7 @@ class Test():
                 if self.global_vars.bacia[lin][col] == 1:
                     # ARPlidar
                     if self.global_vars.numcabe[lin][col] > 0:
-                        self.global_vars.numcabeaux = self.global_vars.numcabe[lin][col]
+                        self.global_vars.numcabeaux = int(self.global_vars.numcabe[lin][col])
                         self.global_vars.linaux = lin
                         self.global_vars.colaux = col
                         self.global_vars.linaux2 = lin
@@ -1148,7 +1149,7 @@ class Test():
         for lin in range(self.rdc_vars.nlin):
             for col in range(self.global_vars):
                 if self.global_vars.numcabe[lin][col] > 0:
-                    self.global_vars.numcabeaux = self.global_vars.numcabe[lin][col]
+                    self.global_vars.numcabeaux = int(self.global_vars.numcabe[lin][col])
                     self.global_vars.lincabe[self.global_vars.numcabeaux] = lin
                     self.global_vars.colcabe[self.global_vars.numcabeaux] = col
 
@@ -1176,7 +1177,7 @@ class Test():
             for col in range(self.rdc_vars.ncol):
                 # As ações são baseadas na região da bacia hidrográfica
                 if self.global_vars.bacia[lin][col] == 1:
-                    self.global_vars.numcabeaux = self.global_vars.CABEpix[lin][col]
+                    self.global_vars.numcabeaux = int(self.global_vars.CABEpix[lin][col])
                     self.global_vars.Taux = 0
 
                     # Verificando se o píxel é válido; executando cabeceiras

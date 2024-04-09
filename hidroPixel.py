@@ -419,8 +419,12 @@ class HidroPixel:
         # - E  D  C                 8  4  2               16   8   4 -
 
         # Recebendo os arquivos necessários: função run
-        if self.rdc_vars.nomeRDC and self.rdc_vars.nomeRST:
+        linhas_text_edit = self.dlg_flow_tt.te_1_pg2.toPlainText()
+        linhas = linhas_text_edit.split('\n')
+        self.rdc_vars.nomeRDC = linhas[0]
+        self.rdc_vars.nomeRST = linhas[1]
 
+        if self.rdc_vars.nomeRDC !='' and self.rdc_vars.nomeRST !='':
             # Verificando a extensão do arquivo: ordem de leitura, 1st o arquivo rdc
             exten1 = Path(self.rdc_vars.nomeRDC).suffix.lower()
             exten2 = Path(self.rdc_vars.nomeRST).suffix.lower()
@@ -684,12 +688,13 @@ class HidroPixel:
 
         return dist2
 
-    def comprimento_acumulado(self,lado):
-        """Esta função calcula o comprimento acumulado da rede de drenagem, ou seja, dos diferentes cursos d'água presentes na bacia hidrográfica."""
+    def comprimento_acumulado(self):
+        """Esta função determina o comprimento dos pixels que fazem partes da rede de drenagem da bacia hidrográfica. Da cabeceira ao exutório em questão"""
+
         self.Lfoz = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol), dtype=np.float64)
         self.Lac = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol), dtype=np.float64)
-        self.global_vars.lado = lado
-        self.global_vars.diagonal = lado*np.sqrt(2.0)
+        self.global_vars.lado = float(self.dlg_flow_tt.le_3_pg1.text())
+        self.global_vars.diagonal = float(self.dlg_flow_tt.le_4_pg1.text())
         
         # Iniciando a iteração para varrer todos os elementos da bacia hidrográfica
         for col in range(self.rdc_vars.ncol):
@@ -773,7 +778,6 @@ class HidroPixel:
                         # Atulizando a variável lfoz
                         self.Lfoz[lin, col] = self.global_vars.tamfoz
                         
-
     def numera_pixel(self):
         '''
         Esta função enumera os píxels presentes na rede de drenagem
@@ -792,8 +796,8 @@ class HidroPixel:
         self.contadren[pix_bacia_e_dren] = self.rdc_vars.cont
 
         pixel_dren = np.where(self.global_vars.dren == 1)
-        self.lincontadren = np.array(pixel_dren[0])
-        self.colcontadren = np.array(pixel_dren[1])
+        self.global_vars.lincontadren = np.array(pixel_dren[0])
+        self.global_vars.colcontadren = np.array(pixel_dren[1])
 
 
         # Numeração dos píxels internos a bacia: São chamados de cabeceira, pois o caminho do fluxo é iniciado a partir de cada um deles
@@ -823,7 +827,9 @@ class HidroPixel:
 
         # Atualiza variáveis globais
         self.global_vars.numcabe = self.numcabe
-        self.global_vars.Ncabec = self.numcabeaux
+
+        # JVD: redundancia de variáveis, Ncabe = numcabeaux
+        self.global_vars.numcabeaux = self.numcabeaux
 
     def dist_drenagem(self):
         """Esta funçao determina a distância incremental percorrida pela água na rede de drenagem,
@@ -928,12 +934,12 @@ class HidroPixel:
                                         self.global_vars.Streaux = self.DECLIVpixjus[self.global_vars.linaux2][self.global_vars.colaux2]
                                         self.global_vars.Ltreaux = self.global_vars.Lincr
                                         self.global_vars.usaux = self.global_vars.usosolo[self.global_vars.linaux2][self.global_vars.colaux2]
-                                        self.global_vars.Smin = 10 #em m/km
+                                        self.global_vars.Smin = float(self.dlg_flow_tt.le_1_pg1.text()) #em m/km
 
                                         if self.global_vars.Streaux < self.global_vars.Smin:
                                             self.global_vars.Streaux = self.global_vars.Smin
                                         
-                                        self.global_vars.Smax = 600 #em m/km
+                                        self.global_vars.Smax = float(self.dlg_flow_tt.le_2_pg1.text()) #em m/km
                                         if self.global_vars.Streaux > self.global_vars.Smax:
                                             self.global_vars.Streaux = self.global_vars.Smax
 
@@ -946,6 +952,7 @@ class HidroPixel:
 
     def dist_trecho(self):
         ''' Esta função determina o número dos diferentes trechos que existem na bacia hidrográfica estudada'''
+
         self.global_vars.numtreauxmax = 0
         self.global_vars.TREpix = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
         condicao1 = None
@@ -1011,6 +1018,8 @@ class HidroPixel:
                                 self.global_vars.linaux2 = self.global_vars.linaux
                                 self.global_vars.colaux2 = self.global_vars.colaux
                                 self.global_vars.usaux = self.global_vars.usosolo[self.global_vars.linaux][self.global_vars.colaux]
+
+        self.global_vars.Ntre = self.global_vars.numtreauxmax + 1
 
         # Percorrendo o caminho desde as cabeceiras e granvando as distâncias relativas de cada trecho de uso do solo contínuo
 
@@ -1273,7 +1282,7 @@ class HidroPixel:
                                 # ARPdecliv: para a média ponderada
                                 self.global_vars.Somaauxpond[self.global_vars.numcabeaux][self.global_vars.numtreaux2] += self.global_vars.DECLIVpix[self.global_vars.linaux][self.global_vars.colaux] * self.global_vars.DISTtre[self.global_vars.linaux][self.global_vars.colaux]
                                 self.global_vars.SomaauxDist[self.global_vars.numcabeaux][self.global_vars.numtreaux2] += self.global_vars.DISTtre[self.global_vars.linaux][self.global_vars.colaux]
-                        
+                                  
     def tempo_canal(self):
         '''
         Esta função é responsável por determinar o tempo de viagem/concentração da água da foz até o exutório da bacia hidrográfica
@@ -2249,23 +2258,23 @@ class HidroPixel:
                             arquivo_txt.write('\n')
                             arquivo_txt.write('Watershed delineation:\n')
                             arquivo_txt.write(f'=> {self.dlg_flow_tt.le_1_pg2.text()}\n')
-                            arquivo_txt.write('Digital elevation model:\n')
+                            arquivo_txt.write('\nDigital elevation model:\n')
                             arquivo_txt.write(f'=> {self.dlg_flow_tt.le_2_pg2.text()}\n')
-                            arquivo_txt.write('Flow direction (RDC and RST):\n')
+                            arquivo_txt.write('\nFlow direction (RDC and RST):\n')
                             linhas_text_edit = self.dlg_flow_tt.te_1_pg2.toPlainText()
                             linhas = linhas_text_edit.split('\n')
-                            arquivo_txt.write(f'=> {linhas[0]}\n=> {linhas[1]}')
-                            arquivo_txt.write('River drainage newtwork (RDN):\n')
+                            arquivo_txt.write(f'=> {linhas[0]}\n=> {linhas[1]}\n')
+                            arquivo_txt.write('\nRiver drainage newtwork (RDN):\n')
                             arquivo_txt.write(f'=> {self.dlg_flow_tt.le_3_pg2.text()}\n')
-                            arquivo_txt.write('RDN segmentation into classes:\n')
+                            arquivo_txt.write('\nRDN segmentation into classes:\n')
                             arquivo_txt.write(f'=> {self.dlg_flow_tt.le_4_pg2.text()}\n')
-                            arquivo_txt.write('Characteristics of RDN classes:\n')
+                            arquivo_txt.write('\nCharacteristics of RDN classes:\n')
                             arquivo_txt.write(f'=> {self.dlg_flow_tt.le_7_pg2.text()}\n')
-                            arquivo_txt.write('Land use or land corver (LULC) map:\n')
+                            arquivo_txt.write('\nLand use or land corver (LULC) map:\n')
                             arquivo_txt.write(f'=> {self.dlg_flow_tt.le_5_pg2.text()}\n')
-                            arquivo_txt.write('Manning roughness coeficient for each LULC:\n')
+                            arquivo_txt.write('\nManning roughness coeficient for each LULC:\n')
                             arquivo_txt.write(f'=> {self.dlg_flow_tt.le_8_pg2.text()}\n')
-                            arquivo_txt.write('Rainfall depth for 24-h duration:\n')
+                            arquivo_txt.write('\nRainfall depth for 24-h duration (mm):\n')
                             arquivo_txt.write(f'=> {self.dlg_flow_tt.le_6_pg2.text()}\n')
                 else:
                     # Caso o usuário não selecione um arquivo
@@ -2373,7 +2382,7 @@ class HidroPixel:
                 self.dlg_flow_tt.le_1_pg2.setText(str(values[0]))
                 self.dlg_flow_tt.le_2_pg2.setText(str(values[1]))
                 self.dlg_flow_tt.te_1_pg2.setPlainText(str(values[2]))
-                self.dlg_flow_tt.te_1_pg2.append(f'\n{str(values[3])}')
+                self.dlg_flow_tt.te_1_pg2.append(str(values[3]))
                 self.dlg_flow_tt.le_3_pg2.setText(str(values[4]))
                 self.dlg_flow_tt.le_4_pg2.setText(str(values[5]))
                 self.dlg_flow_tt.le_7_pg2.setText(str(values[6]))
@@ -2737,12 +2746,38 @@ class HidroPixel:
 
     def close_gui(self):
         '''Está função é usada para torna nulo (limpar) as informações adicionadas nos diferentes objetos da janela flow travel time'''
-        # Verifica se o botão de salvar foi clicado: modifica a execução da função close
+        # Verifica se o botão de salvar foi clicado, ou se alguma lineEdit sobre alteração: modifica a execução da função close
+        line_edit_list = [
+            self.dlg_flow_tt.le_1_pg1.text(),
+            self.dlg_flow_tt.le_2_pg1.text(),
+            self.dlg_flow_tt.le_5_pg1.text(),
+            self.dlg_flow_tt.le_6_pg1.text(),
+            self.dlg_flow_tt.le_7_pg1.text(),
+            self.dlg_flow_tt.le_8_pg1.text(),
+            self.dlg_flow_tt.le_9_pg1.text(),
+            self.dlg_flow_tt.le_10_pg1.text(),
+            self.dlg_flow_tt.le_11_pg1.text(),
+            self.dlg_flow_tt.le_12_pg1.text(),
+            self.dlg_flow_tt.le_13_pg1.text(),
+            self.dlg_flow_tt.le_1_pg2.text(),
+            self.dlg_flow_tt.le_2_pg2.text(),
+            self.dlg_flow_tt.le_3_pg2.text(),
+            self.dlg_flow_tt.le_4_pg2.text(),
+            self.dlg_flow_tt.le_5_pg2.text(),
+            self.dlg_flow_tt.le_6_pg2.text(),
+            self.dlg_flow_tt.le_7_pg2.text(),
+            self.dlg_flow_tt.le_8_pg2.text(),
+            self.dlg_flow_tt.le_1_pg4.text(),
+            self.dlg_flow_tt.le_2_pg4.text(),
+            self.dlg_flow_tt.le_3_pg4.text(),
+            self.dlg_flow_tt.le_4_pg4.text(),
+            self.dlg_flow_tt.le_5_pg4.text(),
+            self.dlg_flow_tt.le_6_pg4.text(),
+            self.dlg_flow_tt.le_7_pg4.text()
+        ]
 
-        if self.save_result == True or self.le_edited == False:
-            self.dlg_flow_tt.close()
-
-        else:
+        # Verifica se algum elemento da lista de line_edits foi modificado
+        if any(item != '' for item in line_edit_list) and  self.dlg_flow_tt.isVisible():
             while True:
 
                 result = "Wait! You did not save your changes. Are you sure you want to close?"
@@ -2804,11 +2839,15 @@ class HidroPixel:
                                 item.setText('')
 
                     self.dlg_flow_tt.close()
-                    break
-        # Atualiza as variáveis para a condição de salvamento
-        self.save_result = False
-        self.le_edited = False
-            
+
+                # Atualiza as variáveis para a condição de salvamento
+                self.save_result = False
+                self.le_edited = False
+                break
+
+        # Se não houver moficações nos objetos do plugin, a janela será fechada normalmente
+        else:
+            self.dlg_flow_tt.close()
 
     def clear_table(self,table,lineEdit):
         '''Esta função limpa os valores armazenados na respectiva tabela'''
@@ -2825,16 +2864,11 @@ class HidroPixel:
         # Limpa a lineEdit
         lineEdit.clear()
 
-    def changed(self):
-        '''Esta função modifica a condição da variável le_edited referenciando a modificação da line edit,
-           verifica condição de salvamento;
-           Se le_changed == True => bloqueia o fechamento direto da página
-           se le_changed == False => fecha a página diretamente '''
-        self.le_edited = True
-
     def logging_run_page(self):
         '''Está função ativa a página de log e configura a ordem de execução das funções para o cálculo do tempo de viagem'''
-        # Limpa as informações passadas no text_edit
+        # Ativiva a página de log e limpa as informações passadas no text_edit 
+        mensagem_log = None
+        self.dlg_flow_tt.pg_log_ftt.setEnabled(True)
         self.dlg_flow_tt.te_logg.clear()
 
         # Cria condição de parada da execução: se o usuário clicar no botão cancel da página de log
@@ -2864,7 +2898,7 @@ class HidroPixel:
             if any(item == '' for item in duplicate):
                 self.dlg_flow_tt.pages_flow_tt.setCurrentIndex(0)
                 # Vefica se os códigos das diferções de drenagem foram corretamente enviados
-                QMessageBox.warning(self.dlg_flow_tt, 'Warning', f"Direction codes might not None.")
+                QMessageBox.warning(self.dlg_flow_tt, 'Warning', "Direction codes might not None.")
                 return
 
             elif duplicate and all(item != '' for item in duplicate):
@@ -2872,8 +2906,8 @@ class HidroPixel:
                 # O usuário enviou 2 valores semelhantes, será mostrado uma mensagem de erro
                 QMessageBox.warning(self.dlg_flow_tt, 'Warning', f"The value(s) '{duplicate}' is(are) (a) duplicate(s)! Direction codes do not accept duplicates.")
                 return
+                
             else:
-
                 # Se não existir erros nas informações enviadas, será mostrada a página de log e o programa será executado
                 self.dlg_flow_tt.tabWidget.setCurrentIndex(1)
                 self.dlg_flow_tt.pg_par_ftt.setEnabled(False)
@@ -2887,19 +2921,20 @@ class HidroPixel:
 
                 # Configura as informações do textEdit da referida página
                 datatime_started = datetime.now().isoformat()
-                mensagem_log1 = f"The plugin was developed with:\n"
+                mensagem_log1 = "The plugin was developed with:\n"
                 mensagem_log1 += f"QGIS Version: {version_info['QGIS Version']}\n"
                 mensagem_log1 += f"Qt Version: {version_info['Qt Version']}\n"
                 mensagem_log1 += f"Python Version: {version_info['Python Version']}\n"
                 mensagem_log1 += f"GDAL Version: {version_info['GDAL Version']}\n"
                 mensagem_log1 += "--------------------------------------------------------\n"
                 mensagem_log1 += f"Algorithm started at: {datatime_started}\n"
+                mensagem_log1 += "--------------------------------------------------------\n"
 
                 # Adiciona as mensagem de log ao text edit e configura a função run
                 self.dlg_flow_tt.te_logg.append(mensagem_log1)
 
                 # ---Entradas---
-                mensagem_log = f"READING INPUT FILES...\n"
+                mensagem_log = "READING INPUT FILES...\n"
                 self.leh_bacia()
                 self.leh_direcoes_de_fluxo()
                 self.leh_modelo_numerico_dTerreno()
@@ -2918,7 +2953,7 @@ class HidroPixel:
                 self.leh_precipitacao_24h()
 
                 # ---Cálculos---
-                mensagem_log = f'PROCESSING...\n'
+                mensagem_log = 'PROCESSING...\n'
                 self.dlg_flow_tt.te_logg.append(mensagem_log)
                 if self.global_vars.unidaderef3 == 'deg':
                     # sistema em graus, assumindo latlong
@@ -2929,158 +2964,167 @@ class HidroPixel:
                     # caso contrário (se metro=0), assume que está graus e faz projeção para metros
                     self.global_vars.metro = 1
 
-                mensagem_log = f'Processing NumeraPix...\n'
+                mensagem_log = 'Processing NumeraPix...\n'
                 self.dlg_flow_tt.te_logg.append(mensagem_log)
                 self.numera_pixel()
 
-                mensagem_log = f'Processing DistDren...\n' 
-                self.dlg_flow_tt.te_logg.append(mensagem_log)
-                self.dist_drenagem()
+                # mensagem_log = 'Processing DistDren...\n' 
+                # self.dlg_flow_tt.te_logg.append(mensagem_log)
+                # self.dist_drenagem()
                 
-                if self.global_vars.tipo_decliv == 4:
-                    self.escreve_decliv_pixel_jus()
-                mensagem_log = f'Processing DistTrecho...\n'
-                self.dlg_flow_tt.te_logg.append(mensagem_log)
-                self.dist_trecho()
-                # self.escreve_declivi_pixel()
+                # if self.global_vars.tipo_decliv == 4:
+                #     self.escreve_decliv_pixel_jus()
+                # mensagem_log = 'Processing DistTrecho...\n'
+                # self.dlg_flow_tt.te_logg.append(mensagem_log)
+                # self.dist_trecho()
+                # # self.escreve_declivi_pixel()
 
-                mensagem_log = f'Processing TempoSup...\n'
-                self.dlg_flow_tt.te_logg.append(mensagem_log)
-                self.tempo_sup()
-                # self.escreve_tre_cabec()
-                # self.escreve_num_trechos()
-                # self.escreve_dist_rel_trechos()
+                # mensagem_log = 'Processing TempoSup...\n'
+                # self.dlg_flow_tt.te_logg.append(mensagem_log)
+                # self.tempo_sup()
+                # # self.escreve_tre_cabec()
+                # # self.escreve_num_trechos()
+                # # self.escreve_dist_rel_trechos()
 
-                mensagem_log = f'Processing ComprimAcu...\n'
-                self.dlg_flow_tt.te_logg.append(mensagem_log)
-                self.comprimento_acumulado(1)
+                # mensagem_log = 'Processing ComprimAcu...\n'
+                # self.dlg_flow_tt.te_logg.append(mensagem_log)
+                # self.comprimento_acumulado(1)
 
-                mensagem_log = f'Processing TempoCanal...\n'
-                self.dlg_flow_tt.te_logg.append(mensagem_log)
-                self.tempo_canal()
+                # mensagem_log = 'Processing TempoCanal...\n'
+                # self.dlg_flow_tt.te_logg.append(mensagem_log)
+                # self.tempo_canal()
 
-                mensagem_log = f'Processig TempoTotal...\n'
-                self.dlg_flow_tt.te_logg.append(mensagem_log)
-                self.tempo_total()
+                # mensagem_log = 'Processig TempoTotal...\n'
+                # self.dlg_flow_tt.te_logg.append(mensagem_log)
+                # self.tempo_total()
 
-                # Saídas
-                mensagem_log = f'WRITING OUTPUT FILES...\n'
-                self.dlg_flow_tt.te_logg.append(mensagem_log)
-                # self.escreve_num_pix_cabec()
-                # self.escreve_num_pix_drenagem()
-                # self.escreve_conectividade()
+                # # Saídas
+                # mensagem_log = 'WRITING OUTPUT FILES...\n'
+                # self.dlg_flow_tt.te_logg.append(mensagem_log)
+                # # self.escreve_num_pix_cabec()
+                # # self.escreve_num_pix_drenagem()
+                # # self.escreve_conectividade()
                 
-                if self.global_vars.tipo_decliv == 4:
-                    self.escreve_tempo_sup()
+                # if self.global_vars.tipo_decliv == 4:
+                #     self.escreve_tempo_sup()
                 
-                # self.escreve_comprimento_acumulado()
-                # self.escreve_tempo_canal()
-                # self.escreve_tempo_total()
+                # # self.escreve_comprimento_acumulado()
+                # # self.escreve_tempo_canal()
+                # # self.escreve_tempo_total()
 
-                if self.global_vars.tipo_decliv == 4:
-                    self.escreve_TS_pix_acum()
+                # if self.global_vars.tipo_decliv == 4:
+                #     self.escreve_TS_pix_acum()
 
                 # Adiciona as informação ao text edit
-                self.dlg_flow_tt.te_logg.append(mensagem_log)
+                # self.dlg_flow_tt.te_logg.append(mensagem_log)
+                QMessageBox.information(None, "Information", "Operation completed successfully")
+                self.run_condicao = False
+                break
 
     def cancel_log_page(self):
         '''Esta função configura o botão de cancelar da página de log'''
-        # Escreve a mensagem de pausa no text edit da página de log
-        mansage_log = f'Attention!\nStoping FLOW TRAVEL TIME process...'
+        mensagem_log = None
+        # Cria texto formatado para adicionar ao text edit? mensagem de aviso
+        mensagem_log = '<font>Attention: stopping FLOW TRAVEL TIME process...</font>'
+
+        # Adiciona o texto formatado no QTextEdit
+        self.dlg_flow_tt.te_logg.insertHtml(mensagem_log)
 
         # Reativa a página de parametros
         self.dlg_flow_tt.pg_par_ftt.setEnabled(True)
 
-        # Para a função logging run page
-        self.run_condicao = False
+        # Desativa a página de log 
+        self.dlg_flow_tt.pg_log_ftt.setEnabled(False)
 
     def run(self):
-        """Run method that performs all the real work"""
-        # Apenas mostra a janela se for a primeira vez que o plugin é iniciado
-        if self.first_start:
-            self.first_start = False
-        # Inicializa self.dlg_hidro_pixel
-        self.dlg_hidro_pixel = HidroPixelDialog()
+        """Esta é a função principal do plugin, todas as funcionalidades propostas anteriormente serão efetivadas na função run"""
+        # Verifica se a interface já foi mostrada anteriormente
+        if not hasattr(self, 'dlg_hidro_pixel') or not self.dlg_hidro_pixel.isVisible():
+            # Inicializa self.dlg_hidro_pixel apenas se ainda não estiver inicializado ou se estiver fechado
+            self.dlg_hidro_pixel = HidroPixelDialog()
+            # Mostra a interface gráfica
+            self.dlg_hidro_pixel.show()
 
-        # Show the dialog
-        self.dlg_hidro_pixel.show()
+            # Mostra a interface gráfica
+            self.dlg_hidro_pixel.show()
+            QApplication.processEvents()
 
-        # Cria as flags para configurar a leitura dos dados da tabela
-        self.flag = 0
-        self.flag_1 = 0
+            # Desativa a página de log, só será ativada após clicar no botão run
+            self.dlg_flow_tt.pg_log_ftt.setEnabled(False)
+            # Cria as flags para configurar a leitura dos dados da tabela
+            self.flag = 0
+            self.flag_1 = 0
 
-        # Cria flag para parar a execução da função run logging page
-        self.run_condicao = True
-        # Configura os botões da página da rotina do flow travel time
-        self.dlg_hidro_pixel.btn_flow_trav.clicked.connect(lambda: self.dlg_flow_tt.show())
+            # Cria flag para parar a execução da função run logging page
+            self.run_condicao = True
+            # Configura os botões da página da rotina do flow travel time
+            self.dlg_hidro_pixel.btn_flow_trav.clicked.connect(lambda: self.dlg_flow_tt.show())
 
-        self.dlg_flow_tt.btn_config.clicked.connect(lambda: self.dlg_flow_tt.pages_flow_tt.setCurrentWidget(self.dlg_flow_tt.pg1_config))      
-        self.dlg_flow_tt.btn_input_data.clicked.connect(lambda: self.dlg_flow_tt.pages_flow_tt.setCurrentWidget(self.dlg_flow_tt.pg2_in_data))
-        self.dlg_flow_tt.btn_data_va_tool.clicked.connect(lambda: self.dlg_flow_tt.pages_flow_tt.setCurrentWidget(self.dlg_flow_tt.pg3_data_val_tool))
-        self.dlg_flow_tt.btn_run.clicked.connect(lambda: self.dlg_flow_tt.pages_flow_tt.setCurrentWidget(self.dlg_flow_tt.pg4_run))
+            self.dlg_flow_tt.btn_config.clicked.connect(lambda: self.dlg_flow_tt.pages_flow_tt.setCurrentWidget(self.dlg_flow_tt.pg1_config))      
+            self.dlg_flow_tt.btn_input_data.clicked.connect(lambda: self.dlg_flow_tt.pages_flow_tt.setCurrentWidget(self.dlg_flow_tt.pg2_in_data))
+            self.dlg_flow_tt.btn_data_va_tool.clicked.connect(lambda: self.dlg_flow_tt.pages_flow_tt.setCurrentWidget(self.dlg_flow_tt.pg3_data_val_tool))
+            self.dlg_flow_tt.btn_run.clicked.connect(lambda: self.dlg_flow_tt.pages_flow_tt.setCurrentWidget(self.dlg_flow_tt.pg4_run))
 
-        # Configura os botões da página configuration
-        self.dlg_flow_tt.tbtn_pg1_1.clicked.connect(lambda: self.carrega_work_folder())
+            # Configura os botões da página configuration
+            self.dlg_flow_tt.tbtn_pg1_1.clicked.connect(lambda: self.carrega_work_folder())
 
-        # Configura os botões da página input data:
-        self.dlg_flow_tt.tbtn_pg2_1.clicked.connect(lambda: self.carrega_arquivos(self.dlg_flow_tt.le_1_pg2))
-        self.dlg_flow_tt.tbtn_pg2_2.clicked.connect(lambda: self.carrega_arquivos(self.dlg_flow_tt.le_2_pg2))
-        self.dlg_flow_tt.tbtn_pg2_3.clicked.connect(lambda: self.carrega_arquivos(self.dlg_flow_tt.te_1_pg2, qtd = 2))
-        self.dlg_flow_tt.tbtn_pg2_4.clicked.connect(lambda: self.carrega_arquivos(self.dlg_flow_tt.le_3_pg2))
-        self.dlg_flow_tt.tbtn_pg2_5.clicked.connect(lambda: self.carrega_arquivos(self.dlg_flow_tt.le_4_pg2))
-        self.dlg_flow_tt.tbtn_pg2_6.clicked.connect(lambda: self.carrega_arquivos(self.dlg_flow_tt.le_5_pg2))
+            # Configura os botões da página input data:
+            self.dlg_flow_tt.tbtn_pg2_1.clicked.connect(lambda: self.carrega_arquivos(self.dlg_flow_tt.le_1_pg2))
+            self.dlg_flow_tt.tbtn_pg2_2.clicked.connect(lambda: self.carrega_arquivos(self.dlg_flow_tt.le_2_pg2))
+            self.dlg_flow_tt.tbtn_pg2_3.clicked.connect(lambda: self.carrega_arquivos(self.dlg_flow_tt.te_1_pg2, qtd = 2))
+            self.dlg_flow_tt.tbtn_pg2_4.clicked.connect(lambda: self.carrega_arquivos(self.dlg_flow_tt.le_3_pg2))
+            self.dlg_flow_tt.tbtn_pg2_5.clicked.connect(lambda: self.carrega_arquivos(self.dlg_flow_tt.le_4_pg2))
+            self.dlg_flow_tt.tbtn_pg2_6.clicked.connect(lambda: self.carrega_arquivos(self.dlg_flow_tt.le_5_pg2))
 
-        # Configura os botões da página run page:
-        self.dlg_flow_tt.tbtn_pg4_1.clicked.connect(lambda: self.save_buttons(self.dlg_flow_tt.le_1_pg4))
-        self.dlg_flow_tt.tbtn_pg4_2.clicked.connect(lambda: self.save_buttons(self.dlg_flow_tt.le_2_pg4))
-        self.dlg_flow_tt.tbtn_pg4_3.clicked.connect(lambda: self.save_buttons(self.dlg_flow_tt.le_3_pg4))
-        self.dlg_flow_tt.tbtn_pg4_4.clicked.connect(lambda: self.save_buttons(self.dlg_flow_tt.le_4_pg4))
-        self.dlg_flow_tt.tbtn_pg4_5.clicked.connect(lambda: self.save_buttons(self.dlg_flow_tt.le_5_pg4))
-        self.dlg_flow_tt.tbtn_pg4_6.clicked.connect(lambda: self.save_buttons(self.dlg_flow_tt.le_6_pg4))
-        self.dlg_flow_tt.tbtn_pg4_7.clicked.connect(lambda: self.save_buttons(self.dlg_flow_tt.le_7_pg4))
+            # Configura os botões da página run page:
+            self.dlg_flow_tt.tbtn_pg4_1.clicked.connect(lambda: self.save_buttons(self.dlg_flow_tt.le_1_pg4))
+            self.dlg_flow_tt.tbtn_pg4_2.clicked.connect(lambda: self.save_buttons(self.dlg_flow_tt.le_2_pg4))
+            self.dlg_flow_tt.tbtn_pg4_3.clicked.connect(lambda: self.save_buttons(self.dlg_flow_tt.le_3_pg4))
+            self.dlg_flow_tt.tbtn_pg4_4.clicked.connect(lambda: self.save_buttons(self.dlg_flow_tt.le_4_pg4))
+            self.dlg_flow_tt.tbtn_pg4_5.clicked.connect(lambda: self.save_buttons(self.dlg_flow_tt.le_5_pg4))
+            self.dlg_flow_tt.tbtn_pg4_6.clicked.connect(lambda: self.save_buttons(self.dlg_flow_tt.le_6_pg4))
+            self.dlg_flow_tt.tbtn_pg4_7.clicked.connect(lambda: self.save_buttons(self.dlg_flow_tt.le_7_pg4))
 
-        # configura botões de salvar e savar para um arquivo
-        self.dlg_flow_tt.btn_save_file_pg1.clicked.connect(lambda: self.save_to_file(1))
-        self.dlg_flow_tt.btn_save_file_pg2.clicked.connect(lambda: self.save_to_file(2))
-        self.dlg_flow_tt.btn_save_file_pg4.clicked.connect(lambda: self.save_to_file(4))
+            # configura botões de salvar e savar para um arquivo
+            self.dlg_flow_tt.btn_save_file_pg1.clicked.connect(lambda: self.save_to_file(1))
+            self.dlg_flow_tt.btn_save_file_pg2.clicked.connect(lambda: self.save_to_file(2))
+            self.dlg_flow_tt.btn_save_file_pg4.clicked.connect(lambda: self.save_to_file(4))
 
 
-        # Configura botão para ler informações de uma arquivo enviado
-        self.dlg_flow_tt.btn_read_pg1.clicked.connect(lambda: self.read_from_file(1))
-        self.dlg_flow_tt.btn_read_pg2.clicked.connect(lambda: self.read_from_file(2))
-        self.dlg_flow_tt.btn_read_pg4.clicked.connect(lambda: self.read_from_file(4))
+            # Configura botão para ler informações de uma arquivo enviado
+            self.dlg_flow_tt.btn_read_pg1.clicked.connect(lambda: self.read_from_file(1))
+            self.dlg_flow_tt.btn_read_pg2.clicked.connect(lambda: self.read_from_file(2))
+            self.dlg_flow_tt.btn_read_pg4.clicked.connect(lambda: self.read_from_file(4))
 
-        # Configura butões das tabelas
-        self.dlg_flow_tt.btn_read_t1.clicked.connect(lambda: self.read_tb_from_file(self.dlg_flow_tt.tbw_1_pg2,self.dlg_flow_tt.le_7_pg2, 1))
-        self.dlg_flow_tt.btn_read_t2.clicked.connect(lambda: self.read_tb_from_file(self.dlg_flow_tt.tbw_2_pg2,self.dlg_flow_tt.le_8_pg2,2))
-        self.dlg_flow_tt.btn_save_file_t1.clicked.connect(lambda: self.save_table_to_file(1))
-        self.dlg_flow_tt.btn_save_file_t2.clicked.connect(lambda: self.save_table_to_file(2))
-        self.dlg_flow_tt.btn_add_row_1.clicked.connect(lambda: self.add_new_row(self.dlg_flow_tt.tbw_1_pg2))
-        self.dlg_flow_tt.btn_add_row_2.clicked.connect(lambda: self.add_new_row(self.dlg_flow_tt.tbw_2_pg2))
-        self.dlg_flow_tt.btn_del_row_1.clicked.connect(lambda: self.delete_row(self.dlg_flow_tt.tbw_1_pg2))
-        self.dlg_flow_tt.btn_del_row_2.clicked.connect(lambda: self.delete_row(self.dlg_flow_tt.tbw_2_pg2))
-        
-        # Save the pages
-        self.dlg_flow_tt.btn_save_pg1.clicked.connect(lambda: self.save())
-        self.dlg_flow_tt.btn_save_pg2.clicked.connect(lambda: self.save())
-        self.dlg_flow_tt.btn_save_pg4.clicked.connect(lambda: self.save())
+            # Configura butões das tabelas
+            self.dlg_flow_tt.btn_read_t1.clicked.connect(lambda: self.read_tb_from_file(self.dlg_flow_tt.tbw_1_pg2,self.dlg_flow_tt.le_7_pg2, 1))
+            self.dlg_flow_tt.btn_read_t2.clicked.connect(lambda: self.read_tb_from_file(self.dlg_flow_tt.tbw_2_pg2,self.dlg_flow_tt.le_8_pg2,2))
+            self.dlg_flow_tt.btn_save_file_t1.clicked.connect(lambda: self.save_table_to_file(1))
+            self.dlg_flow_tt.btn_save_file_t2.clicked.connect(lambda: self.save_table_to_file(2))
+            self.dlg_flow_tt.btn_add_row_1.clicked.connect(lambda: self.add_new_row(self.dlg_flow_tt.tbw_1_pg2))
+            self.dlg_flow_tt.btn_add_row_2.clicked.connect(lambda: self.add_new_row(self.dlg_flow_tt.tbw_2_pg2))
+            self.dlg_flow_tt.btn_del_row_1.clicked.connect(lambda: self.delete_row(self.dlg_flow_tt.tbw_1_pg2))
+            self.dlg_flow_tt.btn_del_row_2.clicked.connect(lambda: self.delete_row(self.dlg_flow_tt.tbw_2_pg2))
+            
+            # Configura botões de salvar das diferentes páginas
+            self.dlg_flow_tt.btn_save_pg1.clicked.connect(lambda: self.save())
+            self.dlg_flow_tt.btn_save_pg2.clicked.connect(lambda: self.save())
+            self.dlg_flow_tt.btn_save_pg4.clicked.connect(lambda: self.save())
 
-        # clear all tables's values
-        self.dlg_flow_tt.btn_clear_1.clicked.connect(lambda: self.clear_table(self.dlg_flow_tt.tbw_1_pg2,self.dlg_flow_tt.le_7_pg2))
-        self.dlg_flow_tt.btn_clear_2.clicked.connect(lambda: self.clear_table(self.dlg_flow_tt.tbw_2_pg2,self.dlg_flow_tt.le_8_pg2))
+            # Configura os botões de limpeza das variáveis
+            self.dlg_flow_tt.btn_clear_1.clicked.connect(lambda: self.clear_table(self.dlg_flow_tt.tbw_1_pg2,self.dlg_flow_tt.le_7_pg2))
+            self.dlg_flow_tt.btn_clear_2.clicked.connect(lambda: self.clear_table(self.dlg_flow_tt.tbw_2_pg2,self.dlg_flow_tt.le_8_pg2))
 
-        # close the pages and config save button
-        self.save_result = False
-        self.le_edited = False
-        self.dlg_flow_tt.le_6_pg1.textChanged.connect(lambda: self.changed())
-        self.dlg_flow_tt.btn_close_pg4.clicked.connect(lambda: self.close_gui())
-        
-        # Configura run button
-        self.dlg_flow_tt.btn_run_2.clicked.connect(lambda: self.logging_run_page())
+            # configura botões da página run
+            self.dlg_flow_tt.btn_close_pg4.clicked.connect(self.close_gui)
+            
+            # Configura run button
+            self.dlg_flow_tt.btn_run_2.clicked.connect(lambda: self.logging_run_page())
 
-        # Configura botões página de log
-        self.dlg_flow_tt.btn_cancel_log.clicked.connect(lambda: self.cancel_log_page())
-        self.dlg_flow_tt.btn_close_log.clicked.connect(lambda: self.close_gui())
-        # Run the dialog event loop
-        self.dlg_hidro_pixel.exec_()
-        self.close_gui()
+            # Configura botões página de log
+            self.dlg_flow_tt.btn_cancel_log.clicked.connect(self.cancel_log_page)
+            self.dlg_flow_tt.btn_close_log.clicked.connect(self.close_gui)
+
+            # Run the dialog event loop
+            self.dlg_hidro_pixel.exec_()
+            self.close_gui()
