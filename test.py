@@ -1,12 +1,11 @@
 # Import the code for the dialog
 import os.path
 import sys, os
-import matplotlib.pyplot as plt
 import time
 # Importing libs
 import numpy as np
 import matplotlib as plt
-from osgeo import ogr, gdal
+from osgeo import ogr, gdal, gdalconst
 import matplotlib.pyplot as plt
 from pathlib import Path
 from modulos_files.RDC_variables import RDCVariables
@@ -66,7 +65,7 @@ class Test():
             result ="Nenhum arquivo foi selecionado!"
             # QMessageBox.warning(None, "ERROR!", result)
         
-        print(f'Qtd pix bacia: {np.count_nonzero(self.global_vars.bacia)}\nPassou bacia')
+        print(f'Qtd pix bacia: {np.count_nonzero(self.global_vars.bacia)}\nÁrea da bacia: {(np.count_nonzero(self.global_vars.bacia))*10} m²')
 
         
     def leh_caracteristica_dRios(self):
@@ -415,14 +414,17 @@ class Test():
 
         return dist2
 
-    def comprimento_acumulado(self,lado):
+    def comprimento_acumulado(self):
         """Esta função determina o comprimento dos pixels que fazem partes da rede de drenagem da bacia hidrográfica. Da cabeceira ao exutório em questão"""
 
-        self.Lfoz = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol), dtype=np.float64)
-        self.Lac = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol), dtype=np.float64)
-        self.global_vars.lado = lado
-        self.global_vars.diagonal = lado*np.sqrt(2.0)
-        
+        # Define variáveis
+        Lfoz = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
+        self.global_vars.Lfoz= Lfoz
+        Lac = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
+        self.global_vars.Lac = Lac
+        Lac = None
+        Lfoz = None
+    
         # Iniciando a iteração para varrer todos os elementos da bacia hidrográfica
         for col in range(self.rdc_vars.ncol):
             for lin in range(self.rdc_vars.nlin):
@@ -486,10 +488,10 @@ class Test():
                                 self.global_vars.tamfoz = self.global_vars.tamcam
 
                                 # Condição para verificar se o tamanho do rio é maior que o armazenameto do pixel
-                                condicao3 = self.global_vars.tamcam > self.Lac[self.global_vars.linaux, self.global_vars.colaux]
+                                condicao3 = self.global_vars.tamcam > self.global_vars.Lac[self.global_vars.linaux, self.global_vars.colaux]
                                 if condicao3:
                                     # O valor do pixel é armazenado em um novo rio
-                                    self.Lac[self.global_vars.linaux, self.global_vars.colaux] = self.global_vars.tamcam
+                                    self.global_vars.Lac[self.global_vars.linaux, self.global_vars.colaux] = self.global_vars.tamcam
                                 
                                 # Armazena o pixel contabilizado
                                 self.global_vars.linaux2 = self.global_vars.linaux
@@ -504,16 +506,17 @@ class Test():
 
                         # Atulizando a variável lfoz
                         self.Lfoz[lin, col] = self.global_vars.tamfoz
-                        
+        self.fim = time.time()
+        print(f'{(self.fim - self.inicio)/60} min')                  
         print('Passou compri_acumulado')
 
     def numera_pixel(self):
         '''
         Esta função enumera os píxels presentes na rede de drenagem
         '''
-        # self.cabeceira = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol), dtype=np.int32)
-        self.contadren = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol), dtype=np.float64)
-        self.numcabe = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol), dtype=np.float64)
+        # Define variáveis
+        self.contadren = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
+        self.numcabe = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
         self.cabeceira = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
         self.numcabeaux = 0
         
@@ -538,8 +541,8 @@ class Test():
                     # A priori, todos os píxels serão considerados de cabeceira
                     self.cabeceira[lin][col] = 1
                     # Cria vizinhança 3x3 para estudar a direção de fluxo do píxel central.
-                    for linaux in range(lin - 1, lin + 2):
-                        for colaux in range(col - 1, col + 2):
+                    for colaux in range(col - 1, col + 2):
+                        for linaux in range(lin - 1, lin + 2):
                             # Para cada vizinho, verifica a direção de fluxo dela e para qual pixel ele drena
                             self.global_vars.diraux = self.global_vars.direcoes[linaux][colaux]
                             self.global_vars.linaux2 = linaux + self.global_vars.dlin[self.global_vars.diraux]
@@ -560,20 +563,27 @@ class Test():
         # JVD: redundancia de variáveis, Ncabe = numcabeaux
         self.global_vars.numcabeaux = self.numcabeaux
         self.fim = time.time()
-        print(self.fim - self.inicio)
+        print(f'{(self.fim - self.inicio)/60} min') 
         print('Passou numera_pix')
 
     def dist_drenagem(self):
         """Esta funçao determina a distância incremental percorrida pela água na rede de drenagem,
             assim como a declividade pixel a pixel"""
+
         # Redimenciona as variáveis necessárias
         dist = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
-        self.global_vars.pixeldren = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
-        self.global_vars.Difcota = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol)) 
-        self.global_vars.DECLIVpixjus = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
-        self.global_vars.TSpix = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
-        self.global_vars.lado = 1
-        self.global_vars.diagonal = np.sqrt(2)
+        pixeldren = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
+        self.global_vars.pixeldren = pixeldren
+        pixeldren = None
+        Difcota = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
+        self.global_vars.Difcota = Difcota
+        Difcota = None
+        DECLIVpixjus = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
+        self.global_vars.DECLIVpixjus = DECLIVpixjus
+        DECLIVpixjus = None
+        TSpix = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
+        self.global_vars.TSpix = TSpix
+        TSpix = None
 
         # iterando sobre os elementos do arquivo raster
         for col in range(self.rdc_vars.ncol):
@@ -609,7 +619,7 @@ class Test():
                                     # Após alocação do pixel da rede de drenagem: encerra o processo de busca
                                     self.global_vars.caminho = 1
                                     dist[lin][col] = self.global_vars.tamcam
-                                    self.pixeldren[lin][col] = self.contadren[self.global_vars.linaux][self.global_vars.colaux]
+                                    self.global_vars.pixeldren[lin][col] = self.contadren[self.global_vars.linaux][self.global_vars.colaux]
                                 else:
                                     self.global_vars.diraux = self.global_vars.direcoes[self.global_vars.linaux][self.global_vars.colaux]
                                     self.global_vars.caminho = 0
@@ -638,8 +648,6 @@ class Test():
                                         self.rdc_vars.tipo = 3
 
                                     # Determinando a distância incremental projetada
-                                    'METRO VARIA COM O ARQUIVO DE ENTRADA, PARA O EXEMPLO ATUAL É IGUAL A 1'
-                                    self.global_vars.metro = 1
                                     if self.global_vars.metro == 0:
                                         self.global_vars.auxdist = self.project(self.global_vars.Xesq,
                                                            self.global_vars.Xdir,
@@ -660,12 +668,13 @@ class Test():
                                     self.global_vars.tamcam += self.global_vars.auxdist
 
                                     # ARPdeclivjus
+
                                     if self.global_vars.tipo_decliv == 4:
                                         # calcula declividade do pixel relativo ao pixel de jusante (este pixel)
                                         self.global_vars.Lincr = self.global_vars.auxdist
-                                        self.Difcota = self.global_vars.MDE[self.global_vars.linaux2][self.global_vars.colaux2] - self.global_vars.MDE[self.global_vars.linaux][self.global_vars.colaux]
-                                        self.DECLIVpixjus[self.global_vars.linaux2][self.global_vars.colaux2] = self.Difcota/self.global_vars.Lincr*1000.0
-                                        self.global_vars.Streaux = self.DECLIVpixjus[self.global_vars.linaux2][self.global_vars.colaux2]
+                                        self.global_vars.Difcota = self.global_vars.MDE[self.global_vars.linaux2][self.global_vars.colaux2] - self.global_vars.MDE[self.global_vars.linaux][self.global_vars.colaux]
+                                        self.global_vars.DECLIVpixjus[self.global_vars.linaux2][self.global_vars.colaux2] = self.global_vars.Difcota/self.global_vars.Lincr*1000.0
+                                        self.global_vars.Streaux = self.global_vars.DECLIVpixjus[self.global_vars.linaux2][self.global_vars.colaux2]
                                         self.global_vars.Ltreaux = self.global_vars.Lincr
                                         self.global_vars.usaux = self.global_vars.usosolo[self.global_vars.linaux2][self.global_vars.colaux2]
                                         self.global_vars.Smin = 10 #em m/km
@@ -684,18 +693,20 @@ class Test():
         # Atualiza as variáveis globais
         self.global_vars.DIST = dist
         self.fim = time.time()
-        print(self.fim - self.inicio)
+        print(f'{(self.fim - self.inicio)/60} min') 
         print('Passou dist_drenagem')
 
     def dist_trecho(self):
         ''' Esta função determina o número dos diferentes trechos que existem na bacia hidrográfica estudada'''
         self.global_vars.numtreauxmax = 0
-        self.global_vars.TREpix = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
+        TREpix = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
+        self.global_vars.TREpix = TREpix
+        TREpix = None
         condicao1 = None
         
         #ARPlidar: loop para contar o número máximo de trechos
-        for col in range(1, self.rdc_vars.ncol):
-            for lin in range(1, self.rdc_vars.nlin):
+        for col in range(1, self.rdc_vars.ncol-1):
+            for lin in range(1, self.rdc_vars.nlin-1):
 
                 # Ações realizadas apenas na região da bacia
                 if self.global_vars.bacia[lin][col] == 1:
@@ -754,28 +765,48 @@ class Test():
                                 self.global_vars.linaux2 = self.global_vars.linaux
                                 self.global_vars.colaux2 = self.global_vars.colaux
                                 self.global_vars.usaux = self.global_vars.usosolo[self.global_vars.linaux][self.global_vars.colaux]
-        self.fim = time.time()
-        print(self.fim - self.inicio)
+
         self.global_vars.Ntre = self.global_vars.numtreauxmax + 1
 
         # Percorrendo o caminho desde as cabeceiras e granvando as distâncias relativas de cada trecho de uso do solo contínuo
 
         # Redimenciona variáveis necessárias
-        self.global_vars.cotaini = np.reshape(self.global_vars.cotaini, (self.global_vars.numcabeaux,self.global_vars.Ntre))
-        self.global_vars.cotafim = np.reshape(self.global_vars.cotafim,(self.global_vars.numcabeaux,self.global_vars.Ntre))
-        self.global_vars.Ltre = np.reshape(self.global_vars.Ltre, (self.global_vars.numcabeaux,self.global_vars.Ntre))
-        self.global_vars.Stre = np.reshape(self.global_vars.Stre(self.global_vars.numcabeaux,self.global_vars.Ntre))
-        self.global_vars.usotre = np.reshape(self.global_vars.usotre,(self.global_vars.numcabeaux,self.global_vars.Ntre))
-        self.global_vars.DISTult = np.reshape(self.global_vars.DISTult,(self.global_vars.numcabeaux,self.global_vars.Ntre))
-        self.global_vars.refcabtre  = np.reshape(self.global_vars.refcabtre,(self.rdc_vars.nlin,self.rdc_vars.ncol))
-        self.global_vars.DISTtre  = np.reshape(self.global_vars.DISTtre, (self.rdc_vars.nlin,self.rdc_vars.ncol))
-        self.global_vars.DECLIVpix  = np.reshape(self.global_vars.DECLIVpix, (self.rdc_vars.nlin,self.rdc_vars.ncol))
-        self.global_vars.CABEpix = np.reshape(self.global_vars.CABEpix, (self.rdc_vars.nlin,self.rdc_vars.ncol))
-
+        cotaini = np.zeros((self.global_vars.numcabeaux,self.global_vars.Ntre))
+        self.global_vars.cotaini = cotaini
+        containi = None
+        cotafim = np.zeros((self.global_vars.numcabeaux,self.global_vars.Ntre))
+        self.global_vars.cotafim = cotafim
+        cotafim = None
+        Ltre = np.zeros((self.global_vars.numcabeaux,self.global_vars.Ntre))
+        self.global_vars.Ltre = Ltre
+        Ltre = None
+        Stre = np.zeros((self.global_vars.numcabeaux,self.global_vars.Ntre))
+        self.global_vars.Stre = Stre
+        Stre = None
+        usotre = np.zeros((self.global_vars.numcabeaux,self.global_vars.Ntre))
+        self.global_vars.usotre = usotre
+        usotre = None
+        DISTult = np.zeros((self.global_vars.numcabeaux,self.global_vars.Ntre))
+        self.global_vars.DISTult = DISTult
+        DISTult = None
+        refcabtre  = np.zeros((self.rdc_vars.nlin,self.rdc_vars.ncol))
+        self.global_vars.refcabtre = refcabtre
+        refcabtre = None
+        DISTtre  = np.zeros((self.rdc_vars.nlin,self.rdc_vars.ncol))
+        self.global_vars.DISTtre = DISTtre
+        DECLIVpix  = np.zeros((self.rdc_vars.nlin,self.rdc_vars.ncol))
+        self.global_vars.DECLIVpix = DECLIVpix
+        DECLIVpix = None
+        CABEpix = np.zeros((self.rdc_vars.nlin,self.rdc_vars.ncol))
+        self.global_vars.CABEpix = CABEpix
+        CABEpix = None
+        numtre = np.zeros(self.global_vars.numcabeaux)
+        self.global_vars.numtre = numtre
+        numtre = None
 
         # Continua o cálculo dos trechos
-        for col in range(self.rdc_vars.ncol):
-            for lin in range(self.rdc_vars.nlin):
+        for col in range(1, self.rdc_vars.ncol-1):
+            for lin in range(1, self.rdc_vars.nlin-1):
                 # Verificando os elementos da região da bacia
                 if self.global_vars.numcabe[lin][col] > 0:
                     self.global_vars.numcabeaux = int(self.global_vars.numcabe[lin][col])
@@ -805,18 +836,18 @@ class Test():
                             # então terminou o trecho no píxel anterior
                             self.global_vars.numtreaux +=1
                             self.global_vars.numtre[self.global_vars.numcabeaux] = self.global_vars.numtreaux
-                            self.global_vars.Ltre[self.global_vars.numcabeaux][self.global_vars.numtreaux] = self.global_vars.DIST[self.global_vars.linaux3][self.global_vars.colaux3] \
+                            self.global_vars.Ltre[self.global_vars.numcabeaux][self.global_vars.numtreaux-1] = self.global_vars.DIST[self.global_vars.linaux3][self.global_vars.colaux3] \
                                                                                                             - self.global_vars.DIST[self.global_vars.linaux][self.global_vars.colaux] 
                                                                                                             
                             # Grava a distância (DIST) do último píxel do trecho
-                            self.global_vars.DISTult[self.global_vars.numcabeaux][self.global_vars.numtreaux] = self.global_vars.DIST[self.global_vars.linaux][self.global_vars.colaux]
-                            self.global_vars.cotaini[self.global_vars.numcabeaux][self.global_vars.numtreaux] = self.global_vars.MDE[self.global_vars.linaux3][self.global_vars.colaux3]
-                            self.global_vars.cotafim[self.global_vars.numcabeaux][self.global_vars.numtreaux] = self.global_vars.MDE[self.global_vars.linaux][self.global_vars.colaux]
+                            self.global_vars.DISTult[self.global_vars.numcabeaux][self.global_vars.numtreaux-1] = self.global_vars.DIST[self.global_vars.linaux][self.global_vars.colaux]
+                            self.global_vars.cotaini[self.global_vars.numcabeaux][self.global_vars.numtreaux-1] = self.global_vars.MDE[self.global_vars.linaux3][self.global_vars.colaux3]
+                            self.global_vars.cotafim[self.global_vars.numcabeaux][self.global_vars.numtreaux-1] = self.global_vars.MDE[self.global_vars.linaux][self.global_vars.colaux]
                             
-                            a1 = (self.global_vars.cotaini[self.global_vars.numcabeaux][self.global_vars.numtreaux] - self.global_vars.cotafim[self.global_vars.numcabeaux][self.global_vars.numtreaux])
-                            b1 = self.global_vars.Ltre[self.global_vars.numcabeaux][self.global_vars.numtreaux]*1000.0
-                            self.global_vars.Stre[self.global_vars.numcabeaux][self.global_vars.numtreaux] = a1 / b1
-                            self.global_vars.usotre[self.global_vars.numcabeaux][self.global_vars.numtreaux] = self.global_vars.usaux
+                            a1 = (self.global_vars.cotaini[self.global_vars.numcabeaux][self.global_vars.numtreaux-1] - self.global_vars.cotafim[self.global_vars.numcabeaux][self.global_vars.numtreaux-1])
+                            b1 = self.global_vars.Ltre[self.global_vars.numcabeaux][self.global_vars.numtreaux-1]*1000.0
+                            self.global_vars.Stre[self.global_vars.numcabeaux][self.global_vars.numtreaux-1] = a1 / b1
+                            self.global_vars.usotre[self.global_vars.numcabeaux][self.global_vars.numtreaux-1] = self.global_vars.usaux
 
                             # ARPlidar: adiciona a bacia como condição; chegar na rede de drenagem ou sair da baica, finaliza while
                             condicao4 = self.global_vars.dren[self.global_vars.linaux][self.global_vars.colaux] == 1 or self.global_vars.bacia[self.global_vars.linaux][self.global_vars.colaux] == 0
@@ -856,8 +887,8 @@ class Test():
 
         # Percorre novamente o caminho desde às cabeceiras, gravando distancias relativas de cada pixel dentro de cada trecho de uso do solo continuo
         # Percorrendo os elementos da bacia hidrográfica
-        for col in range(self.rdc_vars.ncol):
-            for lin in range(self.rdc_vars.nlin):
+        for col in range(1, self.rdc_vars.ncol-1):
+            for lin in range(1, self.rdc_vars.nlin-1):
                 # Os cálculos são executados apenas na região da bacia hidrográfica
                 if self.global_vars.bacia[lin][col] == 1:
                     # ARPlidar
@@ -878,7 +909,7 @@ class Test():
                         self.global_vars.DISTtre[self.global_vars.linaux2][self.global_vars.colaux2] = self.global_vars.DIST[lin][col] - self.global_vars.DISTult[self.global_vars.numcabeaux][1]
 
                         # ARPdecliv: calcula a declividade do píxel relativo ao último píxel do trecho
-                        c1 = (self.global_vars.MDE[self.global_vars.linaux2][self.global_vars.colaux2] - self.rdc_vars.cotafim[self.global_vars.numcabeaux][1])
+                        c1 = (self.global_vars.MDE[self.global_vars.linaux2][self.global_vars.colaux2] - self.global_vars.cotafim[self.global_vars.numcabeaux][1])
                         d1 = self.global_vars.DISTtre[self.global_vars.linaux2][self.global_vars.colaux2]*1000.0 
                         self.global_vars.DECLIVpix[[self.global_vars.linaux2][self.global_vars.colaux2]] = c1 / d1
 
@@ -894,12 +925,12 @@ class Test():
                                 # Mudou o tipo de uso do solo ou alcançou a rede de drenagem, 
                                 # então terminou um trecho no píxel anterior
                                 self.global_vars.numtreaux += 1
-                                self.global_vars.numtre[self.global_vars.numtreaux] = self.global_vars.numtreaux
+                                self.global_vars.numtre[self.global_vars.numtreaux-1] = self.global_vars.numtreaux
                                 
                                 # Grava a distância do píxel relativo ao trecho
                                 self.global_vars.DISTtre[self.global_vars.linaux][self.global_vars.colaux] = self.global_vars.DIST[self.global_vars.linaux][self.global_vars.colaux] - self.global_vars.DISTult[self.global_vars.numcabeaux][self.global_vars.numcabeaux + 1]
 
-                                self.global_vars.usotre[self.global_vars.numcabeaux][self.global_vars.numcabeaux] = self.global_vars.usaux
+                                self.global_vars.usotre[self.global_vars.numcabeaux][self.global_vars.numtreaux -1] = self.global_vars.usaux
 
                                 # ARPlidar: adiciona a bacia hidrográfica como uma condição
                                 if self.global_vars.dren[self.global_vars.linaux][self.global_vars.colaux] ==1 or self.global_vars.bacia[self.global_vars.linaux][self.global_vars.colaux] == 0:
@@ -936,16 +967,24 @@ class Test():
                                 # ARPdecliv: Calcula a declividade o píxel relativo ao último píxel do trecho  
                                 g1 = self.global_vars.MDE[self.global_vars.linaux2][self.global_vars.colaux2] - self.global_vars.cotafim[self.global_vars.numcabeaux][self.global_vars.numtreaux + 1]
                                 h1 = self.global_vars.DISTtre[self.global_vars.linaux2][self.global_vars.colaux2]*1000.0
-                                self.global_vars.DECLIVpix[self.global_vars.linaux2][self.global_vars.colaux2] =  g1/h2
+                                self.global_vars.DECLIVpix[self.global_vars.linaux2][self.global_vars.colaux2] =  g1/h1
         
         # Redimenciona variáveis necessárias
-        self.global_vars.Somaaux = np.zeros((self.global_vars.numcabeaux,self.global_vars.Ntre))
-        self.global_vars.SomaauxPond = np.zeros((self.global_vars.numcabeaux,self.global_vars.Ntre))
-        self.global_vars.SomaauxDist = np.zeros((self.global_vars.numcabeaux,self.global_vars.Ntre))
-        self.global_vars.contaaux = np.zeros((self.global_vars.numcabeaux,self.global_vars.Ntre))
+        Somaaux = np.zeros((self.global_vars.numcabeaux,self.global_vars.Ntre))
+        self.global_vars.Somaaux = Somaaux
+        Somaaux = None
+        SomaauxPond = np.zeros((self.global_vars.numcabeaux,self.global_vars.Ntre))
+        self.global_vars.SomaauxPond = SomaauxPond
+        SomaauxPond = None
+        SomaauxDist = np.zeros((self.global_vars.numcabeaux,self.global_vars.Ntre))
+        self.global_vars.SomaauxDist = SomaauxDist
+        SomaauxDist = None
+        contaaux = np.zeros((self.global_vars.numcabeaux,self.global_vars.Ntre))
+        self.global_vars.contaaux = contaaux
+        contaaux = None
 
-        for col in range(self.rdc_vars.ncol):
-            for lin in range(self.rdc_vars.nlin):
+        for col in range(1, self.rdc_vars.ncol-1):
+            for lin in range(1, self.rdc_vars.nlin-1):
                 # Os cálculo são realizados apenas na região da baica hidrográficia 
                 if self.global_vars.bacia[lin][col] == 1:
                     # ARPlidar
@@ -1019,7 +1058,8 @@ class Test():
                                 # ARPdecliv: para a média ponderada
                                 self.global_vars.Somaauxpond[self.global_vars.numcabeaux][self.global_vars.numtreaux2] += self.global_vars.DECLIVpix[self.global_vars.linaux][self.global_vars.colaux] * self.global_vars.DISTtre[self.global_vars.linaux][self.global_vars.colaux]
                                 self.global_vars.SomaauxDist[self.global_vars.numcabeaux][self.global_vars.numtreaux2] += self.global_vars.DISTtre[self.global_vars.linaux][self.global_vars.colaux]
-                        
+        self.fim = time.time()
+        print(f'{(self.fim - self.inicio)/60} min')                        
         print('Passou dist_trecho')
 
     def tempo_canal(self):
@@ -1030,7 +1070,9 @@ class Test():
         condicao = None
         condicao2 = None
         self.classerio_aux = np.zeros((self.rdc_vars.nlin,self.rdc_vars.ncol))
-        self.global_vars.TempoRio = np.zeros((self.rdc_vars.nlin,self.rdc_vars.ncol))
+        TempoRio = np.zeros((self.rdc_vars.nlin,self.rdc_vars.ncol))
+        self.global_vars.TempoRio = TempoRio
+        TempoRio = None
 
         for col in range(self.rdc_vars.ncol):
             for lin in range(self.rdc_vars.nlin):
@@ -1132,19 +1174,36 @@ class Test():
                                 self.global_vars.caminho = 0 
                                 self.global_vars.linaux += self.global_vars.dlin[self.global_vars.diraux]
                                 self.global_vars.colaux += self.global_vars.dcol[self.global_vars.diraux]
+        self.fim = time.time()
+        print(f'{(self.fim - self.inicio)/60} min') 
+        print('passou tempo canal')
 
     def tempo_sup(self):
         """
         Esta função função determina o tempo de concentração/escoamento para os píxels da superfície da rede de drenagem (aqueles que não são canais)
         """
         # Redimenciona as variáveis necessárias
-        self.global_vars.lincabe = np.zeros(self.global_vars.numcabeaux)
-        self.global_vars.colcabe = np.zeros(self.global_vars.numcabeaux)
-        self.global_vars.TS = np.zeros((self.global_vars.numcabeaux, self.global_vars.Ntre))
+        lincabe = np.zeros(self.global_vars.numcabeaux)
+        self.global_vars.lincabe = lincabe
+        lincabe = None
+        colcabe = np.zeros(self.global_vars.numcabeaux)
+        self.global_vars.colcabe = colcabe
+        colcabe = None
+        TS = np.zeros((self.global_vars.numcabeaux, self.global_vars.Ntre))
+        self.global_vars.TS = TS
+        TS = None
         self.global_vars.TScabe = np.zeros(self.global_vars.numcabeaux)
-        self.global_vars.TScabe2d = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
-        self.global_vars.TSnaocabe2d= np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
-        self.global_vars.TSpixacum= np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
+        self.global_vars.TScabe = TScabe
+        TScabe = None
+        TScabe2d = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
+        self.global_vars.TScabe2d = TScabe2d
+        TScabe2d = None
+        TSnaocabe2d = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
+        self.global_vars.TSnaocabe2d = TSnaocabe2d
+        TSnaocabe2d = None
+        TSpixacum = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
+        self.global_vars.TSpixacum = TSpixacum
+        TSpixacum = None
 
         for lin in range(self.rdc_vars.nlin):
             for col in range(self.global_vars):
@@ -1185,30 +1244,31 @@ class Test():
                         
                         self.global_vars.t = self.global_vars.refcabtre[lin][col]
                         self.global_vars.Ltreaux = self.global_vars.Ltre[self.global_vars.numcabeaux][self.global_vars.t]
-                        self.global_vars.Ttreaux = self.global_vars.Ts[self.global_vars.numcabeaux][self.global_vars.t]
+                        self.global_vars.Ttreaux = self.global_vars.TS[self.global_vars.numcabeaux][self.global_vars.t]
                         self.global_vars.DISTtreaux = self.global_vars.DISTtre[lin][col]
                         self.global_vars.Taux = self.global_vars.DISTtreaux * self.global_vars.Ttreaux / self.global_vars.Ltreaux
 
                         # ARPdecliv
                         if self.global_vars.subtipodecliv == 'b':
-                            self.global_vars.Streaux = self.global_vars.Stre(self.global_vars.numcabeaux)[t]
-                            self.global_vars.usaux = self.global_vars.usotre
+                            self.global_vars.Streaux = self.global_vars.Stre[self.global_vars.numcabeaux][self.global_vars.t]
+                            self.global_vars.usaux = self.global_vars.usotre[self.global_vars.numcabeaux][self.global_vars.t]
                             
                             if self.global_vars.Streaux > 0:
                                 self.global_vars.Taux = 5.474 * ((self.global_vars.Mann[self.global_vars.usaux] * self.global_vars.DISTtreaux)**0.8) / ((self.global_vars.P24**0.5)*((self.global_vars.Streaux / 1000.0)**0.4))
                             else:
-                                self.global_vars.Taux
+                                self.global_vars.Taux = 0
 
                         self.global_vars.numtreaux = self.global_vars.numtre[self.global_vars.numcabeaux]
 
                         if self.global_vars.t < self.global_vars.numtreaux:
                             tt = self.global_vars.t + 1
                             for tt in range(self.global_vars.numtreaux):
-                                self.global_vars.Taux += self.global_vars.Ts[self.global_vars.numcabeaux][tt]
+                                self.global_vars.Taux += self.global_vars.TS[self.global_vars.numcabeaux][tt]
                         
                         self.global_vars.TSnaocabe2d[lin][col] = self.global_vars.Taux
 
         self.global_vars.TStodos2d = self.global_vars.TSnaocabe2d + self.global_vars.TScabe2d
+
         if self.global_vars.tipo_decliv == 4:
 
             for col in range(self.rdc_vars.ncol):
@@ -1246,13 +1306,18 @@ class Test():
 
                                     # Atualizando o tempo de escoamento desde o píxel inicial
                                     self.global_vars.tempocam += self.global_vars.TSpix[self.global_vars.linaux2][self.global_vars.colaux2]
-
+        self.fim = time.time()
+        print(f'{(self.fim - self.inicio)/60} min') 
+        print('passou tempo superficie')
+        
     def tempo_total(self):
         '''
         Esta função determina o tempo total de escoamento/concentração da bacia hidrográfica
         '''
         # Redimenciona as variáveis necessárias
-        self.global_vars.TempoTot = np.zeros((self.rdc_vars.nlin,self.rdc_vars.ncol))
+        TempoTot = np.zeros((self.rdc_vars.nlin,self.rdc_vars.ncol))
+        self.global_vars.TempoTot = TempoTot
+        TempoTot = NOne
 
         for col in range(self.rdc_vars.ncol):
             for lin in range(self.rdc_vars.nlin):
@@ -1298,12 +1363,17 @@ class Test():
                         
                     elif self.rdc_vars.VarMM3[lin][col][self.rdc_vars.i3] < self.rdc_vars.Varmin:
                         self.rdc_vars.Varmin = self.rdc_vars.VarMM3[lin][col][self.rdc_vars.i3]
-    
+
+        self.fim = time.time()
+        print(f'{self.fim - self.inicio} min')
+        print('passou tempo total')
+
+
     def tamanho_numero(self, varaux, num):
         '''
         Esta função a dimensão dos números que serão usados na padronização do documento
         '''
-        negativo, nzeros, pp, varaux2, limsup = None
+        negativo, nzeros, pp, varaux2, limsup = None, None, None, None, None
         
         if varaux < 0:
             negativo = 1
@@ -1332,66 +1402,66 @@ class Test():
 
         return self.global_vars.tamnum
 
-    def aux_RDC(self, file, textoaux, varaux, tamnum):
+    def aux_RDC(self, file_name, textoaux, varaux, tamnum):
         """
         Esta função é responsável por formatar as informações dos arquivos de saida do programa
         """
         if tamnum == 1:
-            file.write(f'{textoaux:14s}{varaux:1d}\n')
-            return file
+            file_name.write(f'{textoaux:14s}{varaux:1d}\n')
+            return file_name
         elif tamnum == 2:
-            file.write(f'{textoaux:14s}{varaux:2d}\n')
-            return file
+            file_name.write(f'{textoaux:14s}{varaux:2d}\n')
+            return file_name
         elif tamnum == 3:
-            file.write(f'{textoaux:14s}{varaux:3d}\n')
-            return file
+            file_name.write(f'{textoaux:14s}{varaux:3d}\n')
+            return file_name
         elif tamnum == 4:
-            file.write(f'{textoaux:14s}{varaux:4d}\n')
-            return file
+            file_name.write(f'{textoaux:14s}{varaux:4d}\n')
+            return file_name
         elif tamnum == 5:
-            file.write(f'{textoaux:14s}{varaux:5d}\n')
-            return file
+            file_name.write(f'{textoaux:14s}{varaux:5d}\n')
+            return file_name
         elif tamnum == 6:
-            file.write(f'{textoaux:14s}{varaux:7d}\n')
-            return file
+            file_name.write(f'{textoaux:14s}{varaux:7d}\n')
+            return file_name
         elif tamnum == 8:
-            file.write(f'{textoaux:14s}{varaux:8d}\n')
-            return file
+            file_name.write(f'{textoaux:14s}{varaux:8d}\n')
+            return file_name
         elif tamnum == 9:
-            file.write(f'{textoaux:14s}{varaux:9.7f}\n')
-            return file
+            file_name.write(f'{textoaux:14s}{varaux:9.7f}\n')
+            return file_name
         elif tamnum == 10:
-            file.write(f'{textoaux:14s}{varaux:10.7f}\n')
-            return file
+            file_name.write(f'{textoaux:14s}{varaux:10.7f}\n')
+            return file_name
         elif tamnum == 11:
-            file.write(f'{textoaux:14s}{varaux:11.7f}\n')
-            return file
+            file_name.write(f'{textoaux:14s}{varaux:11.7f}\n')
+            return file_name
         elif tamnum == 12:
-            file.write(f'{textoaux:14s}{varaux:12.7f}\n')
-            return file
+            file_name.write(f'{textoaux:14s}{varaux:12.7f}\n')
+            return file_name
         elif tamnum == 13:
-            file.write(f'{textoaux:14s}{varaux:13.7f}\n')
-            return file
+            file_name.write(f'{textoaux:14s}{varaux:13.7f}\n')
+            return file_name
         elif tamnum == 14:
-            file.write(f'{textoaux:14s}{varaux:14.7f}\n')
-            return file
+            file_name.write(f'{textoaux:14s}{varaux:14.7f}\n')
+            return file_name
         elif tamnum == 15:
-            file.write(f'{textoaux:14s}{varaux:15.7f}\n')
-            return file
+            file_name.write(f'{textoaux:14s}{varaux:15.7f}\n')
+            return file_name
         elif tamnum == 16:
-            file.write(f'{textoaux:14s}{varaux:16.7f}\n')
-            return file
+            file_name.write(f'{textoaux:14s}{varaux:16.7f}\n')
+            return file_name
         elif tamnum == 17:
-            file.write(f'{textoaux:14s}{varaux:17.7f}\n')
-            return file
+            file_name.write(f'{textoaux:14s}{varaux:17.7f}\n')
+            return file_name
         elif tamnum == 18:
-            file.write(f'{textoaux:14s}{varaux:18.7f}\n')
-            return file
+            file_name.write(f'{textoaux:14s}{varaux:18.7f}\n')
+            return file_name
         elif tamnum == 19:
-            file.write(f'{textoaux:14s}{varaux:19.7f}\n')
-            return file
+            file_name.write(f'{textoaux:14s}{varaux:19.7f}\n')
+            return file_name
 
-    def escreve_RDC(self, nome_RST):
+    def escreve_RDC(self, nome_RST,file_title):
         """
         Esta função constrói os arquivos de saída das diferentes funcionalidades do programa
         """
@@ -1447,29 +1517,29 @@ class Test():
             self.global_vars.varaux = self.rdc_vars.Varmin
             self.rdc_vars.num = 2 # num = 2 : real
             textoaux = 'min. value  : '
-            tamnum = self.tamnum(self.global_vars.varaux, self.rdc_vars.num)
-            self.aux_RDC(rdc_file, testoaux,self.global_vars.varaux, tamnum)
+            tamnum = self.tamanho_numero(self.global_vars.varaux, self.rdc_vars.num)
+            self.aux_RDC(rdc_file, textoaux,self.global_vars.varaux, tamnum)
 
             # Escreve a linha com o valor máximo dos dados
             self.global_vars.varaux = self.rdc_vars.Varmax
             self.rdc_vars.num = 2 # num = 2 : real
             textoaux = 'max. value  : '
-            tamnum = self.tamnum(self.global_vars.varaux, self.rdc_vars.num)
-            self.aux_RDC(rdc_file, testoaux,self.global_vars.varaux, tamnum)
+            tamnum = self.tamanho_numero(self.global_vars.varaux, self.rdc_vars.num)
+            self.aux_RDC(rdc_file, textoaux,self.global_vars.varaux, tamnum)
 
             # Escreve a linha com o valor mínimo de exebição
             self.global_vars.varaux = self.rdc_vars.Varmin
             self.rdc_vars.num = 2 # num = 2 : real
             textoaux = 'display min : '
-            tamnum = self.tamnum(self.global_vars.varaux, self.rdc_vars.num)
-            self.aux_RDC(rdc_file, testoaux,self.global_vars.varaux, tamnum) 
+            tamnum = self.tamanho_numero(self.global_vars.varaux, self.rdc_vars.num)
+            self.aux_RDC(rdc_file, textoaux,self.global_vars.varaux, tamnum) 
 
             #  Escreve a linha com o valor máximo para exibição 
             self.global_vars.varaux = self.rdc_vars.Varmax
             self.rdc_vars.num = 2 # num = 2 : real
             textoaux = 'display max : '
-            tamnum = self.tamnum(self.global_vars.varaux, self.rdc_vars.num)
-            self.aux_RDC(rdc_file, testoaux,self.global_vars.varaux, tamnum)
+            tamnum = self.tamanho_numero(self.global_vars.varaux, self.rdc_vars.num)
+            self.aux_RDC(rdc_file, textoaux,self.global_vars.varaux, tamnum)
 
             # Escreve a linha com a unidade dos dados
             rdc_file.write(f'value units : unspecified\n')
@@ -1481,7 +1551,7 @@ class Test():
             rdc_file.write(f'flag value  : {0:1d}\n')
 
             # Escreve a linha com o número de categorias da legenda
-            rdc_file.write(f'legend cats : {0:1d}')
+            rdc_file.write(f'legend cats : {0:1d}\n')
 
             # Escreve a linha sobre a criação da imagem
             rdc_file.write(f'lineage     : This file was created automatically by an ARP and JVD PYTHON program')
@@ -1495,20 +1565,35 @@ class Test():
         """
 
         # Abrindo o arquivo(fn : file name) para escrita dos resultados
-        fn_comp_acum = 'ComprimAcu.rst'
-        # Possivelmente será alterado, a depender dos resultados das variáveis LAc e Lfoz
-        with open(fn_cump_acum, 'wb') as arquivo1:
-            # Escrevendo o resultado do comprimento da rede de drenagem
-            for lin in range(self.rdc_vars.nlin):
-                dados_comp_acum = [float(self.global_vars.LAc[lin][col]) for col in range(self.rdc_vars.ncol)]
-                arquivo1.write(dados_comp_acum.tobytes())
+        file_path = r'C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\resultados_test_modelo\'
+        fn_comp_acum = file_path  + r'\ComprimAcu.rst'
+
+        # Define os dados a serem escritos
+        dados_comp_acum = np.array([[float(self.global_vars.Lac[lin][col]) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)]) #lac n existe
+        tipo_dados = gdalconst.GDT_Float32
+
+        # Os arquivos terão formato rst
+        driver = gdal.GetDriverByName('RST')
+
+        # Cria arquivo final
+        dataset = driver.Create(fn_comp_acum, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
+
+        # Escreve os dados na banda do arquivo
+        banda = dataset.GetRasterBand(1)
+        banda.WriteArray(dados_comp_acum)
+
+        # Fechando o arquivo
+        dataset = None
+        banda = None
+        driver = None
+        tipo_dados = None
 
         # Alocando as variáveis para escrita da documentação do arquivo rdc para o comprimento da rede de drenagem
         self.rdc_vars.nlin3 = self.rdc_vars.nlin
         self.rdc_vars.ncol3 = self.rdc_vars.ncol
         self.rdc_vars.tipo_dado = 2
         self.rdc_vars.tipoMM = 2
-        self.global_vars.VarMM2 = float(self.global_vars.LAc)
+        self.global_vars.VarMM2 = self.global_vars.Lac
         self.rdc_vars.i3 = 0 
         self.rdc_vars.Xmin3 = self.rdc_vars.xmin
         self.rdc_vars.Xmax3 = self.rdc_vars.xmax
@@ -1519,14 +1604,75 @@ class Test():
         self.escreve_RDC(nomeRST)
 
         # Escrevendo o resultado do comprimento da rede de drenagem
-        fn_comp_foz = 'ComprimFoz.rst'
-        with open(fn_comp_foz, 'wb') as arquivo2:
-            for lin in range(self.rdc_vars.nlin):
-                dados_comp_foz = [float(self.global_vars.Lfoz[lin][col]) for col in range(self.rdc_vars.ncol)]
-                arquivo2.write(dados_comp_foz.tobytes())
+        fn_comp_foz = file_path + r'\ComprimFoz.rst'
+               
+         # Define os dados a serem escritos
+        dados_comp_foz = np.array([[float(self.global_vars.Lfoz[lin][col]) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)])
+        tipo_dados = gdalconst.GDT_Float32
+
+        # Os arquivos terão formato rst
+        driver = gdal.GetDriverByName('RST')
+
+        # Cria arquivo final
+        dataset = driver.Create(fn_comp_foz, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
+
+        # Escreve os dados na banda do arquivo
+        banda = dataset.GetRasterBand(1)
+        banda.WriteArray(dados_comp_foz)
+
+        # Fechando o arquivo
+        dataset = None
+        banda = None
+        driver = None
+        tipo_dados = None
+
         # Alocando as variáveis para escrita da documentação do arquivo rdc para o comprimento da foz da bacia hidrográfica
-        self.global_vars.VarMM2 = float(self.global_vars.Lfoz)
+        self.global_vars.VarMM2 = self.global_vars.Lfoz
         nomeRST = fn_comp_foz
+        self.escreve_RDC(nomeRST)
+
+    def escreve_num_pix_cabec(self):
+        '''Esta função escreve a numeração das cabeceiras'''
+
+        # Definindo o caminho para o arquivo RST
+        file_path = r'C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\resultados_test_modelo'
+        fn_num_cab = file_path + r'\NUM_CABECEIRAS.rst'
+
+        # Definindo os dados a serem escritos
+        dados_num_cab = np.array([[float(self.global_vars.numcabe[lin][col]) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)])
+
+        # Definindo o tipo de dados para Float32
+        tipo_dados = gdalconst.GDT_Float32
+
+        # Obtendo o driver RST do GDAL
+        driver = gdal.GetDriverByName('RST')
+
+        # Criando o arquivo RST
+        dataset = driver.Create(fn_num_cab, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
+
+        # Escrevendo os dados na banda do arquivo
+        banda = dataset.GetRasterBand(1)
+        banda.WriteArray(dados_num_cab)
+
+        # Fechando o arquivo
+        dataset = None
+        banda = None
+        driver = None
+        tipo_dados = None
+
+        # Alocando as variáveis para escrita do arquivo rdc para o comprimento da rede de drenagem
+        self.rdc_vars.nlin3 = self.rdc_vars.nlin
+        self.rdc_vars.ncol3 = self.rdc_vars.ncol
+        self.rdc_vars.tipo_dado = 2
+        self.rdc_vars.tipoMM = 2
+        self.global_vars.VarMM2 = self.global_vars.numcabe
+        self.rdc_vars.i3 = 0 
+        self.rdc_vars.Xmin3 = self.rdc_vars.xmin
+        self.rdc_vars.Xmax3 = self.rdc_vars.xmax
+        self.rdc_vars.Ymin3 = self.rdc_vars.ymin
+        self.rdc_vars.Ymin3 = self.rdc_vars.ymax
+        nomeRST = fn_num_cab 
+        self.global_vars.metrordc = self.global_vars.metro
         self.escreve_RDC(nomeRST)
 
     def escreve_conectividade(self):
@@ -1535,20 +1681,35 @@ class Test():
         para os dados referentes ao mapa de conectividade das cabeceiras da bacia hidrográfica
         """
         # Abrindo o arquivo(fn : file name) para escrita dos resultados
-        fn_cab_pix = 'CABEpix.rst'
-        # Possivelmente será alterado, a depender dos resultados das variáveis LAc e Lfoz
-        with open(fn_cump_acum, 'wb') as arquivo1:
-            # Escrevendo o resultado do comprimento da rede de drenagem
-            for lin in range(self.rdc_vars.nlin):
-                dados_cab_pix = [float(self.global_vars.CABEpix[lin][col]) for col in range(self.rdc_vars.ncol)]
-                arquivo1.write(dados_cab_pix.tobytes())
+        file_path = r'C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\resultados_test_modelo'
+        fn_cab_pix = file_path + r'\CABEpix.rst'
 
-        # Alocando as variáveis para escrita da documentação do arquivo rdc para o comprimento da rede de drenagem
+        # Define os dados a serem escritos
+        dados_cab_pix = np.array([[float(self.global_vars.CABEpix[lin][col]) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)])
+        tipo_dados = gdalconst.GDT_Float32
+
+        # Os arquivos terão formato rst
+        driver = gdal.GetDriverByName('RST')
+
+        # Cria arquivo final
+        dataset = driver.Create(fn_cab_pix, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
+
+        # Escreve os dados na banda do arquivo
+        banda = dataset.GetRasterBand(1)
+        banda.WriteArray(dados_cab_pix)
+
+        # Fechando o arquivo
+        dataset = None
+        banda = None
+        driver = None
+        tipo_dados = None
+
+        # Aloca as variáveis para escrita da documentação do arquivo rdc para o comprimento da rede de drenagem
         self.rdc_vars.nlin3 = self.rdc_vars.nlin
         self.rdc_vars.ncol3 = self.rdc_vars.ncol
         self.rdc_vars.tipo_dado = 2
         self.rdc_vars.tipoMM = 2
-        self.global_vars.VarMM2 = float(self.global_vars.CABEpix)
+        self.global_vars.VarMM2 = self.global_vars.CABEpix
         self.rdc_vars.i3 = 0 
         self.rdc_vars.Xmin3 = self.rdc_vars.xmin
         self.rdc_vars.Xmax3 = self.rdc_vars.xmax
@@ -1559,19 +1720,39 @@ class Test():
         self.escreve_RDC(nomeRST)
 
         # Escrevendo o resultado do mapa de conectividade dos pixels da superficie a rede de drenagem
-        fn_n_conect_dren = 'num_conexao_drenagem.rst'
-        with open(fn_comp_foz, 'wb') as arquivo2:
-            for lin in range(self.rdc_vars.nlin):
-                dados_n_conect_dren = [float(self.global_vars.pixeldren[lin][col]) for col in range(self.rdc_vars.ncol)]
-                arquivo2.write(dados_n_conect_dren.tobytes())
-        # Alocando as variáveis para escrita da documentação do arquivo rdc para o comprimento da foz da bacia hidrográfica
-        self.global_vars.VarMM2 = float(self.global_vars.pixeldren)
+        fn_n_conect_dren = file_path + r'\num_conexao_drenagem.rst'
+
+        # Define os dados a serem escritos
+        dados_n_conect_dren = np.array([[float(self.global_vars.pixeldren[lin][col]) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)])
+        tipo_dados = gdalconst.GDT_Float32
+
+        # Obtendo o driver RST do GDAL
+        driver = gdal.GetDriverByName('RST')
+
+        # Cria arquivo final
+        dataset = driver.Create(fn_n_conect_dren, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
+
+        # Escreve os dados na banda do arquivo
+        banda = dataset.GetRasterBand(1)
+        banda.WriteArray(dados_n_conect_dren)
+
+        # Fechando o arquivo
+        dataset = None
+        banda = None
+        driver = None
+        tipo_dados = None
+
+        # Aloca as variáveis para escrita da documentação do arquivo rdc para o comprimento da foz da bacia hidrográfica
+        self.global_vars.VarMM2 = self.global_vars.pixeldren
         nomeRST = fn_n_conect_dren
         self.escreve_RDC(nomeRST)
 
     def escreve_dados_trecho(self):
         # Esta função escreve os dados de saída referentes aos diferentes trechos dos canais da bacia hidrográfica
-        with open('dados_trechos_superf.txt') as arquivo_txt:
+        file_path = r'C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\resultados_test_modelo'
+        fn_dados_tre_sup = file_path + r'\dados_trechos_superf.txt'
+
+        with open(fn_dados_tre_sup, 'w', encodig = 'utf-8') as arquivo_txt:
             arquivo_txt.write('{:<10}{:<6}{:<6}{:<10}{:<10}{:<12}{:<6}\n'.format('Cabeceira', 'Trecho', 'L(m)', 'Z_ini(m)', 'Z_fim(m)','Decliv(m/km)', 'Uso'))
             
             for self.global_vars.numcabeaux in range(self.global_vars.Ncabec):
@@ -1581,27 +1762,43 @@ class Test():
                 if self.global_vars.usotre[self.global_vars.numcabeaux][t] == 0:
                         print(f'{t}; {self.global_vars.numcabeaux}  Uso zero')
                         input('Press enter to continue...')
+                        pass
                 # Escrevendo as linhas do arquivo conforme os valores das variáveis
                 arquivo_txt.write('{:<10}{:<6}{:<10.2f}{:<10.2f}{:<10.2f}{:<12.6f}{:<6}\n'.format(self.global_vars.numcabeaux, t, self.global_vars.Ltre[self.global_vars.numcabeaux][t], self.global_vars.cotaini[self.global_vars.numcabeaux][t], self.global_vars.cotafim[self.global_vars.numcabeaux][t],\
                                                                                     self.global_vars.Stre[self.global_vars.numcabeaux][t],self.global_vars.usotre[self.global_vars.numcabeaux][t]))
 
     def escreve_declivi_pixel(self):
         '''Esta função gera o mapa de numeração dos pixels da rede de drenagem'''
+
         # Abrindo o arquivo(fn : file name) para escrita dos resultados
-        fn_decli_pix = 'decliv_pixel.rst'
-        # Possivelmente será alterado, a depender dos resultados das variáveis LAc e Lfoz
-        with open(fn_decli_pix, 'wb') as arquivo1:
-            # Escrevendo o resultado do comprimento da rede de drenagem
-            for lin in range(self.rdc_vars.nlin):
-                dados_decli_pix = [float(self.global_vars.decliv_pixel[lin][col]) for col in range(self.rdc_vars.ncol)]
-                arquivo1.write(dados_decli_pix.tobytes())
+        file_path = r'C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\resultados_test_modelo'
+        fn_decli_pix = file_path + r'\decliv_pixel.rst'
+
+        # Define os dados a serem escritos
+        dados_decli_pix = np.array([[float(self.global_vars.decliv_pixel[lin][col]) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)])
+        tipo_dados = gdalconst.GDT_Float32
+
+        # Obtendo o driver RST do GDAL
+        driver = gdal.GetDriverByName('RST')
+        # Cria arquivo final
+        dataset = driver.Create(fn_decli_pix, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
+
+        # Escreve os dados na banda do arquivo
+        banda = dataset.GetRasterBand(1)
+        banda.WriteArray(dados_decli_pix)
+
+        # Fechando o arquivo
+        dataset = None
+        banda = None
+        driver = None
+        tipo_dados = None
 
         # Alocando as variáveis para escrita da documentação do arquivo rdc para o comprimento da rede de drenagem
         self.rdc_vars.nlin3 = self.rdc_vars.nlin
         self.rdc_vars.ncol3 = self.rdc_vars.ncol
         self.rdc_vars.tipo_dado = 2
         self.rdc_vars.tipoMM = 2
-        self.global_vars.VarMM2 = float(self.global_vars.decliv_pixel)
+        self.global_vars.VarMM2 = self.global_vars.decliv_pixel
         self.rdc_vars.i3 = 0 
         self.rdc_vars.Xmin3 = self.rdc_vars.xmin
         self.rdc_vars.Xmax3 = self.rdc_vars.xmax
@@ -1613,21 +1810,37 @@ class Test():
 
     def escreve_decliv_pixel_jus(self):
         '''Esta função gera o mapa de numeração dos pixels jusantes da rede de drenagem'''
+
         # Abrindo o arquivo(fn : file name) para escrita dos resultados
-        fn_decli_pix_jus = 'decliv_pixel_jus.rst'
-        # Possivelmente será alterado, a depender dos resultados das variáveis LAc e Lfoz
-        with open(fn_decli_pix_jus, 'wb') as arquivo1:
-            # Escrevendo o resultado do comprimento da rede de drenagem
-            for lin in range(self.rdc_vars.nlin):
-                dados_decli_pix_jus = [float(self.global_vars.decliv_pixel_jus[lin][col]) for col in range(self.rdc_vars.ncol)]
-                arquivo1.write(dados_decli_pix_jus.tobytes())
+        file_path = r'C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\resultados_test_modelo'
+        fn_decli_pix_jus = file_path + r'\decliv_pixel_jus.rst'
+        
+        # Define os dados a serem escritos
+        dados_decli_pix_jus = np.array([[float(self.global_vars.DECLIVpixjus[lin][col]) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)])
+        tipo_dados = gdalconst.GDT_Float32
+
+        # Obtendo o driver RST do GDAL
+        driver = gdal.GetDriverByName('RST')
+
+        # Cria arquivo final
+        dataset = driver.Create(fn_decli_pix_jus, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
+
+        # Escreve os dados na banda do arquivo
+        banda = dataset.GetRasterBand(1)
+        banda.WriteArray(dados_decli_pix_jus)
+
+        # Fechando o arquivo
+        dataset = None
+        banda = None
+        driver = None
+        tipo_dados = None
 
         # Alocando as variáveis para escrita da documentação do arquivo rdc para o comprimento da rede de drenagem
         self.rdc_vars.nlin3 = self.rdc_vars.nlin
         self.rdc_vars.ncol3 = self.rdc_vars.ncol
         self.rdc_vars.tipo_dado = 2
         self.rdc_vars.tipoMM = 2
-        self.global_vars.VarMM2 = float(self.global_vars.decliv_pixel_jus)
+        self.global_vars.VarMM2 = self.global_vars.DECLIVpixjus
         self.rdc_vars.i3 = 0 
         self.rdc_vars.Xmin3 = self.rdc_vars.xmin
         self.rdc_vars.Xmax3 = self.rdc_vars.xmax
@@ -1639,21 +1852,37 @@ class Test():
     
     def escreve_dist_rel_trechos(self):
         '''Esta função gera o arquivo com as distânicas relativas dentro do trecho'''
+
         # Abrindo o arquivo(fn : file name) para escrita dos resultados
-        fn_dist_rel_tre = 'DISTtre.rst'
-        # Possivelmente será alterado, a depender dos resultados das variáveis LAc e Lfoz
-        with open(fn_dist_rel_tre, 'wb') as arquivo1:
-            # Escrevendo o resultado do comprimento da rede de drenagem
-            for lin in range(self.rdc_vars.nlin):
-                dados_dist_rel_tre = [float(self.global_vars.DISTtre[lin][col]) for col in range(self.rdc_vars.ncol)]
-                arquivo1.write(dados_dist_rel_tre.tobytes())
+        file_path = r'C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\resultados_test_modelo'
+        fn_dist_rel_tre = file_path + r'\DISTtre.rst'
+        
+        # Define os dados a serem escritos
+        dados_dist_rel_tre = np.array([[float(self.global_vars.DISTtre[lin][col]) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)])
+        tipo_dados = gdalconst.GDT_Float32
+
+        # Obtendo o driver RST do GDAL
+        driver = gdal.GetDriverByName('RST')
+
+        # Cria arquivo final
+        dataset = driver.Create(fn_dist_rel_tre, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
+
+        # Escreve os dados na banda do arquivo
+        banda = dataset.GetRasterBand(1)
+        banda.WriteArray(dados_dist_rel_tre)
+
+        # Fechando o arquivo
+        dataset = None
+        banda = None
+        driver = None
+        tipo_dados = None
 
         # Alocando as variáveis para escrita da documentação do arquivo rdc para o comprimento da rede de drenagem
         self.rdc_vars.nlin3 = self.rdc_vars.nlin
         self.rdc_vars.ncol3 = self.rdc_vars.ncol
         self.rdc_vars.tipo_dado = 2
         self.rdc_vars.tipoMM = 2
-        self.global_vars.VarMM2 = float(self.global_vars.DISTtre)
+        self.global_vars.VarMM2 = self.global_vars.DISTtre
         self.rdc_vars.i3 = 0 
         self.rdc_vars.Xmin3 = self.rdc_vars.xmin
         self.rdc_vars.Xmax3 = self.rdc_vars.xmax
@@ -1663,49 +1892,38 @@ class Test():
         self.global_vars.metrordc = self.global_vars.metro
         self.escreve_RDC(nomeRST)
 
-    def escreve_num_pix_cabec(self):
-        '''Esta função escreve a numeração das cabeceiras'''
-        # Abrindo o arquivo(fn : file name) para escrita dos resultados
-        fn_num_cab = 'NUM_CABECEIRAS.rst'
-        # Possivelmente será alterado, a depender dos resultados das variáveis LAc e Lfoz
-        with open(fn_num_cab , 'wb') as arquivo1:
-            # Escrevendo o resultado do comprimento da rede de drenagem
-            for lin in range(self.rdc_vars.nlin):
-                dados_num_cab = [float(self.global_vars.numcabe[lin][col]) for col in range(self.rdc_vars.ncol)]
-                arquivo1.write(dados_num_cab.tobytes())
-
-        # Alocando as variáveis para escrita da documentação do arquivo rdc para o comprimento da rede de drenagem
-        self.rdc_vars.nlin3 = self.rdc_vars.nlin
-        self.rdc_vars.ncol3 = self.rdc_vars.ncol
-        self.rdc_vars.tipo_dado = 2
-        self.rdc_vars.tipoMM = 2
-        self.global_vars.VarMM2 = float(self.global_vars.numcabe)
-        self.rdc_vars.i3 = 0 
-        self.rdc_vars.Xmin3 = self.rdc_vars.xmin
-        self.rdc_vars.Xmax3 = self.rdc_vars.xmax
-        self.rdc_vars.Ymin3 = self.rdc_vars.ymin
-        self.rdc_vars.Ymin3 = self.rdc_vars.ymax
-        nomeRST = fn_num_cab 
-        self.global_vars.metrordc = self.global_vars.metro
-        self.escreve_RDC(nomeRST)
-
     def escreve_num_pix_drenagem(self):
         '''Esta função gera o mapa de numeração dos píxels da rede de drenagem'''
-        # Abrindo o arquivo(fn : file name) para escrita dos resultados
-        fn_num_pix_dren = 'num_pixels_drenagem.rst'
-        # Possivelmente será alterado, a depender dos resultados das variáveis LAc e Lfoz
-        with open(fn_num_pix_dren, 'wb') as arquivo1:
-            # Escrevendo o resultado do comprimento da rede de drenagem
-            for lin in range(self.rdc_vars.nlin):
-                dados_num_pix_dren = [float(self.global_vars.contadren[lin][col]) for col in range(self.rdc_vars.ncol)]
-                arquivo1.write(dados_num_pix_dren.tobytes())
 
+        # Abrindo o arquivo(fn : file name) para escrita dos resultados
+        file_path = r'C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\resultados_test_modelo'
+        fn_num_pix_dren = file_path + 'num_pixels_drenagem.rst'
+        
+        # Define os dados a serem escritos
+        dados_num_pix_dren = np.array([[float(self.global_vars.pixeldren[lin][col]) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)])
+        tipo_dados = gdalconst.GDT_Float32
+
+        # Obtendo o driver RST do GDAL
+        driver = gdal.GetDriverByName('RST')
+
+        # Cria arquivo final
+        dataset = driver.Create(fn_num_pix_dren, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
+
+        # Escreve os dados na banda do arquivo
+        banda = dataset.GetRasterBand(1)
+        banda.WriteArray(dados_num_pix_dren)
+
+        # Fechando o arquivo
+        dataset = None
+        banda = None
+        driver = None
+       
         # Alocando as variáveis para escrita da documentação do arquivo rdc para o comprimento da rede de drenagem
         self.rdc_vars.nlin3 = self.rdc_vars.nlin
         self.rdc_vars.ncol3 = self.rdc_vars.ncol
         self.rdc_vars.tipo_dado = 1
         self.rdc_vars.tipoMM = 2
-        self.global_vars.VarMM2 = float(self.global_vars.contadren)
+        self.global_vars.VarMM2 = self.contadren
         self.rdc_vars.i3 = 0 
         self.rdc_vars.Xmin3 = self.rdc_vars.xmin
         self.rdc_vars.Xmax3 = self.rdc_vars.xmax
@@ -1718,20 +1936,34 @@ class Test():
     def escreve_num_trechos(self):
         '''Esta função escreve a numeração dos trechos'''
         # Abrindo o arquivo(fn : file name) para escrita dos resultados
-        fn_num_tre = 'num_pixels_drenagem.rst'
-        # Possivelmente será alterado, a depender dos resultados das variáveis LAc e Lfoz
-        with open(fn_num_tre, 'wb') as arquivo1:
-            # Escrevendo o resultado do comprimento da rede de drenagem
-            for lin in range(self.rdc_vars.nlin):
-                dados_num_tre = [float(self.global_vars.refcabtre[lin][col]) for col in range(self.rdc_vars.ncol)]
-                arquivo1.write(dados_num_tere.tobytes())
+        file_path = r'C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\resultados_test_modelo'
+        fn_num_tre = file_path + r'\num_pixels_drenagem.rst'
+
+        # Define os dados a serem escritos
+        dados_num_tre = np.array([[float(self.global_vars.refcabtre[lin][col]) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)])
+        tipo_dados = gdalconst.GDT_Float32
+
+        # Obtendo o driver RST do GDAL
+        driver = gdal.GetDriverByName('RST')
+
+        # Cria arquivo final
+        dataset = driver.Create(fn_num_tre, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
+
+        # Escreve os dados na banda do arquivo
+        banda = dataset.GetRasterBand(1)
+        banda.WriteArray(dados_num_tre)
+
+        # Fechando o arquivo
+        dataset = None
+        banda = None
+        driver = None
 
         # Alocando as variáveis para escrita da documentação do arquivo rdc para o comprimento da rede de drenagem
         self.rdc_vars.nlin3 = self.rdc_vars.nlin
         self.rdc_vars.ncol3 = self.rdc_vars.ncol
         self.rdc_vars.tipo_dado = 1
         self.rdc_vars.tipoMM = 2
-        self.global_vars.VarMM2 = float(self.global_vars.refcabtre)
+        self.global_vars.VarMM2 = self.global_vars.refcabtre
         self.rdc_vars.i3 = 0 
         self.rdc_vars.Xmin3 = self.rdc_vars.xmin
         self.rdc_vars.Xmax3 = self.rdc_vars.xmax
@@ -1744,23 +1976,36 @@ class Test():
     def escreve_tempo_canal(self):
         '''Esta função escreve os dados referentes aos cálculos do tempo de concentração para os canais da rede de drenagem da 
             bacia hidrográfica'''
-        self.global_vars.TempoRioR = float(self.global_vars.TempoRio)
 
         # Abrindo o arquivo(fn : file name) para escrita dos resultados
-        fn_temp_canal = 'TempoCanal.rst'
-        # Possivelmente será alterado, a depender dos resultados das variáveis LAc e Lfoz
-        with open(fn_temp_canal, 'wb') as arquivo1:
-            # Escrevendo o resultado do comprimento da rede de drenagem
-            for lin in range(self.rdc_vars.nlin):
-                dados_temp_canal = [float(self.global_vars.TempoRioR[lin][col]) for col in range(self.rdc_vars.ncol)]
-                arquivo1.write(dados_temp_canal.tobytes())
+        file_path = r'C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\resultados_test_modelo'
+        fn_temp_canal = file_path + r'\TempoCanal.rst'
+
+        # Define os dados a serem escritos
+        dados_temp_canal = np.array([[float(self.global_vars.TempoRioR[lin][col]) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)])
+        tipo_dados = gdalconst.GDT_Float32
+
+        # Obtendo o driver RST do GDAL
+        driver = gdal.GetDriverByName('RST')
+
+        # Cria arquivo final
+        dataset = driver.Create(fn_temp_canal, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
+
+        # Escreve os dados na banda do arquivo
+        banda = dataset.GetRasterBand(1)
+        banda.WriteArray(dados_temp_canal)
+
+        # Fechando o arquivo
+        dataset = None
+        banda = None
+        driver = None
 
         # Alocando as variáveis para escrita da documentação do arquivo rdc para o comprimento da rede de drenagem
         self.rdc_vars.nlin3 = self.rdc_vars.nlin
         self.rdc_vars.ncol3 = self.rdc_vars.ncol
         self.rdc_vars.tipo_dado = 2
         self.rdc_vars.tipoMM = 2
-        self.global_vars.VarMM2 = float(self.global_vars.TempoRioR)
+        self.global_vars.VarMM2 = self.global_vars.TempoRioR
         self.rdc_vars.i3 = 0 
         self.rdc_vars.Xmin3 = self.rdc_vars.xmin
         self.rdc_vars.Xmax3 = self.rdc_vars.xmax
@@ -1773,19 +2018,34 @@ class Test():
     def escreve_tempo_sup(self):
         '''Esta função constrói o mapa dos tempos de deslocamento da água para os píxel de superfícies'''
         # Abrindo o arquivo(fn : file name) para escrita dos resultados
-        fn_temp_sup = 'TempoSup_por_cabeceira.rst'
-        with open(fn_temp_sup, 'wb') as arquivo1:
-            # Escrevendo o resultado do comprimento da rede de drenagem
-            for lin in range(self.rdc_vars.nlin):
-                dados_temp_sup = [float(self.global_vars.TScabe2d[lin][col]) for col in range(self.rdc_vars.ncol)]
-                arquivo1.write(dados_temp_sup.tobytes())
+        file_path = r'C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\resultados_test_modelo'
+        fn_temp_sup = file_path + r'\TempoSup_por_cabeceira.rst'
+        
+        # Define os dados a serem escritos
+        dados_temp_sup = np.array([[float(self.global_vars.TScabe2d[lin][col]) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)])
+        tipo_dados = gdalconst.GDT_Float32
+
+        # Obtendo o driver RST do GDAL
+        driver = gdal.GetDriverByName('RST')
+
+        # Cria arquivo final
+        dataset = driver.Create(fn_temp_sup, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
+
+        # Escreve os dados na banda do arquivo
+        banda = dataset.GetRasterBand(1)
+        banda.WriteArray(dados_temp_sup)
+
+        # Fechando o arquivo
+        dataset = None
+        banda = None
+        driver = None
 
         # Alocando as variáveis para escrita da documentação do arquivo rdc para o comprimento da rede de drenagem
         self.rdc_vars.nlin3 = self.rdc_vars.nlin
         self.rdc_vars.ncol3 = self.rdc_vars.ncol
         self.rdc_vars.tipo_dado = 2
         self.rdc_vars.tipoMM = 2
-        self.global_vars.VarMM2 = float(self.global_vars.TScabe2d)
+        self.global_vars.VarMM2 = self.global_vars.TScabe2d
         self.rdc_vars.i3 = 0 
         self.rdc_vars.Xmin3 = self.rdc_vars.xmin
         self.rdc_vars.Xmax3 = self.rdc_vars.xmax
@@ -1796,51 +2056,96 @@ class Test():
         self.escreve_RDC(nomeRST)
 
         # TempoS de deslocamento no mapa - píxels não fazem parte da cabeceira
-        fn_temp_sup_Ncabe = 'TempoSup_nao_de_cabeceira.rst'
-        with open(fn_temp_sup_Ncabe, 'wb') as arquivo2:
-        # Escrevendo o resultado do comprimento da rede de drenagem
-            for lin in range(self.rdc_vars.nlin):
-                dados_temp_sup_Ncabe = [float(self.global_vars.TSnaocabe2d[lin][col]) for col in range(self.rdc_vars.ncol)]
-                arquivo2.write(dados_temp_sup_Ncabe.tobytes())
+
+        fn_temp_sup_Ncabe = file_path + r'\TempoSup_nao_de_cabeceira.rst'
+
+        # Define os dados a serem escritos
+        dados_temp_sup_Ncabe = np.array([[float(self.global_vars.TSnaocabe2d[lin][col]) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)])
+        tipo_dados = gdalconst.GDT_Float32
+
+        # Obtendo o driver RST do GDAL
+        driver = gdal.GetDriverByName('RST')
+
+        # Cria arquivo final
+        dataset = driver.Create(fn_temp_sup_Ncabe, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
+
+        # Escreve os dados na banda do arquivo
+        banda = dataset.GetRasterBand(1)
+        banda.WriteArray(dados_temp_sup_Ncabe)
+
+        # Fechando o arquivo
+        dataset = None
+        banda = None
+        driver = None 
 
         # Alocando as variáveis para escrita da documentação do arquivo rdc para o comprimento da rede de drenagem    
         self.rdc_vars.tipo_dado = 2
         self.rdc_vars.tipoMM = 2
-        self.global_vars.VarMM2 = float(self.global_vars.TSnaocabe2d)   
+        self.global_vars.VarMM2 = self.global_vars.TSnaocabe2d 
         nomeRST = fn_temp_sup_Ncab
         self.escreve_RDC(nomeRST)
 
-        # TempoS de deslocamento no mapa - todos os píxels
-        fn_temp_sup_td = 'TempoSup_todos.rst'
-        with open(fn_temp_sup_td, 'wb') as arquivo3:
-        # Escrevendo o resultado do comprimento da rede de drenagem
-            for lin in range(self.rdc_vars.nlin):
-                dados_temp_sup_td = [float(self.global_vars.TStodos2d[lin][col]) for col in range(self.rdc_vars.ncol)]
-                arquivo3.write(dados_temp_sup_td.tobytes())
+        # Tempo de deslocamento no mapa - todos os píxels
+        fn_temp_sup_td = file_path + r'\TempoSup_todos.rst'
+
+        # Define os dados a serem escritos
+        dados_temp_sup_td = np.array([[float(self.global_vars.TStodos2d[lin][col]) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)])
+        tipo_dados = gdalconst.GDT_Float32
+
+        # Obtendo o driver RST do GDAL
+        driver = gdal.GetDriverByName('RST')
+
+        # Cria arquivo final
+        dataset = driver.Create(fn_temp_sup_td, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
+
+        # Escreve os dados na banda do arquivo
+        banda = dataset.GetRasterBand(1)
+        banda.WriteArray(dados_temp_sup_td)
+
+        # Fechando o arquivo
+        dataset = None
+        banda = None
+        driver = None         
 
         # Alocando as variáveis para escrita da documentação do arquivo rdc para o comprimento da rede de drenagem    
         self.rdc_vars.tipo_dado = 2
         self.rdc_vars.tipoMM = 2
-        self.global_vars.VarMM2 = float(self.global_vars.TStodos2d)   
+        self.global_vars.VarMM2 = self.global_vars.TStodos2d
         nomeRST = fn_temp_sup_td
         self.escreve_RDC(nomeRST)
 
     def escreve_tempo_total(self):
         '''Esta função gera o mapa de conectividade dos píxels de superfície da rede de drenagem'''
+
         # Abrindo o arquivo(fn : file name) para escrita dos resultados
-        fn_temp_total = 'TempoTotal.rst'
-        with open(fn_temp_total, 'wb') as arquivo1:
-            # Escrevendo o resultado do comprimento da rede de drenagem
-            for lin in range(self.rdc_vars.nlin):
-                dados_temp_total = [float(self.global_vars.TempoTotal[lin][col]) for col in range(self.rdc_vars.ncol)]
-                arquivo1.write(dados_temp_total.tobytes())
+        file_path = r'C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\resultados_test_modelo'
+        fn_temp_total = file_path + r'\TempoTotal.rst'
+        
+        # Define os dados a serem escritos
+        dados_temp_total = np.array([[float(self.global_vars.TempoTot[lin][col]) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)]) #tempo total não exist
+        tipo_dados = gdalconst.GDT_Float32
+
+        # Obtendo o driver RST do GDAL
+        driver = gdal.GetDriverByName('RST')
+
+        # Cria arquivo final
+        dataset = driver.Create(fn_temp_total, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
+
+        # Escreve os dados na banda do arquivo
+        banda = dataset.GetRasterBand(1)
+        banda.WriteArray(dados_temp_total)
+
+        # Fechando o arquivo
+        dataset = None
+        banda = None
+        driver = None   
 
         # Alocando as variáveis para escrita da documentação do arquivo rdc para o comprimento da rede de drenagem
         self.rdc_vars.nlin3 = self.rdc_vars.nlin
         self.rdc_vars.ncol3 = self.rdc_vars.ncol
         self.rdc_vars.tipo_dado = 2
         self.rdc_vars.tipoMM = 2
-        self.global_vars.VarMM2 = float(self.global_vars.TempoTotal)
+        self.global_vars.VarMM2 = self.global_vars.TempoTot
         self.rdc_vars.i3 = 0 
         self.rdc_vars.Xmin3 = self.rdc_vars.xmin
         self.rdc_vars.Xmax3 = self.rdc_vars.xmax
@@ -1852,8 +2157,10 @@ class Test():
 
     def escreve_tre_cabec(self):
         '''Esta função gera o arquivo que possui as informações acerca dos trechos das cabeceiras'''
+
         # Abrindo o arquivo(fn : file name) para escrita dos resultados
-        fn_tre_cabec = 'relacao_trechos_cabec.txt'
+        file_path = r'C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\resultados_test_modelo'
+        fn_tre_cabec = file_path + r'\relacao_trechos_cabec.txt'
         with open(fn_tre_cabec, 'w') as arquivo_txt:
             arquivo_txt.write('{:<12}{:<12}'.format('Cabeceira', 'Num.trechos'))
             for self.global_vars.numcabeaux in range(self.global_vars.Ncabec):
@@ -1862,18 +2169,36 @@ class Test():
     
     def escreve_trecho_pixel(self):
         '''Esta função gera o mapa de conectividade das cabeceiras'''
+
         # Abrindo o arquivo(fn : file name) para escrita dos resultados
-        fn_tre_pix = 'TREpix.rst'
-        with open(fn_tre_pix, 'wb') as arquivo1:
-            for lin in range(self.global_vars.rdc_vars.nlin):
-                dados_tre_pix = [float(self.global_vars.TREpix[lin][col] for col in range(self.rdc_vars.ncol))]
-                arquivo1.write(dados_tre_pix.tobytes())
+        file_path = r'C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\resultados_test_modelo'
+        fn_tre_pix = file_path + r'\TREpix.rst'
+
+        # Define os dados a serem escritos
+        dados_tre_pix = np.array([[float(self.global_vars.TREpix[lin][col]) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)])
+        tipo_dados = gdalconst.GDT_Float32
+
+        # Obtendo o driver RST do GDAL
+        driver = gdal.GetDriverByName('RST')
+        
+        # Cria arquivo final
+        dataset = driver.Create(fn_tre_pix, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
+
+        # Escreve os dados na banda do arquivo
+        banda = dataset.GetRasterBand(1)
+        banda.WriteArray(dados_tre_pix)
+
+        # Fechando o arquivo
+        dataset = None
+        banda = None
+        driver = None   
+
         # Alocando as variáveis para escrita da documentação do arquivo rdc para o comprimento da rede de drenagem
         self.rdc_vars.nlin3 = self.rdc_vars.nlin
         self.rdc_vars.ncol3 = self.rdc_vars.ncol
         self.rdc_vars.tipo_dado = 1
         self.rdc_vars.tipoMM = 2
-        self.global_vars.VarMM2 = float(self.global_vars.TREpix)
+        self.global_vars.VarMM2 = self.global_vars.TREpix
         self.rdc_vars.i3 = 0 
         self.rdc_vars.Xmin3 = self.rdc_vars.xmin
         self.rdc_vars.Xmax3 = self.rdc_vars.xmax
@@ -1885,18 +2210,36 @@ class Test():
     
     def escreve_TS_pix_acum(self):
         '''Esta função gera os arquivos com os resultados para o tempo de concentração/escoamento'''
+
         # Abrindo o arquivo(fn : file name) para escrita dos resultados
-        fn_temp_pix_jus = 'tempo_pixel_jus.rst'
-        with open(fn_temp_pix_jus, 'wb') as arquivo1:
-            for lin in range(self.global_vars.rdc_vars.nlin):
-                dados_temp_pix_jus = [float(self.global_vars.TSpix[lin][col] for col in range(self.rdc_vars.ncol))]
-                arquivo1.write(dados_temp_pix_jus.tobytes())
+        file_path = r'C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\resultados_test_modelo'
+        fn_temp_pix_jus = file_path + r'\tempo_pixel_jus.rst'
+
+        # Define os dados a serem escritos
+        dados_temp_pix_jus = np.array([[float(self.global_vars.TSpix[lin][col]) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)])
+        tipo_dados = gdalconst.GDT_Float32
+
+        # Obtendo o driver RST do GDAL
+        driver = gdal.GetDriverByName('RST')
+        
+        # Cria arquivo final
+        dataset = driver.Create(fn_temp_pix_jus, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
+
+        # Escreve os dados na banda do arquivo
+        banda = dataset.GetRasterBand(1)
+        banda.WriteArray(dados_temp_pix_jus)
+
+        # Fechando o arquivo
+        dataset = None
+        banda = None
+        driver = None   
+
         # Alocando as variáveis para escrita da documentação do arquivo rdc para o comprimento da rede de drenagem
         self.rdc_vars.nlin3 = self.rdc_vars.nlin
         self.rdc_vars.ncol3 = self.rdc_vars.ncol
         self.rdc_vars.tipo_dado = 2
         self.rdc_vars.tipoMM = 2
-        self.global_vars.VarMM2 = float(self.global_vars.TSpix)
+        self.global_vars.VarMM2 = self.global_vars.TSpix
         self.rdc_vars.i3 = 0 
         self.rdc_vars.Xmin3 = self.rdc_vars.xmin
         self.rdc_vars.Xmax3 = self.rdc_vars.xmax
@@ -1906,51 +2249,114 @@ class Test():
         self.global_vars.metrordc = self.global_vars.metro
         self.escreve_RDC(nomeRST)
 
-        fn_temp_pix_jus_acum = 'tempo_pixel_jus_acum.rst'
-        with open(fn_temp_pix_jus_acum, 'wb') as arquivo2:
-            for lin in range(self.global_vars.rdc_vars.nlin):
-                dados_temp_pix_jus_acum = [float(self.global_vars.TSpixacum[lin][col] for col in range(self.rdc_vars.ncol))]
-                arquivo2.write(dados_temp_pix_jus_acum.tobytes())
+        fn_temp_pix_jus_acum = file_path + r'\tempo_pixel_jus_acum.rst'
+        # Define os dados a serem escritos
+        dados_temp_pix_jus_acum = np.array([[float(self.global_vars.TSpixacum[lin][col]) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)])
+        tipo_dado  -= gdalconst.GDT_Float32
 
-        self.global_vars.VarMM2 = float(self.global_vars.TSpixacum) 
+        # Obtendo o driver RST do GDAL
+        driver = gdal.GetDriverByName('RST')
+
+        # Cria o arquivo final
+        dataset = driver.Create(fn_temp_pix_jus_acum,self.rdc_vars.ncol, self.rdc_vars.ncol, 1, tipo_dado)
+
+        # Escreve os dados na banda do arquivo
+        banda = dataset.GetRasterBand(1)
+        banda.WriteArray(dados_temp_pix_jus_acum)
+
+        self.global_vars.VarMM2 = self.global_vars.TSpixacum
         nomeRST = fn_temp_pix_jus
         self.escreve_RDC(nomeRST)       
 
+    def run(self):
+        '''Esta função ordena a execução das outras funções da classe test'''
+
+        # Definicões iniciais!
+
+        # Define tipo:
+        self.global_vars.tipo_decliv = 4
+        # 1: declividade cte para subtrecho dada em funcao das cotas ini e fim do subtrecho, e sua extensao
+        # 2: declividade cte para subtrecho dada pela media ponderada da decliv de cada pixel em relacao ao final do subtrecho
+        # 3: declividade cte para subtrecho dada pela media artimetica da decliv de cada pixel em relacao ao final do subtrecho
+        # 4: declividade variavel calculada invidualmente pixel a pixel ao longo do caminho, com imposicao de limites minimo e maximo, sendo
+        #calculado tempo de um pixel para seu jusante e depois somados esses tempos
+        
+        # Define subtipo (valido para tipos 1, 2 e 3; tipodecliv=4 nao tem subtipo):
+        self.global_vars.subtipodecliv = 'b'
+        # a: aproximacao linear por regra de tres para tempos de escoamento dos pixels intermediarios
+        # b: calculo via equacao do metodo SCS para cada tempo de escoamento dos pixels intermediarios, mantido S constante (tipo 1,2 ou 3)
+        
+        self.global_vars.lado = 1
+        self.global_vars.diagonal = 1.4142
+        # Funções de leitura dos arquivos
+        print('Lendo arquivos de entrada...')
+        self.leh_bacia()
+        self.leh_caracteristica_dRios()
+        self.leh_classes_rios()
+        self.leh_direcoes_de_fluxo()
+        self.leh_drenagem()
+        self.leh_modelo_numerico_dTerreno()
+        self.leh_precipitacao_24h()
+        self.leh_uso_do_solo()
+        self.leh_uso_manning()
+
+        # Funções de processamento
+        print('\nIniciando processamento...\n')
+
+        if self.rdc_vars.unidaderef3 =='deg':
+            # Sistema está em graus, assumindo lat e long: será feita a projeção para metros
+            self.global_vars.metro = 0
+        else:
+            # Sistema está em metros, não é preciso fazer a projeção para metros
+            self.global_vars.metro = 1
+
+        print('Processando numera pixel...\n')
+        self.numera_pixel()
+
+        print('Processando distância de drenagem...\n')
+        self.dist_drenagem()
+
+        if self.global_vars.tipo_decliv == 4:
+            self.escreve_decliv_pixel_jus()
+        
+        print('Processando distância de trecho...\n')
+        self.dist_trecho()
+        self.escreve_dados_trecho()
+
+        print('Processando tempo de superfície...\n')
+        self.tempo_sup()
+        self.escreve_tre_cabec()
+        self.escreve_num_trechos()
+        self.escreve_dist_rel_trechos()
+
+        print('Processando comprimento acumulado...\n')
+        self.comprimento_acumulado()
+        
+        print('Processando tempo canal...\n')
+        self.tempo_canal()
+        
+        print('Processando tempo total...\n')
+        self.tempo_total()
+
+        print('\nEscrevendo arquivos de saída...\n')  
+        self.escreve_conectividade()
+        self.escreve_num_pix_cabec()
+        self.escreve_num_pix_drenagem()
+
+        if self.global_vars.tipo_decliv == 4:
+            print('*\n')
+        else:
+            self.escreve_tempo_sup()
+
+        self.escreve_comprimento_acumulado()
+        self.escreve_tempo_canal()
+        self.escreve_tempo_total()
+        self.escreve_trecho_pixel()
+
+        if self.global_vars.tipo_decliv == 4:
+            self.escreve_TS_pix_acum()
+
 
 cla_test = Test()
-cla_test.leh_bacia()
-cla_test.leh_caracteristica_dRios()
-cla_test.leh_classes_rios()
-cla_test.leh_direcoes_de_fluxo()
-cla_test.leh_drenagem()
-cla_test.leh_modelo_numerico_dTerreno()
-cla_test.leh_precipitacao_24h()
-cla_test.leh_uso_do_solo()
-cla_test.leh_uso_manning()
-cla_test.numera_pixel()
-# cla_test.comprimento_acumulado(1)
-# cla_test.dist_drenagem()
-cla_test.dist_trecho()
-cla_test.tempo_canal()
-cla_test.tempo_sup()
-cla_test.tempo_total()
-cla_test.min_max()
-cla_test.tamanho_numero()
-cla_test.escreve_RDC()
-cla_test.escreve_comprimento_acumulado()
-cla_test.escreve_conectividade()
-cla_test.escreve_dados_trecho()
-cla_test.escreve_declivi_pixel()
-cla_test.escreve_declivi_pixel_jus()
-cla_test.escreve_dit_rel_trechos()
-cla_test.escreve_num_pix_cabec()
-cla_test.escreve_num_pix_drenagem()
-cla_test.escreve_num_trechos()
-cla_test.escreve_tempo_canal()
-cla_test.escreve_tempo_total()
-cla_test.escreve_tre_cabec()
-cla_test.escreve_trecho_pixel()
-cla_test.escreve_TS_pix_acum()
-
-
+cla_test.run()
 
