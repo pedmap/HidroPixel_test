@@ -1565,7 +1565,7 @@ class Test():
         """
 
         # Abrindo o arquivo(fn : file name) para escrita dos resultados
-        file_path = r'C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\resultados_test_modelo\'
+        file_path = r'C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\resultados_test_modelo'
         fn_comp_acum = file_path  + r'\ComprimAcu.rst'
 
         # Define os dados a serem escritos
