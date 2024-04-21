@@ -835,14 +835,14 @@ class Test():
                             # Mudou o tipo de uso do solo ou alcançou a rede de drenagem,
                             # então terminou o trecho no píxel anterior
                             self.global_vars.numtreaux +=1
-                            self.global_vars.numtre[self.global_vars.numcabeaux] = self.global_vars.numtreaux
-                            self.global_vars.Ltre[self.global_vars.numcabeaux][self.global_vars.numtreaux-1] = self.global_vars.DIST[self.global_vars.linaux3][self.global_vars.colaux3] \
+                            self.global_vars.numtre[self.global_vars.numcabeaux-1] = self.global_vars.numtreaux
+                            self.global_vars.Ltre[self.global_vars.numcabeaux-1][self.global_vars.numtreaux-1] = self.global_vars.DIST[self.global_vars.linaux3][self.global_vars.colaux3] \
                                                                                                             - self.global_vars.DIST[self.global_vars.linaux][self.global_vars.colaux] 
                                                                                                             
                             # Grava a distância (DIST) do último píxel do trecho
-                            self.global_vars.DISTult[self.global_vars.numcabeaux][self.global_vars.numtreaux-1] = self.global_vars.DIST[self.global_vars.linaux][self.global_vars.colaux]
-                            self.global_vars.cotaini[self.global_vars.numcabeaux][self.global_vars.numtreaux-1] = self.global_vars.MDE[self.global_vars.linaux3][self.global_vars.colaux3]
-                            self.global_vars.cotafim[self.global_vars.numcabeaux][self.global_vars.numtreaux-1] = self.global_vars.MDE[self.global_vars.linaux][self.global_vars.colaux]
+                            self.global_vars.DISTult[self.global_vars.numcabeaux-1][self.global_vars.numtreaux-1] = self.global_vars.DIST[self.global_vars.linaux][self.global_vars.colaux]
+                            self.global_vars.cotaini[self.global_vars.numcabeaux-1][self.global_vars.numtreaux-1] = self.global_vars.MDE[self.global_vars.linaux3][self.global_vars.colaux3]
+                            self.global_vars.cotafim[self.global_vars.numcabeaux-1][self.global_vars.numtreaux-1] = self.global_vars.MDE[self.global_vars.linaux][self.global_vars.colaux]
                             
                             a1 = (self.global_vars.cotaini[self.global_vars.numcabeaux][self.global_vars.numtreaux-1] - self.global_vars.cotafim[self.global_vars.numcabeaux][self.global_vars.numtreaux-1])
                             b1 = self.global_vars.Ltre[self.global_vars.numcabeaux][self.global_vars.numtreaux-1]*1000.0
@@ -1398,9 +1398,8 @@ class Test():
             if nzeros == 0:
                 self.global_vars.tamnum = 8 + 1 + negativo
             else:
-                self.global_vars.tamnum = 8 + nzeros + negativo     
+                self.global_vars.tamnum = 8 + nzeros + negativo   
 
-        return self.global_vars.tamnum
 
     def aux_RDC(self, file_name, textoaux, varaux, tamnum):
         """
@@ -1461,7 +1460,7 @@ class Test():
             file_name.write(f'{textoaux:14s}{varaux:19.7f}\n')
             return file_name
 
-    def escreve_RDC(self, nome_RST,file_title):
+    def escreve_RDC(self, nome_RST):
         """
         Esta função constrói os arquivos de saída das diferentes funcionalidades do programa
         """
@@ -1513,6 +1512,44 @@ class Test():
             # Escreve linha com distância unitária de referência
             rdc_file.write(f'unit dist.  : {1.0:<9.7f}\n')
 
+            # Escreve linha com coordenada xmin
+            self.global_vars.varaux = self.rdc_vars.Xmax3
+            self.rdc_vars.num = 2 # num = 2 : real
+            textoaux = 'max. X      : '
+            tamnum = self.tamanho_numero(self.global_vars.varaux, self.rdc_vars.num)
+            self.aux_RDC(rdc_file, textoaux,self.global_vars.varaux, tamnum)
+
+            # Escreve linha com coordenada xmax
+            self.global_vars.varaux = self.rdc_vars.Xmin3
+            self.rdc_vars.num = 2 # num = 2 : real
+            textoaux = 'min. X      : '
+            tamnum = self.tamanho_numero(self.global_vars.varaux, self.rdc_vars.num)
+            self.aux_RDC(rdc_file, textoaux,self.global_vars.varaux, tamnum)
+
+            # Escreve linha com coordenada ymin
+            self.global_vars.varaux = self.rdc_vars.Ymin3
+            self.rdc_vars.num = 2 # num = 2 : real
+            textoaux = 'min. Y      : '
+            tamnum = self.tamanho_numero(self.global_vars.varaux, self.rdc_vars.num)
+            self.aux_RDC(rdc_file, textoaux,self.global_vars.varaux, tamnum)
+
+            # Escreve linha com coordenada ymax
+            self.global_vars.varaux = self.rdc_vars.Ymax3
+            self.rdc_vars.num = 2 # num = 2 : real
+            textoaux = 'max. Y      : '
+            tamnum = self.tamanho_numero(self.global_vars.varaux, self.rdc_vars.num)
+            self.aux_RDC(rdc_file, textoaux,self.global_vars.varaux, tamnum)
+
+            # Escreve a linha com o valor do erro dos dados
+            rdc_file.write(f"pos'n error : unknown\n")
+
+            # Escreve linha com resolução
+            self.global_vars.varaux = self.global_vars.dx
+            self.rdc_vars.num = 2 # num = 2 : real
+            textoaux = 'resolution  : '
+            tamnum = self.tamanho_numero(self.global_vars.varaux, self.rdc_vars.num)
+            self.aux_RDC(rdc_file, textoaux,self.global_vars.varaux, tamnum)
+
             # Escreve a linha com o valor mínimo dos dados
             self.global_vars.varaux = self.rdc_vars.Varmin
             self.rdc_vars.num = 2 # num = 2 : real
@@ -1547,8 +1584,11 @@ class Test():
             # Escreve a linha com o valor do erro dos dados
             rdc_file.write(f'value error : unknown\n')
 
-            # Escreve a linha com a definição do sinalizador
+            # Escreve linha com sinalizador
             rdc_file.write(f'flag value  : {0:1d}\n')
+            
+            # Escreve a linha com a definição do sinalizador
+            rdc_file.write(f"flag def'n  : none\n")
 
             # Escreve a linha com o número de categorias da legenda
             rdc_file.write(f'legend cats : {0:1d}\n')
@@ -1598,7 +1638,7 @@ class Test():
         self.rdc_vars.Xmin3 = self.rdc_vars.xmin
         self.rdc_vars.Xmax3 = self.rdc_vars.xmax
         self.rdc_vars.Ymin3 = self.rdc_vars.ymin
-        self.rdc_vars.Ymin3 = self.rdc_vars.ymax
+        self.rdc_vars.Ymax3 = self.rdc_vars.ymax
         nomeRST = fn_comp_acum
         self.global_vars.metrordc = self.global_vars.metro
         self.escreve_RDC(nomeRST)
@@ -1670,7 +1710,7 @@ class Test():
         self.rdc_vars.Xmin3 = self.rdc_vars.xmin
         self.rdc_vars.Xmax3 = self.rdc_vars.xmax
         self.rdc_vars.Ymin3 = self.rdc_vars.ymin
-        self.rdc_vars.Ymin3 = self.rdc_vars.ymax
+        self.rdc_vars.Ymax3 = self.rdc_vars.ymax
         nomeRST = fn_num_cab 
         self.global_vars.metrordc = self.global_vars.metro
         self.escreve_RDC(nomeRST)
@@ -1714,7 +1754,7 @@ class Test():
         self.rdc_vars.Xmin3 = self.rdc_vars.xmin
         self.rdc_vars.Xmax3 = self.rdc_vars.xmax
         self.rdc_vars.Ymin3 = self.rdc_vars.ymin
-        self.rdc_vars.Ymin3 = self.rdc_vars.ymax
+        self.rdc_vars.Ymax3 = self.rdc_vars.ymax
         nomeRST = fn_cab_pix
         self.global_vars.metrordc = self.global_vars.metro
         self.escreve_RDC(nomeRST)
@@ -1803,7 +1843,7 @@ class Test():
         self.rdc_vars.Xmin3 = self.rdc_vars.xmin
         self.rdc_vars.Xmax3 = self.rdc_vars.xmax
         self.rdc_vars.Ymin3 = self.rdc_vars.ymin
-        self.rdc_vars.Ymin3 = self.rdc_vars.ymax
+        self.rdc_vars.Ymax3 = self.rdc_vars.ymax
         nomeRST = fn_decli_pix
         self.global_vars.metrordc = self.global_vars.metro
         self.escreve_RDC(nomeRST)
@@ -1845,7 +1885,7 @@ class Test():
         self.rdc_vars.Xmin3 = self.rdc_vars.xmin
         self.rdc_vars.Xmax3 = self.rdc_vars.xmax
         self.rdc_vars.Ymin3 = self.rdc_vars.ymin
-        self.rdc_vars.Ymin3 = self.rdc_vars.ymax
+        self.rdc_vars.Ymax3 = self.rdc_vars.ymax
         nomeRST = fn_decli_pix_jus
         self.global_vars.metrordc = self.global_vars.metro
         self.escreve_RDC(nomeRST)
@@ -1887,7 +1927,7 @@ class Test():
         self.rdc_vars.Xmin3 = self.rdc_vars.xmin
         self.rdc_vars.Xmax3 = self.rdc_vars.xmax
         self.rdc_vars.Ymin3 = self.rdc_vars.ymin
-        self.rdc_vars.Ymin3 = self.rdc_vars.ymax
+        self.rdc_vars.Ymax3 = self.rdc_vars.ymax
         nomeRST = fn_dist_rel_tre
         self.global_vars.metrordc = self.global_vars.metro
         self.escreve_RDC(nomeRST)
@@ -1928,7 +1968,7 @@ class Test():
         self.rdc_vars.Xmin3 = self.rdc_vars.xmin
         self.rdc_vars.Xmax3 = self.rdc_vars.xmax
         self.rdc_vars.Ymin3 = self.rdc_vars.ymin
-        self.rdc_vars.Ymin3 = self.rdc_vars.ymax
+        self.rdc_vars.Ymax3 = self.rdc_vars.ymax
         nomeRST = fn_num_pix_dren 
         self.global_vars.metrordc = self.global_vars.metro
         self.escreve_RDC(nomeRST)
@@ -1968,7 +2008,7 @@ class Test():
         self.rdc_vars.Xmin3 = self.rdc_vars.xmin
         self.rdc_vars.Xmax3 = self.rdc_vars.xmax
         self.rdc_vars.Ymin3 = self.rdc_vars.ymin
-        self.rdc_vars.Ymin3 = self.rdc_vars.ymax
+        self.rdc_vars.Ymax3 = self.rdc_vars.ymax
         nomeRST = fn_num_tre 
         self.global_vars.metrordc = self.global_vars.metro
         self.escreve_RDC(nomeRST)
@@ -2010,7 +2050,7 @@ class Test():
         self.rdc_vars.Xmin3 = self.rdc_vars.xmin
         self.rdc_vars.Xmax3 = self.rdc_vars.xmax
         self.rdc_vars.Ymin3 = self.rdc_vars.ymin
-        self.rdc_vars.Ymin3 = self.rdc_vars.ymax
+        self.rdc_vars.Ymax3 = self.rdc_vars.ymax
         nomeRST = fn_temp_canal
         self.global_vars.metrordc = self.global_vars.metro
         self.escreve_RDC(nomeRST)
@@ -2050,7 +2090,7 @@ class Test():
         self.rdc_vars.Xmin3 = self.rdc_vars.xmin
         self.rdc_vars.Xmax3 = self.rdc_vars.xmax
         self.rdc_vars.Ymin3 = self.rdc_vars.ymin
-        self.rdc_vars.Ymin3 = self.rdc_vars.ymax
+        self.rdc_vars.Ymax3 = self.rdc_vars.ymax
         nomeRST = fn_temp_sup
         self.global_vars.metrordc = self.global_vars.metro
         self.escreve_RDC(nomeRST)
@@ -2150,7 +2190,7 @@ class Test():
         self.rdc_vars.Xmin3 = self.rdc_vars.xmin
         self.rdc_vars.Xmax3 = self.rdc_vars.xmax
         self.rdc_vars.Ymin3 = self.rdc_vars.ymin
-        self.rdc_vars.Ymin3 = self.rdc_vars.ymax
+        self.rdc_vars.Ymax3 = self.rdc_vars.ymax
         nomeRST = fn_temp_total
         self.global_vars.metrordc = self.global_vars.metro
         self.escreve_RDC(nomeRST)
@@ -2203,7 +2243,7 @@ class Test():
         self.rdc_vars.Xmin3 = self.rdc_vars.xmin
         self.rdc_vars.Xmax3 = self.rdc_vars.xmax
         self.rdc_vars.Ymin3 = self.rdc_vars.ymin
-        self.rdc_vars.Ymin3 = self.rdc_vars.ymax
+        self.rdc_vars.Ymax3 = self.rdc_vars.ymax
         nomeRST = fn_tre_pix
         self.global_vars.metrordc = self.global_vars.metro
         self.escreve_RDC(nomeRST)
@@ -2244,7 +2284,7 @@ class Test():
         self.rdc_vars.Xmin3 = self.rdc_vars.xmin
         self.rdc_vars.Xmax3 = self.rdc_vars.xmax
         self.rdc_vars.Ymin3 = self.rdc_vars.ymin
-        self.rdc_vars.Ymin3 = self.rdc_vars.ymax
+        self.rdc_vars.Ymax3 = self.rdc_vars.ymax
         nomeRST = fn_temp_pix_jus
         self.global_vars.metrordc = self.global_vars.metro
         self.escreve_RDC(nomeRST)
@@ -2315,6 +2355,7 @@ class Test():
 
         print('Processando distância de drenagem...\n')
         self.dist_drenagem()
+        self.escreve_num_pix_drenagem()
 
         if self.global_vars.tipo_decliv == 4:
             self.escreve_decliv_pixel_jus()
@@ -2341,7 +2382,6 @@ class Test():
         print('\nEscrevendo arquivos de saída...\n')  
         self.escreve_conectividade()
         self.escreve_num_pix_cabec()
-        self.escreve_num_pix_drenagem()
 
         if self.global_vars.tipo_decliv == 4:
             print('*\n')

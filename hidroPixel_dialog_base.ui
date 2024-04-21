@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>HidroPixel Plugin</string>
+   <string>Hidropixel Plugin</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_2">
    <item>
@@ -47,7 +47,7 @@
 rgb:213, 213, 213;</string>
         </property>
         <property name="text">
-         <string>HidroPixel</string>
+         <string>Hidropixel</string>
         </property>
         <property name="alignment">
          <set>Qt::AlignCenter</set>

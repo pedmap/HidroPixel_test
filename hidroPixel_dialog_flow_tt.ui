@@ -24,7 +24,7 @@
     <item row="1" column="0">
      <widget class="QTabWidget" name="tabWidget">
       <property name="currentIndex">
-       <number>1</number>
+       <number>0</number>
       </property>
       <widget class="QWidget" name="pg_par_ftt">
        <attribute name="title">
@@ -66,7 +66,7 @@
         <item row="1" column="0">
          <widget class="QStackedWidget" name="pages_flow_tt">
           <property name="currentIndex">
-           <number>3</number>
+           <number>0</number>
           </property>
           <widget class="QWidget" name="pg1_config">
            <layout class="QGridLayout" name="gridLayout_4">
@@ -844,7 +844,7 @@
                  <x>0</x>
                  <y>0</y>
                  <width>551</width>
-                 <height>867</height>
+                 <height>874</height>
                 </rect>
                </property>
                <layout class="QGridLayout" name="gridLayout_14">
@@ -1387,6 +1387,9 @@
                          <property name="showDropIndicator" stdset="0">
                           <bool>true</bool>
                          </property>
+                         <property name="dragEnabled">
+                          <bool>true</bool>
+                         </property>
                          <property name="dragDropOverwriteMode">
                           <bool>true</bool>
                          </property>
@@ -1409,7 +1412,7 @@
                           <bool>true</bool>
                          </property>
                          <attribute name="horizontalHeaderVisible">
-                          <bool>false</bool>
+                          <bool>true</bool>
                          </attribute>
                          <attribute name="horizontalHeaderCascadingSectionResizes">
                           <bool>true</bool>
@@ -1770,7 +1773,7 @@
                               <bool>true</bool>
                              </property>
                              <attribute name="horizontalHeaderVisible">
-                              <bool>false</bool>
+                              <bool>true</bool>
                              </attribute>
                              <attribute name="horizontalHeaderCascadingSectionResizes">
                               <bool>true</bool>
@@ -2007,8 +2010,8 @@
                 <rect>
                  <x>0</x>
                  <y>0</y>
-                 <width>658</width>
-                 <height>487</height>
+                 <width>254</width>
+                 <height>64</height>
                 </rect>
                </property>
                <layout class="QGridLayout" name="gridLayout_30">
@@ -2056,8 +2059,8 @@
                 <rect>
                  <x>0</x>
                  <y>0</y>
-                 <width>658</width>
-                 <height>474</height>
+                 <width>507</width>
+                 <height>425</height>
                 </rect>
                </property>
                <layout class="QGridLayout" name="gridLayout_48">
@@ -2729,7 +2732,7 @@ color: rgb(0, 0, 0);
                   <item>
                    <layout class="QHBoxLayout" name="horizontalLayout_14">
                     <item>
-                     <widget class="QCheckBox" name="checkBox_7">
+                     <widget class="QCheckBox" name="ch_7_pg4">
                       <property name="text">
                        <string/>
                       </property>
@@ -2838,10 +2841,13 @@ color: rgb(0, 0, 0);
             </property>
             <property name="html">
              <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
-&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;meta charset=&quot;utf-8&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
 p, li { white-space: pre-wrap; }
-&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;&quot;&gt;
-&lt;p style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Segoe UI'; font-size:9pt;&quot;&gt;&lt;br /&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+hr { height: 1px; border-width: 0; }
+li.unchecked::marker { content: &quot;\2610&quot;; }
+li.checked::marker { content: &quot;\2612&quot;; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Segoe UI'; font-size:9pt; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p style=&quot;-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;br /&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="textInteractionFlags">
              <set>Qt::TextSelectableByMouse</set>
