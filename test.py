@@ -1400,7 +1400,6 @@ class Test():
             else:
                 self.global_vars.tamnum = 8 + nzeros + negativo   
 
-
     def aux_RDC(self, file_name, textoaux, varaux, tamnum):
         """
         Esta função é responsável por formatar as informações dos arquivos de saida do programa
@@ -1459,6 +1458,138 @@ class Test():
         elif tamnum == 19:
             file_name.write(f'{textoaux:14s}{varaux:19.7f}\n')
             return file_name
+
+# Funções para as rotinas Excess rainfall e flow routing
+    def numera_pix_bacia(self):
+        '''Esta função enumera e quantifica os píxels presentes na bacia hidrográfica, além de atualizar variáveis inerente ao programa'''
+        
+        # Redimensiona variáveis com as dimensões da bacia hidrográfica (nlin, ncol)
+        delimitaBacia = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
+        TempoTotal_reclass = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
+        Spotencial = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
+        perdas_iniciais = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
+        chuva_acumulada_pixel = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
+        chuva_total_pixel = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
+        CN = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
+        TempoTotal_1 = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
+        numero_pixel = 0
+        numero_total_pix = 0
+
+        # Enumera os pixels presentes na bacia hidrográfica
+        for lin in range(self.rdc_vars.nlin):
+            for col in range(self.rdc_vars.ncol):
+                # delimitaBacia = self.global_vars.bacia[lin][col]
+                if self.global_vars.bacia[lin][col] == 1:
+                    numero_pixel += 1
+
+        # Computa o número total de pixels que são bacia hidrográfica
+        numero_total_pix = numera_pix
+        
+        return numero_total_pix
+
+    def leh_CN(self):
+        '''Esta função lê o arquivo enviado pelo usuário contendo os valores do parametro CURVE-NUMBER (CN) para os diferentes pixels da bacia hidrográfica'''        
+        arquivo = r"C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\Hidropixel - User Manual and algorithms\Algorithms\4 - Hydrograph\Example\Input\2 - CN map\2_CN_map.rst"
+        # Tratamento de erros: verifica se o arquivo foi corretamente enviado
+        if arquivo:
+            # Realizando a abertura do arquivo raster e coletando as informações referentes as dimensões do mesmo
+            rst_file_CN = gdal.Open(arquivo)
+            
+            # Lendo os dados raste como um array 
+            dados_lidos_raster_CN = rst_file_CN.GetRasterBand(1).ReadAsArray()
+
+            #  Tratamento de erros: verifica se o arquivo raster foi aberto corretamente
+            if rst_file_CN is not None:
+                # Reorganizando os dados lidos em uma nova matriz, essa possui as informações sobre as classes dos rios
+                CN = dados_lidos_raster_CN
+                # Fechando o dataset GDAL referente ao arquivo raster
+                rst_file_CN = None
+            else:
+                # Caso o arquivo raster apresente erros durante a abertura, ocorrerá um erro
+                resulte = f"Failde to open the raster file: {arquivo}"
+                # QMessageBox.warning(None, "ERROR!", resulte)
+                
+        else:
+            # Exibe uma mensagem de erro
+            result ="Nenhum arquivo foi selecionado!"
+            # QMessageBox.warning(None, "ERROR!", result)
+        return CN 
+
+    def leh_precip_distribuida(self):
+        '''Esta função lê o arquivo enviado pelo usuário contento os valores da precipitação destribuidos ao longo dos pixels pertencentes a baica hidrográfica'''
+        quantidade_blocos_chuva = 0
+        # Lê os dados enviados e os armaneza
+        arquivo = r'C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\Hidropixel - User Manual and algorithms\Algorithms\4 - Hydrograph\Example\Input\3 - Rainfall\3_rainfall_file.txt' 
+        with open(arquivo, 'r') as arquivo_txt:
+            # armazena o cabeçalho
+            lines = arquivo_txt.readline().strip()
+
+            # Sepera as linhas por vígula (,)
+            split_lines = lines.split(',')
+
+        quantidade_blocos_chuva = len(split_lines) - 1 
+
+    def leh_tempo_viagem(self):
+        '''Esta função lê o arquivo contendo o tempo de concentração de cada pixel presente na bacia hidrográfica e o armazena'''
+
+        arquivo = r"C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\Hidropixel - User Manual and algorithms\Algorithms\4 - Hydrograph\Example\Input\4 - Travel time to the outlet\4_TV_BIN.RST"
+        # Tratamento de erros: verifica se o arquivo foi corretamente enviado
+        if arquivo:
+            # Realizando a abertura do arquivo raster e coletando as informações referentes as dimensões do mesmo
+            rst_file_Tempo_total = gdal.Open(arquivo)
+            
+            # Lendo os dados raste como um array 
+            dados_lidos_raster_Tempo_total = rst_file_Tempo_total.GetRasterBand(1).ReadAsArray()
+
+            #  Tratamento de erros: verifica se o arquivo raster foi aberto corretamente
+            if rst_file_Tempo_total is not None:
+                # Reorganizando os dados lidos em uma nova matriz, essa possui as informações sobre as classes dos rios
+                Tempo_total = dados_lidos_raster_Tempo_total
+                # Fechando o dataset GDAL referente ao arquivo raster
+                rst_file_Tempo_total = None
+            else:
+                # Caso o arquivo raster apresente erros durante a abertura, ocorrerá um erro
+                resulte = f"Failde to open the raster file: {arquivo}"
+                # QMessageBox.warning(None, "ERROR!", resulte)
+                
+        else:
+            # Exibe uma mensagem de erro
+            result ="Nenhum arquivo foi selecionado!"
+            # QMessageBox.warning(None, "ERROR!", result)
+
+        return Tempo_total        
+
+    def leh_parametros(self):
+         '''Esta função lê o arquivo enviado pelo usuário contento os parâmetros do modelo: abstração inicial, time step, tempo critério de parada e o beta'''
+        alfa, delta_t, criterio_parada, beta = 0
+        values = []
+        arquivo = r'C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\Hidropixel - User Manual and algorithms\Algorithms\4 - Hydrograph\Example\Input\5 - Parameters\5_parameters.txt'
+        with open(arquivo, 'r') as arquivo_txt:
+            # Lê as linhas do arquivo separando por ','
+            for line in arquivo_txt:
+                split_lines = line.split(',')[1].strip()
+                values.append(split_lines)
+
+        # Armazena as informações coletadas
+        alfa = float(values[0])
+        delta_t = int(values[1])
+        criterio_parada = int(values[2])
+        beta = float(values[3])
+
+    def hidrograma_por_pixel(self):
+        '''Esta função determina o hidrograma de cada pixel presente na baica hidrográfica, fumentando-se no método do SCS-CN'''
+        tempo_total = self.leh_tempo_viagem()
+        Tmax = 0
+        # Define o tempo de viagem máximo até o exutório (por pixel)
+        # for lin in range(self.rdc_vars.nlin):
+        #     for col in range(self.rdc_vars.ncol):
+        #         if self.global_vars.bacia[lin][col] == 1
+        #             if tempo_total[lin][col] > Tmax:
+        #                 Tmax = tempo_total[lin][col]
+        # JVDoptmize
+        tempo_total_bacia = tempo_total[self.global_vars.bacia == 1]
+        Tmax = np.amax(tempo_total_bacia)
+         
 
     def escreve_RDC(self, nome_RST):
         """
