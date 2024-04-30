@@ -63,7 +63,15 @@ class GlobalVariables:
         self.Stre = np.empty((0,0), dtype = np.float64)
         self.usotre = np.empty((0,0), dtype = np.float64)
         self.contaaux = np.empty((0,0), dtype = np.float64)
-        
+        self.delimitaBacia = np.zeros((0,0))
+        self.TempoTotal_reclass = np.zeros((0,0))
+        self.Spotencial = np.zeros((0,0))
+        self.perdas_iniciais = np.zeros((0,0))
+        self.chuva_acumulada_pixel = np.zeros((0,0))
+        self.chuva_total_pixel = np.zeros((0,0))
+        self.CN = np.zeros((0,0))
+        self.TempoTotal_1 = np.zeros((0,0))
+
         # vector's declaration
         self.lincontadren =  np.empty([], dtype = np.int16)
         self.colcontadren =  np.empty([], dtype = np.int16)
@@ -78,7 +86,15 @@ class GlobalVariables:
         self.numtre = np.empty([], dtype = np.int16)
         self.dlin = np.empty((128), dtype = int)
         self.dcol = np.empty((128), dtype = int)
-        
+        self.tempo_intervalo = np.zeros(50000)
+        self.time = np.zeros(50000)
+        self.hacum = np.zeros(50000)
+        self.vazao_pixel = np.zeros(50000)
+        self.tempo_vazao_pixel = np.zeros(50000)
+        self.tempo_vazao = np.zeros(50000)
+        self.vazao_amortecida_pixel = np.zeros(50000)
+        self.vazao = np.zeros(50000)
+
         # string's declaration
         self.subtipodecliv = ""
         self.unidaderef3 = ""
@@ -126,7 +142,15 @@ class GlobalVariables:
         self.numtreaux2 = 0
         self.tipo_decliv = 4
         self.sda = 0
-
+        self.hexc = 0
+        self.numero_total_pix = 0
+        self.num_intervalos = 0
+        self.volume_total = 0
+        self.quantidade_blocos_chuva = 0
+        self.chuva_excedente_calc = 0
+        self.blocos_vazao = 0
+        self.alfa, self.delta_t, self.criterio_parada, self.beta = 0,0,0,0
+                
         # Real varibles declaration
         self.xmin = 0.0
         self.xmax = 0.0
@@ -171,3 +195,6 @@ class GlobalVariables:
         # Int 4bytes
         self.numncabeaux = np.int32(0)
         self.Ncabec = np.int32(0)
+
+
+
