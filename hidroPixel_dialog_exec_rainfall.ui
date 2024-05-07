@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>661</width>
-    <height>592</height>
+    <width>628</width>
+    <height>601</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -121,8 +121,8 @@
                 <rect>
                  <x>0</x>
                  <y>0</y>
-                 <width>599</width>
-                 <height>402</height>
+                 <width>566</width>
+                 <height>411</height>
                 </rect>
                </property>
                <layout class="QGridLayout" name="gridLayout_13">
@@ -533,7 +533,569 @@
             </item>
            </layout>
           </widget>
-          <widget class="QWidget" name="pg2_in_data">
+          <widget class="QWidget" name="pg2_rain_int">
+           <layout class="QGridLayout" name="gridLayout_10">
+            <item row="0" column="0">
+             <widget class="QLabel" name="label_7">
+              <property name="text">
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Excess rainfall: Rainfall interpolation&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="0">
+             <widget class="QScrollArea" name="scrollArea_5">
+              <property name="widgetResizable">
+               <bool>true</bool>
+              </property>
+              <widget class="QWidget" name="scrollAreaWidgetContents_5">
+               <property name="geometry">
+                <rect>
+                 <x>0</x>
+                 <y>0</y>
+                 <width>570</width>
+                 <height>450</height>
+                </rect>
+               </property>
+               <layout class="QGridLayout" name="gridLayout_36">
+                <item row="1" column="0">
+                 <layout class="QVBoxLayout" name="verticalLayout_7">
+                  <item>
+                   <layout class="QGridLayout" name="gridLayout_37">
+                    <item row="1" column="2">
+                     <widget class="QToolButton" name="tbtn_pg_r_1">
+                      <property name="text">
+                       <string>...</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item row="1" column="3">
+                     <widget class="QLabel" name="label_34">
+                      <property name="sizePolicy">
+                       <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                        <horstretch>0</horstretch>
+                        <verstretch>0</verstretch>
+                       </sizepolicy>
+                      </property>
+                      <property name="minimumSize">
+                       <size>
+                        <width>16</width>
+                        <height>16</height>
+                       </size>
+                      </property>
+                      <property name="maximumSize">
+                       <size>
+                        <width>16</width>
+                        <height>16</height>
+                       </size>
+                      </property>
+                      <property name="toolTip">
+                       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;justify&quot;&gt;Will&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                      </property>
+                      <property name="text">
+                       <string/>
+                      </property>
+                      <property name="pixmap">
+                       <pixmap>tip_icon.png</pixmap>
+                      </property>
+                     </widget>
+                    </item>
+                    <item row="1" column="0">
+                     <widget class="QLabel" name="label_30">
+                      <property name="text">
+                       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;justify&quot;&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Watershed delineation:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item row="1" column="1">
+                     <widget class="QLineEdit" name="le_1_pg_ri">
+                      <property name="sizePolicy">
+                       <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+                        <horstretch>0</horstretch>
+                        <verstretch>0</verstretch>
+                       </sizepolicy>
+                      </property>
+                      <property name="minimumSize">
+                       <size>
+                        <width>60</width>
+                        <height>24</height>
+                       </size>
+                      </property>
+                      <property name="maximumSize">
+                       <size>
+                        <width>360</width>
+                        <height>24</height>
+                       </size>
+                      </property>
+                      <property name="clearButtonEnabled">
+                       <bool>true</bool>
+                      </property>
+                     </widget>
+                    </item>
+                   </layout>
+                  </item>
+                  <item>
+                   <spacer name="verticalSpacer_10">
+                    <property name="orientation">
+                     <enum>Qt::Vertical</enum>
+                    </property>
+                    <property name="sizeType">
+                     <enum>QSizePolicy::Fixed</enum>
+                    </property>
+                    <property name="sizeHint" stdset="0">
+                     <size>
+                      <width>20</width>
+                      <height>8</height>
+                     </size>
+                    </property>
+                   </spacer>
+                  </item>
+                  <item>
+                   <layout class="QGridLayout" name="gridLayout_38">
+                    <item row="0" column="0">
+                     <widget class="QLabel" name="label_37">
+                      <property name="text">
+                       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;justify&quot;&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Rain gauges metadata:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item row="0" column="1">
+                     <widget class="QLineEdit" name="le_2_pg_ri">
+                      <property name="sizePolicy">
+                       <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+                        <horstretch>0</horstretch>
+                        <verstretch>0</verstretch>
+                       </sizepolicy>
+                      </property>
+                      <property name="minimumSize">
+                       <size>
+                        <width>60</width>
+                        <height>24</height>
+                       </size>
+                      </property>
+                      <property name="maximumSize">
+                       <size>
+                        <width>360</width>
+                        <height>24</height>
+                       </size>
+                      </property>
+                      <property name="clearButtonEnabled">
+                       <bool>true</bool>
+                      </property>
+                     </widget>
+                    </item>
+                    <item row="0" column="3">
+                     <widget class="QLabel" name="label_38">
+                      <property name="sizePolicy">
+                       <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                        <horstretch>0</horstretch>
+                        <verstretch>0</verstretch>
+                       </sizepolicy>
+                      </property>
+                      <property name="minimumSize">
+                       <size>
+                        <width>16</width>
+                        <height>16</height>
+                       </size>
+                      </property>
+                      <property name="maximumSize">
+                       <size>
+                        <width>16</width>
+                        <height>16</height>
+                       </size>
+                      </property>
+                      <property name="toolTip">
+                       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;justify&quot;&gt;Add your watershed delineation. The file might be a raster type, specifically an Idrisi raster format (.rst).&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                      </property>
+                      <property name="text">
+                       <string/>
+                      </property>
+                      <property name="pixmap">
+                       <pixmap>tip_icon.png</pixmap>
+                      </property>
+                     </widget>
+                    </item>
+                    <item row="0" column="2">
+                     <widget class="QToolButton" name="tbtn_pg_r_2">
+                      <property name="text">
+                       <string>...</string>
+                      </property>
+                     </widget>
+                    </item>
+                   </layout>
+                  </item>
+                  <item>
+                   <spacer name="verticalSpacer_15">
+                    <property name="orientation">
+                     <enum>Qt::Vertical</enum>
+                    </property>
+                    <property name="sizeType">
+                     <enum>QSizePolicy::Fixed</enum>
+                    </property>
+                    <property name="sizeHint" stdset="0">
+                     <size>
+                      <width>20</width>
+                      <height>8</height>
+                     </size>
+                    </property>
+                   </spacer>
+                  </item>
+                  <item>
+                   <layout class="QGridLayout" name="gridLayout_39">
+                    <item row="0" column="3">
+                     <widget class="QLabel" name="label_40">
+                      <property name="sizePolicy">
+                       <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                        <horstretch>0</horstretch>
+                        <verstretch>0</verstretch>
+                       </sizepolicy>
+                      </property>
+                      <property name="minimumSize">
+                       <size>
+                        <width>16</width>
+                        <height>16</height>
+                       </size>
+                      </property>
+                      <property name="maximumSize">
+                       <size>
+                        <width>16</width>
+                        <height>16</height>
+                       </size>
+                      </property>
+                      <property name="toolTip">
+                       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;justify&quot;&gt;Add your river drainage network. The file might be a raster type, specifically an Idrisi raster format (.rst).&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                      </property>
+                      <property name="text">
+                       <string/>
+                      </property>
+                      <property name="pixmap">
+                       <pixmap>tip_icon.png</pixmap>
+                      </property>
+                     </widget>
+                    </item>
+                    <item row="0" column="2">
+                     <widget class="QToolButton" name="tbtn_pg_r_3">
+                      <property name="text">
+                       <string>...</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item row="0" column="0">
+                     <widget class="QLabel" name="label_39">
+                      <property name="text">
+                       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;justify&quot;&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Rainfall data:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item row="0" column="1">
+                     <widget class="QLineEdit" name="le_3_pg_ri">
+                      <property name="sizePolicy">
+                       <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+                        <horstretch>0</horstretch>
+                        <verstretch>0</verstretch>
+                       </sizepolicy>
+                      </property>
+                      <property name="minimumSize">
+                       <size>
+                        <width>60</width>
+                        <height>24</height>
+                       </size>
+                      </property>
+                      <property name="maximumSize">
+                       <size>
+                        <width>360</width>
+                        <height>24</height>
+                       </size>
+                      </property>
+                      <property name="clearButtonEnabled">
+                       <bool>true</bool>
+                      </property>
+                     </widget>
+                    </item>
+                   </layout>
+                  </item>
+                 </layout>
+                </item>
+                <item row="5" column="0">
+                 <layout class="QGridLayout" name="gridLayout_46">
+                  <item row="0" column="0">
+                   <widget class="QPushButton" name="btn_read_pg_ri">
+                    <property name="text">
+                     <string>Read from file</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="0" column="1">
+                   <widget class="QPushButton" name="btn_save_file_pg_ri">
+                    <property name="text">
+                     <string>Save to file</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="0" column="2">
+                   <widget class="QPushButton" name="btn_save_pg_ri">
+                    <property name="text">
+                     <string>Save</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="0" column="3">
+                   <widget class="QPushButton" name="btn_help_pg_ri">
+                    <property name="text">
+                     <string>Help</string>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
+                </item>
+                <item row="4" column="0">
+                 <spacer name="verticalSpacer_16">
+                  <property name="orientation">
+                   <enum>Qt::Vertical</enum>
+                  </property>
+                  <property name="sizeHint" stdset="0">
+                   <size>
+                    <width>20</width>
+                    <height>40</height>
+                   </size>
+                  </property>
+                 </spacer>
+                </item>
+                <item row="3" column="0">
+                 <widget class="QFrame" name="frame_7">
+                  <property name="frameShape">
+                   <enum>QFrame::StyledPanel</enum>
+                  </property>
+                  <property name="frameShadow">
+                   <enum>QFrame::Raised</enum>
+                  </property>
+                  <layout class="QGridLayout" name="gridLayout_40">
+                   <item row="1" column="2">
+                    <spacer name="horizontalSpacer_10">
+                     <property name="orientation">
+                      <enum>Qt::Horizontal</enum>
+                     </property>
+                     <property name="sizeHint" stdset="0">
+                      <size>
+                       <width>40</width>
+                       <height>20</height>
+                      </size>
+                     </property>
+                    </spacer>
+                   </item>
+                   <item row="1" column="0">
+                    <spacer name="horizontalSpacer_11">
+                     <property name="orientation">
+                      <enum>Qt::Horizontal</enum>
+                     </property>
+                     <property name="sizeHint" stdset="0">
+                      <size>
+                       <width>40</width>
+                       <height>20</height>
+                      </size>
+                     </property>
+                    </spacer>
+                   </item>
+                   <item row="1" column="1">
+                    <layout class="QHBoxLayout" name="horizontalLayout_13">
+                     <item>
+                      <layout class="QVBoxLayout" name="verticalLayout_4">
+                       <item alignment="Qt::AlignRight">
+                        <widget class="QLabel" name="label_9">
+                         <property name="text">
+                          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;justify&quot;&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Rainfall file:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                         </property>
+                        </widget>
+                       </item>
+                       <item alignment="Qt::AlignRight">
+                        <widget class="QLabel" name="label_8">
+                         <property name="text">
+                          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;justify&quot;&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Rainfall maps:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                         </property>
+                        </widget>
+                       </item>
+                      </layout>
+                     </item>
+                     <item>
+                      <layout class="QHBoxLayout" name="horizontalLayout_14">
+                       <item>
+                        <layout class="QVBoxLayout" name="verticalLayout_9">
+                         <item>
+                          <widget class="QLineEdit" name="le_3_pg_ri_2">
+                           <property name="sizePolicy">
+                            <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+                             <horstretch>0</horstretch>
+                             <verstretch>0</verstretch>
+                            </sizepolicy>
+                           </property>
+                           <property name="minimumSize">
+                            <size>
+                             <width>60</width>
+                             <height>24</height>
+                            </size>
+                           </property>
+                           <property name="maximumSize">
+                            <size>
+                             <width>360</width>
+                             <height>24</height>
+                            </size>
+                           </property>
+                           <property name="clearButtonEnabled">
+                            <bool>true</bool>
+                           </property>
+                          </widget>
+                         </item>
+                         <item>
+                          <widget class="QLineEdit" name="le_3_pg_ri_3">
+                           <property name="sizePolicy">
+                            <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+                             <horstretch>0</horstretch>
+                             <verstretch>0</verstretch>
+                            </sizepolicy>
+                           </property>
+                           <property name="minimumSize">
+                            <size>
+                             <width>60</width>
+                             <height>24</height>
+                            </size>
+                           </property>
+                           <property name="maximumSize">
+                            <size>
+                             <width>360</width>
+                             <height>24</height>
+                            </size>
+                           </property>
+                           <property name="clearButtonEnabled">
+                            <bool>true</bool>
+                           </property>
+                          </widget>
+                         </item>
+                        </layout>
+                       </item>
+                       <item>
+                        <layout class="QVBoxLayout" name="verticalLayout_11">
+                         <item>
+                          <layout class="QHBoxLayout" name="horizontalLayout_16">
+                           <item>
+                            <widget class="QPushButton" name="btn_save1_pg_ri">
+                             <property name="text">
+                              <string>Save</string>
+                             </property>
+                            </widget>
+                           </item>
+                           <item>
+                            <widget class="QLabel" name="label_43">
+                             <property name="sizePolicy">
+                              <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                               <horstretch>0</horstretch>
+                               <verstretch>0</verstretch>
+                              </sizepolicy>
+                             </property>
+                             <property name="minimumSize">
+                              <size>
+                               <width>16</width>
+                               <height>16</height>
+                              </size>
+                             </property>
+                             <property name="maximumSize">
+                              <size>
+                               <width>16</width>
+                               <height>16</height>
+                              </size>
+                             </property>
+                             <property name="toolTip">
+                              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;justify&quot;&gt;Add your river drainage network. The file might be a raster type, specifically an Idrisi raster format (.rst).&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                             </property>
+                             <property name="text">
+                              <string/>
+                             </property>
+                             <property name="pixmap">
+                              <pixmap>tip_icon.png</pixmap>
+                             </property>
+                            </widget>
+                           </item>
+                          </layout>
+                         </item>
+                         <item>
+                          <layout class="QHBoxLayout" name="horizontalLayout_17">
+                           <item>
+                            <widget class="QPushButton" name="pushButton">
+                             <property name="text">
+                              <string>Save</string>
+                             </property>
+                            </widget>
+                           </item>
+                           <item>
+                            <widget class="QLabel" name="label_42">
+                             <property name="sizePolicy">
+                              <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                               <horstretch>0</horstretch>
+                               <verstretch>0</verstretch>
+                              </sizepolicy>
+                             </property>
+                             <property name="minimumSize">
+                              <size>
+                               <width>16</width>
+                               <height>16</height>
+                              </size>
+                             </property>
+                             <property name="maximumSize">
+                              <size>
+                               <width>16</width>
+                               <height>16</height>
+                              </size>
+                             </property>
+                             <property name="toolTip">
+                              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;justify&quot;&gt;Add your river drainage network. The file might be a raster type, specifically an Idrisi raster format (.rst).&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                             </property>
+                             <property name="text">
+                              <string/>
+                             </property>
+                             <property name="pixmap">
+                              <pixmap>tip_icon.png</pixmap>
+                             </property>
+                            </widget>
+                           </item>
+                          </layout>
+                         </item>
+                        </layout>
+                       </item>
+                      </layout>
+                     </item>
+                    </layout>
+                   </item>
+                   <item row="0" column="0">
+                    <widget class="QLabel" name="label_10">
+                     <property name="text">
+                      <string>Output:</string>
+                     </property>
+                    </widget>
+                   </item>
+                  </layout>
+                 </widget>
+                </item>
+                <item row="2" column="0">
+                 <spacer name="verticalSpacer_17">
+                  <property name="orientation">
+                   <enum>Qt::Vertical</enum>
+                  </property>
+                  <property name="sizeType">
+                   <enum>QSizePolicy::Fixed</enum>
+                  </property>
+                  <property name="sizeHint" stdset="0">
+                   <size>
+                    <width>20</width>
+                    <height>20</height>
+                   </size>
+                  </property>
+                 </spacer>
+                </item>
+               </layout>
+              </widget>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+          <widget class="QWidget" name="pg3_in_data">
            <layout class="QGridLayout" name="gridLayout_19">
             <item row="1" column="0">
              <widget class="QScrollArea" name="scrollArea_2">
@@ -545,8 +1107,8 @@
                 <rect>
                  <x>0</x>
                  <y>0</y>
-                 <width>599</width>
-                 <height>432</height>
+                 <width>570</width>
+                 <height>450</height>
                 </rect>
                </property>
                <layout class="QGridLayout" name="gridLayout_14">
@@ -836,7 +1398,7 @@
                        <item row="0" column="0">
                         <widget class="QLabel" name="label_32">
                          <property name="text">
-                          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;justify&quot;&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;List of files with the spatially &lt;br/&gt;distributed rainfall:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;justify&quot;&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Spatially distributed rainfall:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                          </property>
                         </widget>
                        </item>
@@ -968,7 +1530,7 @@
             </item>
            </layout>
           </widget>
-          <widget class="QWidget" name="pg3_data_val_tool">
+          <widget class="QWidget" name="pg4_data_val_tool">
            <layout class="QGridLayout" name="gridLayout_29">
             <item row="1" column="0">
              <widget class="QScrollArea" name="scrollArea_3">
@@ -980,8 +1542,8 @@
                 <rect>
                  <x>0</x>
                  <y>0</y>
-                 <width>599</width>
-                 <height>432</height>
+                 <width>570</width>
+                 <height>450</height>
                 </rect>
                </property>
                <layout class="QGridLayout" name="gridLayout_30">
@@ -1017,7 +1579,7 @@
             </item>
            </layout>
           </widget>
-          <widget class="QWidget" name="pg4_run">
+          <widget class="QWidget" name="pg5_run">
            <layout class="QGridLayout" name="gridLayout_32">
             <item row="1" column="0">
              <widget class="QScrollArea" name="scrollArea_4">
@@ -1029,8 +1591,8 @@
                 <rect>
                  <x>0</x>
                  <y>0</y>
-                 <width>599</width>
-                 <height>432</height>
+                 <width>566</width>
+                 <height>441</height>
                 </rect>
                </property>
                <layout class="QGridLayout" name="gridLayout_17">
@@ -2014,24 +2576,31 @@ color: rgb(0, 0, 0);
             </property>
            </widget>
           </item>
-          <item row="0" column="1">
+          <item row="0" column="2">
            <widget class="QPushButton" name="btn_input_data">
             <property name="text">
              <string>INPUT DATA</string>
             </property>
            </widget>
           </item>
-          <item row="0" column="2">
+          <item row="0" column="3">
            <widget class="QPushButton" name="btn_data_va_tool">
             <property name="text">
              <string>DATA VALIDATION TOOL</string>
             </property>
            </widget>
           </item>
-          <item row="0" column="3">
+          <item row="0" column="4">
            <widget class="QPushButton" name="btn_run">
             <property name="text">
              <string>RUN</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QPushButton" name="btn_rain_int">
+            <property name="text">
+             <string>RAINFALL INTERPOLATION</string>
             </property>
            </widget>
           </item>

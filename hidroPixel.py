@@ -105,6 +105,7 @@ class HidroPixel:
         self.save_result = None
         self.classerio_aux = np.zeros((self.rdc_vars.nlin,self.rdc_vars.ncol))
         self.fn_n_conect_dren = None
+        self.fn_num_pix_dren = None
         self.fn_comp_acum = None
         self.fn_comp_foz = None
         self.fn_decli_pix = None
@@ -113,29 +114,14 @@ class HidroPixel:
         self.flag = None
         self.flag_1 = None
         self.alfa, self.delta_t, self.criterio_parada, self.beta = 0,0,0,0
-        self.tempo_intervalo = np.zeros(50000)
-        self.time = np.zeros(50000)
-        self.hacum = np.zeros(50000)
-        self.vazao_pixel = np.zeros(50000)
-        self.tempo_vazao_pixel = np.zeros(50000)
-        self.tempo_vazao = np.zeros(50000)
-        self.vazao_amortecida_pixel = np.zeros(50000)
-        self.vazao = np.zeros(50000)
-        self.hexc = 0
+        self.alfa, self.delta_t, self.criterio_parada, self.beta = 0,0,0,0
+        self.Pexc = 0
         self.numero_total_pix = 0
         self.num_intervalos = 0
         self.volume_total = 0
         self.quantidade_blocos_chuva = 0
         self.chuva_excedente_calc = 0
         self.blocos_vazao = 0
-        self.delimitaBacia = np.zeros((0,0))
-        self.TempoTotal_reclass = np.zeros((0,0))
-        self.Spotencial = np.zeros((0,0))
-        self.perdas_iniciais = np.zeros((0,0))
-        self.chuva_acumulada_pixel = np.zeros((0,0))
-        self.chuva_total_pixel = np.zeros((0,0))
-        self.CN = np.zeros((0,0))
-        self.TempoTotal_1 = np.zeros((0,0))
 
     # noinspection PyMethodMayBeStatic
     def tr(self, message):
@@ -1652,7 +1638,8 @@ class HidroPixel:
         self.chuva_acumulada_pixel = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
         self.chuva_total_pixel = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
         self.CN = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
-        self.TempoTotal_1 = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
+        self.tempo_total = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
+        self.numb_pix_bacia = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
 
         # Enumera os pixels presentes na bacia hidrográfica
         for lin in range(self.rdc_vars.nlin):
@@ -1660,6 +1647,7 @@ class HidroPixel:
                 # delimitaBacia = self.global_vars.bacia[lin][col]
                 if self.global_vars.bacia[lin][col] == 1:
                     numero_pixel += 1
+                    self.numb_pix_bacia[lin][col] = numero_pixel
 
         # Computa o número total de pixels que são bacia hidrográfica
         self.numero_total_pix = numero_pixel
@@ -1685,12 +1673,12 @@ class HidroPixel:
             else:
                 # Caso o arquivo raster apresente erros durante a abertura, ocorrerá um erro
                 resulte = f"Failde to open the raster file: {arquivo}"
-                # QMessageBox.warning(None, "ERROR!", resulte)
+                QMessageBox.warning(None, "ERROR!", resulte)
                 
         else:
             # Exibe uma mensagem de erro
             result ="Nenhum arquivo foi selecionado!"
-            # QMessageBox.warning(None, "ERROR!", result)
+            QMessageBox.warning(None, "ERROR!", result)
         return CN 
 
     def leh_tempo_viagem(self):
@@ -1714,62 +1702,35 @@ class HidroPixel:
             else:
                 # Caso o arquivo raster apresente erros durante a abertura, ocorrerá um erro
                 resulte = f"Failde to open the raster file: {arquivo}"
-                # QMessageBox.warning(None, "ERROR!", resulte)
+                QMessageBox.warning(None, "ERROR!", resulte)
                 
         else:
             # Exibe uma mensagem de erro
             result ="Nenhum arquivo foi selecionado!"
-            # QMessageBox.warning(None, "ERROR!", result)
+            QMessageBox.warning(None, "ERROR!", result)
 
         return Tempo_total    
-            
-    def hidrograma_por_pixel(self):
-        '''Esta função determina o hidrograma de cada pixel presente na baica hidrográfica, fumentando-se no método do SCS-CN'''
-        tempo_total = self.leh_tempo_viagem()
-        Tmax = 0
 
-        # JVDoptmize: máximo tempo de viagem ao exutório
-        tempo_total_bacia = tempo_total[self.global_vars.bacia == 1]
-        Tmax = np.amax(tempo_total_bacia)
-        
-        # Reclassificação do tempo de viagem ao exutório para multiplos de delta_t
-        w = 0
-        self.tempo_intervalo[w] = 0
-        while self.tempo_intervalo[w] <= Tmax + self.delta_t:
-            self.tempo_intervalo[w + 1] = self.tempo_intervalo[w] + self.delta_t
-            w += 1
-
-        self.num_intervalos = w + 1
-        diferenca = 0
-        diferenca_minima = 100000000
-        for lin in range(self.rdc_vars.nlin):
-            for col in range(self.rdc_vars.ncol):
-                if self.global_vars.bacia[lin][col] ==1:
-                    for w in range(0,self.num_intervalos):
-                        if self.tempo_intervalo[w] >= self.tempo_total[lin][col]:
-                            diferenca = -(self.tempo_total[lin][col] - self.tempo_intervalo[w])
-                        elif self.tempo_intervalo[w] < self.tempo_total[lin][col]:
-                            diferenca = (self.tempo_total[lin][col] - self.tempo_intervalo[w])
-                        elif diferenca < diferenca_minima:
-                            diferenca_minima = diferenca
-                            self.TempoTotal_reclass[lin][col] = self.tempo_intervalo[w]
-
-        # Determinação do hidrograma
-        # Dadas do arquivo de precipitação enviado
-        numero_pixel = 0 
-        self.volume_total = 0
+    def rainfall_excess(self):
+        '''Esta função determina gera os arquivos associados a precipitação excedente de cada pixel presente na baica hidrográfica, fumentando-se no método do SCS-CN'''
+        # Definação das variáveis
         Pacum = 0
-        tempo_exutorio = 0
-        k = 0
-        storage_coefficient = 0
-        c_1 = 0
-        c_2 = 0
-        area_bacia = 0
-        arquivo_precipitação = self.dlg_flow_rout.le_4_pg2.text()
-        with open(arquivo_precipitação, 'r') as arquivo_txt:
+
+        # JVD: estrutura dos arrays
+        self.time = np.zeros(self.quantidade_blocos_chuva)
+        self.hacum = np.zeros(self.quantidade_blocos_chuva)
+        self.hexc_pix = np.zeros((self.numero_total_pix, self.quantidade_blocos_chuva))
+        self.hietograma = np.zeros((self.numero_total_pix, self.quantidade_blocos_chuva))
+        pixel_atual = 0
+
+        # Lê os parâmetros enviados pelo usuário
+        self.alfa = self.dlg_flow_rout.le_1_pg1.text()
+        self.delta_t = self.dlg_flow_rout.le_2_pg1.text()
+
+        arquivo_precipitacao = self.dlg_flow_rout.le_4_pg2.text()        
+        with open(arquivo_precipitacao, 'r') as arquivo_txt:
             for lin in range(self.rdc_vars.nlin):
                 for col in range(self.rdc_vars.ncol):
-                    numero_pixel += 1
                     
                     # Cálculo do potencial de armazenamento do solo por pixel presente na bacia
                     self.Spotencial[lin][col] = (25400/self.CN[lin][col])-254
@@ -1782,7 +1743,7 @@ class HidroPixel:
                     # Armazena as linha do arquivo de precipitação
                     line = arquivo_txt.readline().strip()
                     split_line = line.split(',')
-                    for w in range(1, self.quantidade_blocos_chuva + 1):
+                    for w in range(1, self.quantidade_blocos_chuva):
                         chuva_distribuida = split_line[w]
                         self.time[w] = self.time[w-1] + self.delta_t
 
@@ -1793,71 +1754,61 @@ class HidroPixel:
                             self.hacum[w] = 0
                         else:
                             self.hacum[w] = ((Pacum - self.perdas_iniciais[lin][col])**2) / (Pacum - self.perdas_iniciais[lin][col] + self.Spotencial[lin][col])
-                            # precipitação efetiva
-                            self.hexc = self.hacum[w] - self.hacum[w-1]
 
-                            if self.hexc > 0:
-                                self.hexc /= 1000 #em metros
-
-                                # Vazão correspondente no exutório
-                                self.hexc = ((self.hexc * (self.global_vars.dx**2))/self.delta_t)*(1/60) # Vazão em m³/s
-
-                                # Representação da vazão no exutório (translação)
-                                tempo_exutorio = self.time[w-1] + self.TempoTotal_reclass[lin][col]
-                                k = tempo_exutorio / self.delta_t
-
-                                self.vazao_pixel[k] = self.hexc
-                                
+                            # precipitação efetiva desacumulada por pixel ao longo do evento
+                            self.hexc_pix[lin][w] = self.hacum[w] - self.hacum[w-1]
+                            
                     # Chuva excedente acumulada do pixel
                     self.chuva_acumulada_pixel[lin][col] = self.hacum(self.quantidade_blocos_chuva)
-
-                    # Volume de água gerado no pixel
-                    self.volume_total += (self.chuva_acumulada_pixel[lin][col]/(10**3)) *(self.global_vars.dx**2) #em m³
 
                     # Chuva total no pixel
                     self.chuva_total_pixel[lin][col] = Pacum
 
-                    # Parâmetro para estimativa do armazenamento
-                    storage_coefficient = self.tempo_total[lin][col] / ((1/self.beta) - 1) # em minutos
+                    # Atualiza número do pixel
+                    pixel_atual +=1
 
-                    c_1 = self.delta_t / ((2*storage_coefficient) + self.delta_t)
-                    c_2 = 1 - (2*c_1)
 
-                    # Amortecimento do hidrograma do pixel
-                    k = 0
-                    self.tempo_vazao_pixel[k] = 0
-                    self.vazao_amortecida_pixel[k] = c_1 * self.vazao_pixel[k]
+        # Ordenação dos valores da Pe para formular o hietograma
+        duracao = self.time[-1]
+        n = duracao / self.delta_t #numero de eventos
+        posicao =  [0 for y in range(int(n))] # usada para posicionar os valore de Pe
 
-                    while self.tempo_vazao_pixel[k] <= self.criterio_parada:
-                        self.vazao_amortecida_pixel[k+1] = (c_1 * self.vazao_pixel[k+1]) + (c_1 * self.vazao_pixel[k]) + (c_2*self.vazao_amortecida_pixel[k])
-                        self.tempo_vazao_pixel[k+1] = self.tempo_vazao_pixel[k] + self.delta_t
-                        k += 1
-                        self.vazao[k] += self.vazao_amortecida_pixel[k]
+        # Ordenamento para construção do hietograma: blocos alternados
+        if n%2 == 0:
+            for i in range(0,int(n/2)):
+                posicao[i] = n-((2*i)+2)
+        
+            for i in range((int(n/2)),int(n)):
+                posicao[i] = (2*i) - n+1
+        
+        else:
+            for i in range(0,int(n/2)):
+                posicao[i] = n-((2*i)+2)
+        
+            for i in range((int(n/2)+1),int(n)):
+                posicao[i] = (2*i)-n+1
+        
+        # Ordena o Hietograma segundo método dos blocos alternados
+        for pixel in range((self.numero_total_pix)):
+            for m in range(0,int(n)):
+                pos = posicao[m]
+                self.hietograma[pixel][m] = self.hexc_pix[pixel][pos]
 
-                    # Zera vazão no pixel
-                    k = 0
-                    self.tempo_vazao_pixel[k] = 0
-                    self.vazao_amortecida_pixel[k] = 0
-                    while self.tempo_vazao_pixel[k] <= self.criterio_parada:
-                        self.vazao_pixel[k+1] = 0
-                        self.vazao_amortecida_pixel[k + 1] = 0                       
-                        self.tempo_vazao_pixel[k+1] = self.tempo_vazao_pixel[k] + self.delta_t
-                        k += 1
+    def hidrograma_por_pixel(self):
+        '''Esta função determina o hidrograma de cada pixel presente na baica hidrográfica, fumentando-se no método do SCS-CN'''
+        # Definação das variáveis
+        Pacum = 0
 
-            # Cálculo da área da bacia
-            area_bacia = self.numero_total_pix * (self.global_vars.dx **2) # em m²
+        # Lê os parâmetros enviados pelo usuário
+        self.alfa = self.dlg_flow_rout.le_1_pg1.text()
+        self.delta_t = self.dlg_flow_rout.le_2_pg1.text()
 
-            # Chuva excedente calculada
-            self.chuva_excedente_calc = (self.volume_total / area_bacia) * (10**3) #em mm
+        arquivo_precipitacao = self.dlg_flow_rout.le_4_pg2.text()
+        with open(arquivo_precipitacao, 'r') as arquivo_txt:
+            for lin in range(self.rdc_vars.nlin):
+                for col in range(self.rdc_vars.ncol):
+        ...            
 
-            # Determinação do tempo de duração da vazão
-            k = 0
-            self.tempo_vazao[k] = 0
-            while self.tempo_vazao[k] <= self.criterio_parada:
-                self.tempo_vazao[k+1] = self.tempo_vazao[k] + self.delta_t
-                k += 1
-
-            self.blocos_vazao = k-1
 
     def min_max(self):
         """
@@ -1906,7 +1857,7 @@ class HidroPixel:
         # Se o valor for inteiro
         if num == 1:
             if nzeros == 0:
-                tamnum = 1 + negativo
+                self.global_vars.tamnum = 1 + negativo
             else:
                 self.global_vars.tamnum = nzeros + negativo
         # Se o valor for real
@@ -1918,7 +1869,7 @@ class HidroPixel:
 
         return self.global_vars.tamnum
 
-    def aux_RDC(self, file_name, textoaux, varaux, tamnum):
+    def aux_RDC(self, textoaux, varaux, tamnum):
         """
         Esta função é responsável por formatar as informações dos arquivos de saida do programa
         """
@@ -2006,27 +1957,27 @@ class HidroPixel:
         nome_rdc = nome_RST[:pos_ext] + '.rdc'
 
         # Abrindo o arquivo 
-        with open(nome_rdc, 'w') as rdc_file:
+        with open(nome_rdc, 'w', enconding = 'utf-8') as rdc_file:
             # Escreve linha com formato do arquivo
-            rdc_file.write(f'file format : IDRISI Raster A.1\n')
+            rdc_file.write('file format : IDRISI Raster A.1\n')
             # Escreve linha com o título do arquivo
-            rdc_file.write(f'File title  : \n')
+            rdc_file.write('File title  : \n')
 
             # Escreve linha com tipo de dado
             if self.rdc_vars.tipo_dado == 1:
-                rdc_file.write(f'data type   : integer\n')
+                rdc_file.write('data type   : integer\n')
             elif self.rdc_vars.tipo_dado == 2:
-                rdc_file.write(f'data type   : real\n')
+                rdc_file.write('data type   : real\n')
 
             # Escreve a linha com o tipo de arquivo
-            rdc_file.write(f'file type   : binary\n')
+            rdc_file.write('file type   : binary\n')
 
             # Escreve a linha com o número de colunas
             self.global_vars.varaux = self.rdc_vars.ncol3
             self.rdc_vars.num = 1
             textoaux = 'columns     : ' 
             tamnum = self.tamanho_numero(self.global_vars.varaux, self.rdc_vars.num)
-            phrase = self.aux_RDC(rdc_file, textoaux, self.global_vars.varaux, tamnum)
+            phrase = self.aux_RDC(textoaux, self.global_vars.varaux, tamnum)
             rdc_file.write(phrase)
 
             # Escreve a linha com o número de linhas
@@ -2034,16 +1985,16 @@ class HidroPixel:
             self.rdc_vars.num = 1 # num = 1 : integer
             textoaux = 'rows        : ' 
             tamnum = self.tamanho_numero(self.global_vars.varaux, self.rdc_vars.num)
-            phrase = self.aux_RDC(rdc_file, textoaux, self.global_vars.varaux, tamnum)
+            phrase = self.aux_RDC(textoaux, self.global_vars.varaux, tamnum)
             rdc_file.write(phrase)
             # Escreve a linha com o sistema de referência
             rdc_file.write(f'ref. system : {self.rdc_vars.sistemaref}\n')
 
             # Escreve a linha com a unidade de referência
             if self.global_vars.metro == 1:
-                rdc_file.write(f'ref. units  : m\n')
+                rdc_file.write('ref. units  : m\n')
             else:
-                rdc_file.write(f'ref. units  : deg\n')
+                rdc_file.write('ref. units  : deg\n')
             
             # Escreve linha com distância unitária de referência
             rdc_file.write(f'unit dist.  : {1.0:<9.7f}\n')
@@ -2054,7 +2005,7 @@ class HidroPixel:
             self.rdc_vars.num = 2 # num = 2 : real
             textoaux = 'min. X      : '
             tamnum = self.tamanho_numero(self.global_vars.varaux, self.rdc_vars.num)
-            phrase = self.aux_RDC(rdc_file, textoaux, self.global_vars.varaux, tamnum)
+            phrase = self.aux_RDC(textoaux, self.global_vars.varaux, tamnum)
             rdc_file.write(phrase)
 
             # Escreve linha com coordenada xmax
@@ -2062,7 +2013,7 @@ class HidroPixel:
             self.rdc_vars.num = 2 # num = 2 : real
             textoaux = 'max. X      : '
             tamnum = self.tamanho_numero(self.global_vars.varaux, self.rdc_vars.num)
-            phrase = self.aux_RDC(rdc_file, textoaux, self.global_vars.varaux, tamnum)
+            phrase = self.aux_RDC(textoaux, self.global_vars.varaux, tamnum)
             rdc_file.write(phrase)
             
             # Escreve linha com coordenada ymin
@@ -2070,7 +2021,7 @@ class HidroPixel:
             self.rdc_vars.num = 2 # num = 2 : real
             textoaux = 'min. Y      : '
             tamnum = self.tamanho_numero(self.global_vars.varaux, self.rdc_vars.num)
-            phrase = self.aux_RDC(rdc_file, textoaux, self.global_vars.varaux, tamnum)
+            phrase = self.aux_RDC(textoaux, self.global_vars.varaux, tamnum)
             rdc_file.write(phrase)
 
             # Escreve linha com coordenada ymax
@@ -2078,7 +2029,7 @@ class HidroPixel:
             self.rdc_vars.num = 2 # num = 2 : real
             textoaux = 'max. Y      : '
             tamnum = self.tamanho_numero(self.global_vars.varaux, self.rdc_vars.num)
-            phrase = self.aux_RDC(rdc_file, textoaux, self.global_vars.varaux, tamnum)
+            phrase = self.aux_RDC(textoaux, self.global_vars.varaux, tamnum)
             rdc_file.write(phrase)
 
             # Escreve a linha com o valor do erro dos dados
@@ -2089,7 +2040,7 @@ class HidroPixel:
             self.rdc_vars.num = 2 # num = 2 : real
             textoaux = 'resolution  : '
             tamnum = self.tamanho_numero(self.global_vars.varaux, self.rdc_vars.num)
-            phrase = self.aux_RDC(rdc_file, textoaux, self.global_vars.varaux, tamnum)
+            phrase = self.aux_RDC(textoaux, self.global_vars.varaux, tamnum)
             rdc_file.write(phrase)
 
             # Escreve a linha com o valor mínimo dos dados 
@@ -2097,7 +2048,7 @@ class HidroPixel:
             self.rdc_vars.num = 2 # num = 2 : real
             textoaux = 'min. value  : '
             tamnum = self.tamanho_numero(self.global_vars.varaux, self.rdc_vars.num)
-            phrase = self.aux_RDC(rdc_file, textoaux, self.global_vars.varaux, tamnum)
+            phrase = self.aux_RDC(textoaux, self.global_vars.varaux, tamnum)
             rdc_file.write(phrase)
 
             # Escreve a linha com o valor máximo dos dados 
@@ -2105,7 +2056,7 @@ class HidroPixel:
             self.rdc_vars.num = 2 # num = 2 : real
             textoaux = 'max. value  : '
             tamnum = self.tamanho_numero(self.global_vars.varaux, self.rdc_vars.num)
-            phrase = self.aux_RDC(rdc_file, textoaux, self.global_vars.varaux, tamnum)
+            phrase = self.aux_RDC(textoaux, self.global_vars.varaux, tamnum)
             rdc_file.write(phrase)
 
             # Escreve a linha com o valor mínimo de exebição 
@@ -2113,7 +2064,7 @@ class HidroPixel:
             self.rdc_vars.num = 2 # num = 2 : real
             textoaux = 'display min : '
             tamnum = self.tamanho_numero(self.global_vars.varaux, self.rdc_vars.num)
-            phrase = self.aux_RDC(rdc_file, textoaux, self.global_vars.varaux, tamnum)
+            phrase = self.aux_RDC(textoaux, self.global_vars.varaux, tamnum)
             rdc_file.write(phrase)
 
             #  Escreve a linha com o valor máximo para exibição 
@@ -2121,11 +2072,11 @@ class HidroPixel:
             self.rdc_vars.num = 2 # num = 2 : real
             textoaux = 'display max : '
             tamnum = self.tamanho_numero(self.global_vars.varaux, self.rdc_vars.num)
-            phrase = self.aux_RDC(rdc_file, textoaux, self.global_vars.varaux, tamnum)
+            phrase = self.aux_RDC(textoaux, self.global_vars.varaux, tamnum)
             rdc_file.write(phrase)
 
             # Escreve a linha com a unidade dos dados
-            rdc_file.write(f'value units : unspecified\n')
+            rdc_file.write('value units : unspecified\n')
 
             # Escreve a linha com o valor do erro dos dados
             rdc_file.write(f'value error : unknown\n')
@@ -2134,13 +2085,13 @@ class HidroPixel:
             rdc_file.write(f'flag value  : {0:1d}\n')
             
             # Escreve a linha com a definição do sinalizador
-            rdc_file.write(f"flag def'n  : none\n")
+            rdc_file.write("flag def'n  : none\n")
 
             # Escreve a linha com o número de categorias da legenda
             rdc_file.write(f'legend cats : {0:1d}\n')
 
             # Escreve a linha sobre a criação da imagem
-            rdc_file.write(f'lineage     : This file was created automatically by an ARP and JVD PYTHON program')
+            rdc_file.write('lineage     : This file was created automatically by an ARP and JVD PYTHON program')
         
     def escreve_num_pix_drenagem(self):
         '''Esta função gera o mapa de numeração dos píxels da rede de drenagem'''
@@ -2178,7 +2129,7 @@ class HidroPixel:
         self.rdc_vars.Xmax3 = self.rdc_vars.xmax
         self.rdc_vars.Ymin3 = self.rdc_vars.ymin
         self.rdc_vars.Ymax3 = self.rdc_vars.ymax
-        nomeRST = fn_num_pix_dren 
+        nomeRST = self.fn_num_pix_dren
         self.global_vars.metrordc = self.global_vars.metro
         self.min_max()
         self.escreve_RDC(nomeRST)
@@ -2430,26 +2381,56 @@ class HidroPixel:
     def escreve_hidrograma(self):
         '''Esta função gera contento o hidrograma total da bacia hidrográfica estudada'''
         file_name = self.dlg_flow_rout.le_6_pg4.text()
-        with open(file_name, 'w') as arquivo_txt:
+        with open(file_name, 'w', enconding = 'utf-8') as arquivo_txt:
             arquivo_txt.write('tempo(min), vazão calculada(m³/s)\n')
             for k in range(self.blocos_vazao):
-                arquivo_txt.write(f'{self.tempo_vazao(k)}, {self.vazao(k)}\n')
+                arquivo_txt.write(f'{self.tempo_vazao[k]}, {self.vazao[k]}\n')
 
-    def save_buttons(self, line_edit):
-        '''Esta função configura os botões da salvar (criar arquivo)'''
-        # Seleciona o arquivo enviado pelo usuário
-        while True:
-            # Obtendo o caminho do arquivo a ser salvo usando um diálogo de arquivo
-            file_name, _ = QFileDialog.getSaveFileName(None, "Save the file",'',"Raster Files (*.tif *.rst)")
-            if file_name:
-                line_edit.setText(file_name)
-                break
-            else:
-                # O usuário não solucionou um arquivo (um caminho para salvar o arquivo de saída)
-                result = "Wait! You did not select any file."
-                reply = QMessageBox.warning(None, "No files selected", result, QMessageBox.Ok | QMessageBox.Cancel)
-                if reply == QMessageBox.Cancel:
-                    break
+    def escreve_numb_pix_bacia(self):
+        '''Esta função gera o mapa contendo a numeração dos pixels presentes na bacia hidrografíca'''
+        # JVDopmize: determinação da perda inicial máxima
+        numb_pix_max = np.amax(self.numb_pix_bacia)
+
+        # Abrindo o arquivo(fn : file name) para escrita dos resultados
+        fn_numb_pix = self.dlg_exc_rain.le_1_pg4.text()
+        
+        # Define os dados a serem escritos
+        dados_numb_pix = np.array([[float(self.numb_pix_bacia[lin][col]) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)])
+        tipo_dados = gdalconst.GDT_Float32
+
+        # Obtendo o driver RST do GDAL
+        driver = gdal.GetDriverByName('RST')
+
+        # Cria arquivo final
+        dataset = driver.Create(fn_numb_pix, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
+
+        # Escreve os dados na banda do arquivo
+        banda = dataset.GetRasterBand(1)
+        banda.WriteArray(dados_numb_pix)
+
+        # Fechando o arquivo
+        dataset = None
+        banda = None
+        driver = None
+        tipo_dados = None
+
+        # Alocando as variáveis para escrita da documentação do arquivo rdc para o comprimento da rede de drenagem
+        self.rdc_vars.nlin3 = self.rdc_vars.nlin
+        self.rdc_vars.ncol3 = self.rdc_vars.ncol
+        self.rdc_vars.tipo_dado = 2
+        self.rdc_vars.tipoMM = 2
+        self.rdc_vars.VarMM2 = self.numb_pix_bacia
+        self.rdc_vars.i3 = 0 
+        self.rdc_vars.Xmin3 = self.rdc_vars.xmin
+        self.rdc_vars.Xmax3 = self.rdc_vars.xmax
+        self.rdc_vars.Ymin3 = self.rdc_vars.ymin
+        self.rdc_vars.Ymax3 = self.rdc_vars.ymax
+        self.rdc_vars.Varmax = numb_pix_max
+        self.rdc_vars.Varmin = 0
+        nomeRST = fn_numb_pix
+        self.global_vars.metrordc = self.global_vars.metro
+        self.escreve_RDC(nomeRST)    
+
     def escreve_perdas_ini(self):
         '''Esta função gera o mapa contendo os valores das perdas iniciais dos pixels presentes na bacia hidrografíca'''
         # JVDopmize: determinação da perda inicial máxima
@@ -2629,6 +2610,22 @@ class HidroPixel:
         nomeRST = fn_p_acum
         self.global_vars.metrordc = self.global_vars.metro
         self.escreve_RDC(nomeRST)  
+
+    def save_buttons(self, line_edit):
+        '''Esta função configura os botões da salvar (criar arquivo)'''
+        # Seleciona o arquivo enviado pelo usuário
+        while True:
+            # Obtendo o caminho do arquivo a ser salvo usando um diálogo de arquivo
+            file_name, _ = QFileDialog.getSaveFileName(None, "Save the file",'',"Raster Files (*.tif *.rst)")
+            if file_name:
+                line_edit.setText(file_name)
+                break
+            else:
+                # O usuário não solucionou um arquivo (um caminho para salvar o arquivo de saída)
+                result = "Wait! You did not select any file."
+                reply = QMessageBox.warning(None, "No files selected", result, QMessageBox.Ok | QMessageBox.Cancel)
+                if reply == QMessageBox.Cancel:
+                    break
 
     def save_to_file(self, function, page):
         '''Esta função gera o arquivo com as informações enviadas por meio do usuário por página
@@ -3772,7 +3769,23 @@ class HidroPixel:
             self.dlg_exc_rain.tbtn_pg2_3.setEnabled(False)
             self.dlg_exc_rain.label_35.setEnabled(False)  
 
-    def logging_run_page(self):
+    def cancel_log_page(self, routine):
+        '''Esta função configura o botão de cancelar da página de log'''
+        mensagem_log = None
+        # Cria texto formatado para adicionar ao text edit? mensagem de aviso
+        mensagem_log = '<font>\nATTENTION: stopping FLOW TRAVEL TIME process...</font>'
+
+        # Adiciona o texto formatado no QTextEdit
+        routine.te_logg.insertHtml(mensagem_log)
+
+        # Reativa a página de parametros
+        routine.pg_par_ftt.setEnabled(True)
+
+        # Desativa a página de log 
+        routine.pg_log_ftt.setEnabled(False)
+
+
+    def run_flow_tt(self):
         '''Está função ativa a página de log e configura a ordem de execução das funções para o cálculo do tempo de viagem'''
         # Ativiva a página de log e limpa as informações passadas no text_edit 
         mensagem_log = None
@@ -3814,7 +3827,7 @@ class HidroPixel:
             while True:
                 # Método usado para permitir a iteração do usuário enquanto o programa está em execução
                 QApplication.processEvents()
-                self.dlg_flow_tt.btn_cancel_log.clicked.connect(lambda: self.cancel_log_page())
+                self.dlg_flow_tt.btn_cancel_log.clicked.connect(lambda: self.cancel_log_page(self.dlg_flow_tt))
 
                 # Verifica a existência de incoerências nas informações fornecidas pelo usuário
                 list_line_edit_value_pg1 = [self.dlg_flow_tt.le_5_pg1.text(),
@@ -4030,20 +4043,49 @@ class HidroPixel:
             # O usuário selecionou a opção para cancelar
             self.dlg_flow_tt.tabWidget.setCurrentIndex(0)
 
-    def cancel_log_page(self):
-        '''Esta função configura o botão de cancelar da página de log'''
+    def run_exc_rain(self):
+        '''Está função ativa a página de log e configura a ordem de execução das funções da rotina excess rainfall'''
+        # Ativiva a página de log e limpa as informações passadas no text_edit 
         mensagem_log = None
-        # Cria texto formatado para adicionar ao text edit? mensagem de aviso
-        mensagem_log = '<font>\nATTENTION: stopping FLOW TRAVEL TIME process...</font>'
+        self.dlg_exc_rain.tabWidget.setCurrentIndex(1)
+        self.dlg_exc_rain.pg_log_ftt.setEnabled(True)
+        self.dlg_exc_rain.te_logg.clear()
 
-        # Adiciona o texto formatado no QTextEdit
-        self.dlg_flow_tt.te_logg.insertHtml(mensagem_log)
+        # Configura a progress bar
+        self.dlg_exc_rain.progressBar.setRange(0, 100)
+        self.dlg_exc_rain.progressBar.setValue(0)
 
-        # Reativa a página de parametros
-        self.dlg_flow_tt.pg_par_ftt.setEnabled(True)
+        # Adiciona avisa acerca do tempo de processamento
+        self.dlg_exc_rain.te_logg.append(mensagem_log)
+        reply = QMessageBox.information(None, "Information", "This will take a few minutes (maybe hours)...", QMessageBox.Ok | QMessageBox.Cancel)
+        
+        # Apenas inicia o prpocessamento se o usuário estiver de acordo com o tempo de processamento
+        if reply == QMessageBox.Ok:
 
-        # Desativa a página de log 
-        self.dlg_flow_tt.pg_log_ftt.setEnabled(False)
+            # Configura as informações do textEdit da referida página
+            font = QFont()
+            font.setPointSize(11)
+            version_info = {
+                "QGIS Version": '3.34.0-Prizren',
+                "Qt Version": '5.15.3',
+                "Python Version": '3.9.5',
+                "GDAL Version": '3.8.0'}
+            
+            datatime_started = datetime.now().isoformat()
+            mensagem_log1 = "The plugin was developed with:\n"
+            mensagem_log1 += f"QGIS Version: {version_info['QGIS Version']}\n"
+            mensagem_log1 += f"Qt Version: {version_info['Qt Version']}\n"
+            mensagem_log1 += f"Python Version: {version_info['Python Version']}\n"
+            mensagem_log1 += f"GDAL Version: {version_info['GDAL Version']}\n"
+            mensagem_log1 += "--------------------------------------------------------\n"
+            mensagem_log1 += f"Algorithm started at: {datatime_started}\n"
+            mensagem_log1 += "--------------------------------------------------------\n"
+            # Cria condição de parada da execução: se o usuário clicar no botão cancel da página de log
+            while True:
+                # Método usado para permitir a iteração do usuário enquanto o programa está em execução
+                QApplication.processEvents()
+                self.dlg_exc_rain.btn_cancel_log.clicked.connect(lambda: self.cancel_log_page(self.dlg_exc_rain))
+
 
     def run(self):
         """Esta é a função principal do plugin, todas as funcionalidades propostas anteriormente serão efetivadas na função run"""
@@ -4127,19 +4169,20 @@ class HidroPixel:
             self.dlg_flow_tt.btn_close_pg4.clicked.connect(lambda: self.close_gui(1))
             
             # Configura run button : flow travel time
-            self.dlg_flow_tt.btn_run_2.clicked.connect(lambda: self.logging_run_page())
+            self.dlg_flow_tt.btn_run_2.clicked.connect(lambda: self.run_flow_tt())
 
             # Configura botões página de log:flow travel time
-            self.dlg_flow_tt.btn_cancel_log.clicked.connect(self.cancel_log_page)
+            self.dlg_flow_tt.btn_cancel_log.clicked.connect(lambda: self.cancel_log_page(self.dlg_flow_tt))
             self.dlg_flow_tt.btn_close_log.clicked.connect(lambda: self.close_gui(1))
 
             '''Configura os botões da página da rotina excess rainfall'''
 
             # Configura botões gerais das páginas da rotina excess rainfall
             self.dlg_exc_rain.btn_config.clicked.connect(lambda: self.dlg_exc_rain.pages_exc_rain.setCurrentWidget(self.dlg_exc_rain.pg1_config))      
-            self.dlg_exc_rain.btn_input_data.clicked.connect(lambda: self.dlg_exc_rain.pages_exc_rain.setCurrentWidget(self.dlg_exc_rain.pg2_in_data))
-            self.dlg_exc_rain.btn_data_va_tool.clicked.connect(lambda: self.dlg_exc_rain.pages_exc_rain.setCurrentWidget(self.dlg_exc_rain.pg3_data_val_tool))
-            self.dlg_exc_rain.btn_run.clicked.connect(lambda: self.dlg_exc_rain.pages_exc_rain.setCurrentWidget(self.dlg_exc_rain.pg4_run))
+            self.dlg_exc_rain.btn_rain_int.clicked.connect(lambda: self.dlg_exc_rain.pages_exc_rain.setCurrentWidget(self.dlg_exc_rain.pg2_rain_int))      
+            self.dlg_exc_rain.btn_input_data.clicked.connect(lambda: self.dlg_exc_rain.pages_exc_rain.setCurrentWidget(self.dlg_exc_rain.pg3_in_data))
+            self.dlg_exc_rain.btn_data_va_tool.clicked.connect(lambda: self.dlg_exc_rain.pages_exc_rain.setCurrentWidget(self.dlg_exc_rain.pg4_data_val_tool))
+            self.dlg_exc_rain.btn_run.clicked.connect(lambda: self.dlg_exc_rain.pages_exc_rain.setCurrentWidget(self.dlg_exc_rain.pg5_run))
 
             # Configura botões da página de configuration: excess rainfall
             self.dlg_exc_rain.tbtn_pg1_1.clicked.connect(lambda: self.carrega_work_folder(self.dlg_exc_rain.le_3_pg1))
