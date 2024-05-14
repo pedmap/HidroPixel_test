@@ -843,7 +843,7 @@
                 <rect>
                  <x>0</x>
                  <y>0</y>
-                 <width>551</width>
+                 <width>641</width>
                  <height>874</height>
                 </rect>
                </property>
@@ -2010,8 +2010,8 @@
                 <rect>
                  <x>0</x>
                  <y>0</y>
-                 <width>254</width>
-                 <height>64</height>
+                 <width>658</width>
+                 <height>481</height>
                 </rect>
                </property>
                <layout class="QGridLayout" name="gridLayout_30">
@@ -2059,8 +2059,8 @@
                 <rect>
                  <x>0</x>
                  <y>0</y>
-                 <width>594</width>
-                 <height>425</height>
+                 <width>658</width>
+                 <height>481</height>
                 </rect>
                </property>
                <layout class="QGridLayout" name="gridLayout_48">

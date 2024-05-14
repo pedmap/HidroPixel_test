@@ -23,47 +23,100 @@ class Test():
         self.alfa, self.delta_t, self.criterio_parada, self.beta = 0,0,0,0
         self.numero_total_pix = 0
         self.num_intervalos = 0
-        self.volume_total = 0
+        self.volume_total = 0.0 
         self.quantidade_blocos_chuva = 0
         self.chuva_excedente_calc = 0
         self.blocos_vazao = 0
         self.Pexc
 
-    def leh_bacia(self):
+    def leh_bacia(self, file, function):
+        """Esta função é utilizada para ler o arquivo raster da bacia hidrográfica (arquivo .rst)
+           funciton == 1: flow travel time
+           function == 2: excesse rainfall
+           function == 3: flow routing"""
         self.inicio = time.time()
-        """Esta função é utilizada para ler as informações da bacia hidrográfica (arquivo .rst)"""
-        arquivo = r"C:\Users\joao1\OneDrive\Área de Trabalho\Calcula_Tc_SCS_decliv_indiv_grandesmatrizes_utm_LL\bacia.rst"
+
+        arquivo = file
         # Tratamento de erros: verifica se o arquivo foi corretamente enviado
         if arquivo:
-            # Realizando a abertura do arquivo raster e coletando as informações referentes as dimensões do mesmo
-            rst_file_bacia = gdal.Open(arquivo)
+            if function == 1:
+                # Realizando a abertura do arquivo raster e coletando as informações referentes as dimensões do mesmo
+                rst_file_bacia = gdal.Open(arquivo)
 
-            # Lendo os dados raster como um array 
-            dados_lidos_bacia = rst_file_bacia.GetRasterBand(1).ReadAsArray()
-            
-            # Tratamento de erro: verifica se o arquivo foi aberto corretamente
-            if rst_file_bacia is not None:
+                # Lendo os dados raster como um array 
+                dados_lidos_bacia = rst_file_bacia.GetRasterBand(1).ReadAsArray()
+                
+                # Tratamento de erro: verifica se o arquivo foi aberto corretamente
+                if rst_file_bacia is not None:
 
-                # atualizando os valores das variáveis para coletar o número de linhas e colunas do arquivo raster lido
-                self.rdc_vars.nlin = rst_file_bacia.RasterYSize               
-                self.rdc_vars.ncol = rst_file_bacia.RasterXSize
+                    # atualizando os valores das variáveis para coletar o número de linhas e colunas do arquivo raster lido
+                    self.rdc_vars.nlin = rst_file_bacia.RasterYSize               
+                    self.rdc_vars.ncol = rst_file_bacia.RasterXSize
 
-                # Determinando o numéro de elementos contidos no arquivo raster
-                num_elements_bacia = dados_lidos_bacia.size
-
-                # Tratamento de erros: verifica se o número de elementos (pixel) do arquivo está de acordo com as dimensões da matriz da bacia hidrográfica
-                if num_elements_bacia != self.rdc_vars.nlin * self.rdc_vars.ncol:
-                    result = f"ERROR! As dimensões do arquivo raster ({self.rdc_vars.nlin},{self.rdc_vars.ncol}) são diferentes do número total de \
-                        elementos {num_elements_bacia}. Assim, não é possível ler o arquivo raster '{arquivo}' e armazená-lo na matriz destinada."
-                    # QMessageBox.warning(None, "ERROR!", result)
-                else:
                     # Reorganizando os dados lidos da bacia em uma nova matriz chamada bacia.
 
-                    # global_vars.bacia = dados_lidos_bacia
                     self.global_vars.bacia = dados_lidos_bacia
                     # Fechando o dataset GDAL
 
                     rst_file_bacia = None
+
+                elif function == 2 or function == 3:
+                    # Realizando a abertura do arquivo raster e coletando as informações referentes as dimensões do mesmo
+                    rst_file_bacia = gdal.Open(arquivo)
+
+                    # Lendo os dados raster como um array 
+                    dados_lidos_bacia = rst_file_bacia.GetRasterBand(1).ReadAsArray()
+                    
+                    # Tratamento de erro: verifica se o arquivo foi aberto corretamente
+                    if rst_file_bacia is not None:
+
+                        # atualizando os valores das variáveis para coletar o número de linhas e colunas do arquivo raster lido
+                        self.rdc_vars.nlin = rst_file_bacia.RasterYSize               
+                        self.rdc_vars.ncol = rst_file_bacia.RasterXSize
+
+                        # Reorganizando os dados lidos da bacia em uma nova matriz chamada bacia.
+
+                        self.global_vars.bacia = dados_lidos_bacia
+                        # Fechando o dataset GDAL
+
+                        rst_file_bacia = None
+
+                    # Lê informações do arquivo de metadados (.rdc)
+                    arquivo_rdc = arquivo.replace('.rst','.rdc')
+                    if arquivo_rdc is not None:
+                        with open(arquivo_rdc, 'r') as rdc_file:
+                        # Separando os dados do arquivo RDC em função das linhas que contém alguma das palavras abaixo
+                        k_words = ["columns", "rows", "ref. system", "ref. units", "min. X", "max. X", "min. Y", "max. Y", "resolution"]
+                        lines_RDC = [line.strip() for line in rdc_file.readlines() if any(word in line for word in k_words)]
+                        
+                        # Iterando sobre a lista de lines_rdc para guardas as informações das palavras da lista (k_words) nas ruas respectivas variáveis
+                        for line in lines_RDC:
+                            # Separando as linhas de acordo com o refencial (:)
+                            split_line = line.split(":")
+                            # Armazenando o primeiro valor da linha (antes do sinal ":")em uma variável e retirando os espaços (caracter) do inicio e fim da linha repartida
+                            key = split_line[0].strip()
+                            # Armazenando o segundo valor da linha (antes do sinal ":") em uma variáveis e retirando os espaços (caracter) do inicio e fim da linha repartida
+                            value = split_line[-1].strip()
+
+                            # Estrutura condicional para verificar quais são as informações de cada linha e armazenando elas em suas respectivas variáveis
+                            if key == "ref. system":
+                                self.rdc_vars.sistemaref = value
+                            elif key == "ref. units":
+                                self.rdc_vars.unidaderef3 = value
+                            elif key == "min. X":
+                                self.X_minimo = float(value)
+                            elif key == "max. X":
+                                self.X_maximo = float(value)
+                            elif key == "min. Y":
+                                self.Y_minimo = float(value)
+                            elif key == "max. Y":
+                                self.Y_maximo = float(value)
+                            elif key == "resolution":
+                                self.d_x = float(value)
+                    else:
+                        # Arquivo não existente: mostra erro para usuário
+                        resulte = f"There is no file named {arquivo_rdc} in the same directory as {arquivo}!"
+                        # QMessageBox.warning(None, "ERROR!", resulte)                    
             else:
                 """Caso o arquivo raster apresente erros durante a abertura, ocorrerá um erro"""
                 resulte = f"Failde to open the raster file: {arquivo}"
@@ -75,7 +128,6 @@ class Test():
         
         print(f'Qtd pix bacia: {np.count_nonzero(self.global_vars.bacia)}\nÁrea da bacia: {(np.count_nonzero(self.global_vars.bacia))*10} m²')
 
-        
     def leh_caracteristica_dRios(self):
         """Esta função é utilizada para ler as informações acerca da característica dos rios de uma bacia hidrográfica (texto .rst)"""
 
@@ -102,12 +154,11 @@ class Test():
                 Mannclasse_list.append(Mann)
                 Rhclasse_list.append(Rh)
 
-            # Convertendo as listas em arrays e armazendo nas respectivas variáveis
-            self.global_vars.j = np.array(j_list)
-            self.global_vars.Sclasse = np.array(Sclasse_list)
-            self.global_vars.Mannclasse = np.array(Mannclasse_list)
-            self.global_vars.Rhclasse = np.array(Rhclasse_list)
-
+        # Convertendo as listas em arrays e armazendo nas respectivas variáveis
+        self.global_vars.j = np.array(j_list)
+        self.global_vars.Sclasse = np.array(Sclasse_list)
+        self.global_vars.Mannclasse = np.array(Mannclasse_list)
+        self.global_vars.Rhclasse = np.array(Rhclasse_list)
 
     def leh_classes_rios(self):
         """Esta função é utilizada para ler as informações acerca da classe dos rios da bacia hidrográfica (arquivo raster -  .rst)"""
@@ -1480,6 +1531,177 @@ class Test():
         self.criterio_parada = int(values[2])
         self.beta = float(values[3])
 
+    def leh_posto_pluv(self):
+        '''Esta função é responsável por ler e armazenar as informações dos postos pluviométricos'''
+        # Definição das variáveis
+        id_postos = []
+        latitude = []
+        longitude = []
+        numero_posto = []
+        arquivo_posto = r''
+        w = 0
+        with open(arquivo_posto, 'r', encoding = 'utf-8') as arquivo_txt:
+            # Armazena cabeçalho
+            cabecalho = arquivo_txt.readline().strip()
+            # Lê as linhas do arquivo enviado
+            for line in arquivo_txt:
+                w+=1
+                split_lines = line.split(',').strip()
+                id_postos.append(split_lines[0])
+                latitude.append(split_lines[1])
+                longitude.append(split_lines[2])
+                numero_posto.append(w)
+
+        # Redimensiona as variáveis globais
+        self.quantidade_postos = len(values)
+        self.id_postos = np.array(id_postos)
+        self.latitude = np.array(latitude)
+        self.longitude = np.array(longitude)
+        self.numero_posto = np.array(numero_posto)
+
+    def leh_arquivo_chuva():
+        '''Esta função lê e armazena os valores de precipitação de cada posto ao longo do tempo'''
+        # Definição das variáveis
+        w = 0
+        tempo = []
+        chuva = []
+
+        # Recebe e lê o arquivo
+        arquivo_chuva = r''
+        with open(arquivo_chuva, 'r', encoding = 'utf-8') as arquivo_txt:
+            # Armazena cabeçalho
+            cabecalho = arquivo_txt.readline().strip()
+
+            # Redimenciona variáveis
+            linhas = arquivo_txt.readlines()
+            self.blocos_chuva = len(linhas)
+            self.tempo = np.zeros(self.blocos_chuva)
+            self.chuva = np.zeros((self.blocos_chuva,self.quantidade_postos))
+
+            # Retira informações do arquivo
+            w = 0
+            for line in linhas:
+                slipt_line = line.split(',').strip()
+
+                # Armazena tempo
+                self.tempo[w] = split_line[0]
+
+                # Armazena chuva
+                for c in range(self.quantidade_postos):
+                    self.chuva[w][c] = split_line([c])
+                
+
+    def rainfall_interpolation(self):
+        '''Esta função gera o arquivo com a precipitação por pixel por meio da interpolação dos valores das estações pluviométricas enviadas pelo usuário'''
+        # Definição de variáveis
+        numero_pixel = 0
+        numerador = 0
+        denominador = 0
+        # Gera o arquivo com precipitação interpolada por pixel
+        arquivo = r''
+        with open(arquivo, 'w', encoding = 'utf-8') as arquivo_txt:
+            # Escreve cabeçalho
+            arquivo_txt.write('Pixel,')
+            for w in range(self.blocos_chuva):
+                if w < self.blocos_chuva:
+                    arquivo_txt.write(f'{self.tempo[w]},')
+                else:
+                    arquivo_txt.write(f'{self.tempo[w]}')
+
+            # interpolação da precipitação
+            for lin in range(self.rdc_vars.nlin):
+                for col in range(self.rdc_vars.ncol):
+                    if self.global_vars.bacia[lin][col] == 1:
+                        numero_pixel += 1
+                        linha = numero_pixel
+                        xpixel = self.X_minimo + (col * self.d_x) + (self.d_x / 2)
+                        ypixel = self.Y_minimo - (lin * self.d_y) + (self.d_y / 2)
+
+                        # Aplicação da fórmula de interpolação
+                        for w in range(self.blocos_chuva):
+                            for k in range(self.quantidade_postos):
+                                for q in range(self.quantidade_postos):
+                                    if self.numero_posto[q] == self.id_postos(k):
+                                        distancia_y = self.latitude[k] - y_pixel
+                                        distancia_x = self.longitude[k] - x_pixel
+                                        distancia = ((distancia_x ** 2) + (distancia_y ** 2))**(1/2)
+                                        numerador += (self.chuva[w][q] / (distancia**2))
+                                        denominador += (1/(distancia**2))
+                            rainfall = numerador / denominador
+                            linha += ',' + str(rainfall)     
+                        # Escreve informação no arquivo
+                        arquivo_txt.write(linha)
+
+    def rainfall_interpolation_map(self):
+        '''Se o botão save maps for clicado: gera os arquivos raster com precipitação interpolada por pixel por duração do evento'''
+        # Cria variáveis
+        self.chuva_pixel = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
+        numero_pixel = 0
+        numerador = 0
+        denonimador = 0
+        # Gera um arquivo por evento de precipitação
+        for w in range(self.blocos_chuva):
+            # Pasta enviada pelo user
+            path = r''
+            arquivo = path + f'\{self.tempo[w]}'
+
+            # interpolação da pricipitação para o evento em questão
+            for lin in range(self.rdc_vars.nlin):
+                for col in range(self.rdc_vars.ncol):
+                    if self.global_vars.bacia[lin][col] == 1:
+                        numero_pixel += 1
+                        for k in range(self.quantidade_postos):
+                            for q in range(self.quantidade_postos):
+                                if self.numero_posto[q] = id[k]
+                                    xpixel = self.X_minimo + (col * self.d_x) + (self.d_x / 2)
+                                    ypixel = self.Y_minimo - (lin * self.d_y) + (self.d_y / 2)
+                                    distancia_y = self.latitude[k] - y_pixel
+                                    distancia_x = self.longitude[k] - x_pixel
+                                    distancia = ((distancia_x ** 2) + (distancia_y ** 2))**(1/2)
+                                    numerador += (self.chuva[w][q] / (distancia**2))
+                                    denominador += (1/(distancia**2))
+                        
+                        # Armazena o valor da pricipitação do pixel
+                        rainfall_pix = numerador / denominador
+                        self.chuva_pixel[lin][col] = rainfall_pix
+            num_pix_max = np.amax(self.chuva_pixel)
+            # Escreve arquivo raster (.rst) com a precipitação por pixel em toda bacia para o evento em questão
+            dados_chuva_pixel = np.array([[float(self.chuva_pix[lin][col]) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)])
+            tipo_dados = gdalconst.GDT_Float32
+
+            # Obtendo o driver o RST do GDAL
+            driver = gdal.GetDriverByName('RST')
+
+            # Cria arquivo final
+            dataset = driver.Create(arquivo, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dado)
+
+            # Escreve os dados na banda do arquivo
+            banda = dataset.GetRasterBand(1)
+            banda.WriteArray(dados_chuva_pixel)
+
+            # Fechando o arquivo
+            dataset = None
+            banda = None
+            driver = None
+            tipo_dados = None
+
+            # Alocando as variáveis para escrita da documentação do arquivo rdc para o comprimento da rede de drenagem
+            self.rdc_vars.nlin3 = self.rdc_vars.nlin
+            self.rdc_vars.ncol3 = self.rdc_vars.ncol
+            self.rdc_vars.tipo_dado = 2
+            self.rdc_vars.tipoMM = 2
+            self.rdc_vars.VarMM2 = self.chuva_pix
+            self.rdc_vars.i3 = 0 
+            self.rdc_vars.Xmin3 = self.X_minimo
+            self.rdc_vars.Xmax3 = self.X_maximo
+            self.rdc_vars.Ymin3 = self.Y_minimo
+            self.rdc_vars.Ymax3 = self.Y_maximo
+            self.rdc_vars.Varmax = num_pix_max
+            self.rdc_vars.Varmin = 0
+            nomeRST = arquivo
+            self.global_vars.metrordc = self.global_vars.metro
+            self.escreve_RDC(nomeRST)          
+
     def rainfall_excess(self):
         '''Esta função determina gera os arquivos associados a precipitação excedente de cada pixel presente na baica hidrográfica, fumentando-se no método do SCS-CN'''
         # Definação das variáveis
@@ -1490,7 +1712,6 @@ class Test():
         self.hacum = np.zeros(self.quantidade_blocos_chuva)
         self.hexc_pix = np.zeros((self.numero_total_pix, self.quantidade_blocos_chuva))
         self.hietograma = np.zeros((self.numero_total_pix, self.quantidade_blocos_chuva))
-        pixel_atual = 0
         self.perdas_iniciais = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
         self.chuva_acumulada_pixel = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
         self.chuva_total_pixel = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
@@ -1527,41 +1748,11 @@ class Test():
                             self.hexc_pix[lin][w] = self.hacum[w] - self.hacum[w-1]
                             
                     # Chuva excedente acumulada do pixel
-                    self.chuva_acumulada_pixel[lin][col] = self.hacum(self.quantidade_blocos_chuva)
+                    self.chuva_acumulada_pixel[lin][col] = self.hacum[self.quantidade_blocos_chuva]
 
                     # Chuva total no pixel
                     self.chuva_total_pixel[lin][col] = Pacum
 
-                    # Atualiza número do pixel
-                    pixel_atual +=1
-
-
-        # Ordenação dos valores da Pe para formular o hietograma
-        duracao = self.time[-1]
-        n = duracao / self.delta_t #numero de eventos
-        posicao =  [0 for y in range(int(n))] # usada para posicionar os valore de Pe
-
-        # Ordenamento para construção do hietograma: blocos alternados
-        if n%2 == 0:
-            for i in range(0,int(n/2)):
-                posicao[i] = n-((2*i)+2)
-        
-            for i in range((int(n/2)),int(n)):
-                posicao[i] = (2*i) - n+1
-        
-        else:
-            for i in range(0,int(n/2)):
-                posicao[i] = n-((2*i)+2)
-        
-            for i in range((int(n/2)+1),int(n)):
-                posicao[i] = (2*i)-n+1
-        
-        # Ordena o Hietograma segundo método dos blocos alternados
-        for pixel in range((self.numero_total_pix)):
-            for m in range(0,int(n)):
-                pos = posicao[m]
-                self.hietograma[pixel][m] = self.hexc_pix[pixel][pos]
-            
     def hidrograma_dlr(self):
         '''Esta função gera o hidrograma-DLR da bacia hidrográfica conforme os dados de precipitação enviados'''
         # JVDoptmize: máximo tempo de viagem ao exutório
@@ -1604,7 +1795,7 @@ class Test():
                             diferenca = (self.tempo_total[lin][col] - self.tempo_intervalo[w])
                         elif diferenca < diferenca_minima:
                             diferenca_minima = diferenca
-                            self.TempoTotal_reclass[lin][col] = self.tempo_intervalo[w] 
+                            self.TempoTotal_reclass[lin][col] = self.tempo_intervalo[w]
 
         # Determinação do hidrograma
         # Dadas do arquivo de precipitação enviado
@@ -1654,6 +1845,7 @@ class Test():
 
                     # Amortecimento do hidrograma do pixel
                     k = 0
+                    self.tempo_vazao_pixel = np.zeros(50000)
                     self.tempo_vazao_pixel[k] = 0
                     self.vazao_amortecida_pixel[k] = c_1 * self.vazao_pixel[k]
 
@@ -1666,7 +1858,7 @@ class Test():
                     # Determinação da vazão e do tempo de pico do hidrograma-DLR por pixel
                     self.vazao_pico[lin][col] = np.amax(self.vazao_amortecida_pixel)
                     index_vp = np.where(self.vazao_amortecida_pixel == self.vazao_pico[lin][col])
-                    self.tempo_pico[lin][col] = self.tempo_vazao[index_vp] 
+                    self.tempo_pico[lin][col] = self.tempo_vazao_pixel[index_vp] 
 
                     # Zera vazão no pixel
                     k = 0
@@ -1686,9 +1878,9 @@ class Test():
 
             # Determinação do tempo de duração da vazão
             k = 0
-            self.tempo_vazao[k] = 0
-            while self.tempo_vazao[k] <= self.criterio_parada:
-                self.tempo_vazao[k+1] = self.tempo_vazao[k] + self.delta_t
+            self.tempo_vazao_pixel[k] = 0
+            while self.tempo_vazao_pixel[k] <= self.criterio_parada:
+                self.tempo_vazao_pixel[k+1] = self.tempo_vazao_pixel[k] + self.delta_t
                 k += 1
 
             self.blocos_vazao = k-1
@@ -2685,7 +2877,7 @@ class Test():
         with open(file_name, 'w') as arquivo_txt:
             arquivo_txt.write('tempo(min), vazão calculada(m³/s)\n')
             for k in range(self.blocos_vazao):
-                arquivo_txt.write(f'{self.tempo_vazao[k]}, {self.vazao[k]}\n')
+                arquivo_txt.write(f'{self.tempo_vazao_pixel[k]}, {self.vazao[k]}\n')
 
     def escreve_numb_pix_bacia(self):
         '''Esta função gera o mapa contendo a numeração dos pixels presentes na bacia hidrografíca'''
@@ -2722,10 +2914,10 @@ class Test():
         self.rdc_vars.tipoMM = 2
         self.rdc_vars.VarMM2 = self.numb_pix_bacia
         self.rdc_vars.i3 = 0 
-        self.rdc_vars.Xmin3 = self.rdc_vars.xmin
-        self.rdc_vars.Xmax3 = self.rdc_vars.xmax
-        self.rdc_vars.Ymin3 = self.rdc_vars.ymin
-        self.rdc_vars.Ymax3 = self.rdc_vars.ymax
+        self.rdc_vars.Xmin3 = self.X_minimo
+        self.rdc_vars.Xmax3 = self.X_maximo
+        self.rdc_vars.Ymin3 = self.Y_minimo
+        self.rdc_vars.Ymax3 = self.Y_maximo
         self.rdc_vars.Varmax = numb_pix_max
         self.rdc_vars.Varmin = 0
         nomeRST = fn_numb_pix
@@ -2768,10 +2960,10 @@ class Test():
         self.rdc_vars.tipoMM = 2
         self.rdc_vars.VarMM2 = self.perdas_iniciais
         self.rdc_vars.i3 = 0 
-        self.rdc_vars.Xmin3 = self.rdc_vars.xmin
-        self.rdc_vars.Xmax3 = self.rdc_vars.xmax
-        self.rdc_vars.Ymin3 = self.rdc_vars.ymin
-        self.rdc_vars.Ymax3 = self.rdc_vars.ymax
+        self.rdc_vars.Xmin3 = self.X_minimo
+        self.rdc_vars.Xmax3 = self.X_maximo
+        self.rdc_vars.Ymin3 = self.Y_minimo
+        self.rdc_vars.Ymax3 = self.Y_maximo
         self.rdc_vars.Varmax = perda_ini_max
         self.rdc_vars.Varmin = 0
         nomeRST = fn_perda_ini
@@ -2814,10 +3006,10 @@ class Test():
         self.rdc_vars.tipoMM = 2
         self.rdc_vars.VarMM2 = self.Spotencial
         self.rdc_vars.i3 = 0 
-        self.rdc_vars.Xmin3 = self.rdc_vars.xmin
-        self.rdc_vars.Xmax3 = self.rdc_vars.xmax
-        self.rdc_vars.Ymin3 = self.rdc_vars.ymin
-        self.rdc_vars.Ymax3 = self.rdc_vars.ymax
+        self.rdc_vars.Xmin3 = self.X_minimo
+        self.rdc_vars.Xmax3 = self.X_maximo
+        self.rdc_vars.Ymin3 = self.Y_minimo
+        self.rdc_vars.Ymax3 = self.Y_maximo
         self.rdc_vars.Varmax = max_retencao
         self.rdc_vars.Varmin = 0
         nomeRST = fn_Spotencial
@@ -2860,10 +3052,10 @@ class Test():
         self.rdc_vars.tipoMM = 2
         self.rdc_vars.VarMM2 = self.chuva_acumulada_pixel
         self.rdc_vars.i3 = 0 
-        self.rdc_vars.Xmin3 = self.rdc_vars.xmin
-        self.rdc_vars.Xmax3 = self.rdc_vars.xmax
-        self.rdc_vars.Ymin3 = self.rdc_vars.ymin
-        self.rdc_vars.Ymax3 = self.rdc_vars.ymax
+        self.rdc_vars.Xmin3 = self.X_minimo
+        self.rdc_vars.Xmax3 = self.X_maximo
+        self.rdc_vars.Ymin3 = self.Y_minimo
+        self.rdc_vars.Ymax3 = self.Y_maximo
         self.rdc_vars.Varmax = pe_maxima
         self.rdc_vars.Varmin = 0
         nomeRST = fn_pe_acum
@@ -2906,10 +3098,10 @@ class Test():
         self.rdc_vars.tipoMM = 2
         self.rdc_vars.VarMM2 = self.chuva_total_pixel
         self.rdc_vars.i3 = 0 
-        self.rdc_vars.Xmin3 = self.rdc_vars.xmin
-        self.rdc_vars.Xmax3 = self.rdc_vars.xmax
-        self.rdc_vars.Ymin3 = self.rdc_vars.ymin
-        self.rdc_vars.Ymax3 = self.rdc_vars.ymax
+        self.rdc_vars.Xmin3 = self.X_minimo
+        self.rdc_vars.Xmax3 = self.X_maximo
+        self.rdc_vars.Ymin3 = self.Y_minimo
+        self.rdc_vars.Ymax3 = self.Y_maximo
         self.rdc_vars.Varmax = p_acum_max
         self.rdc_vars.Varmin = 0
         nomeRST = fn_p_acum
