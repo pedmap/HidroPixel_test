@@ -59,73 +59,73 @@ class Test():
 
                     rst_file_bacia = None
 
-                elif function == 2 or function == 3:
-                    # Realizando a abertura do arquivo raster e coletando as informações referentes as dimensões do mesmo
-                    rst_file_bacia = gdal.Open(arquivo)
+            elif function == 2 or function == 3:
+                # Realizando a abertura do arquivo raster e coletando as informações referentes as dimensões do mesmo
+                rst_file_bacia = gdal.Open(arquivo)
 
-                    # Lendo os dados raster como um array 
-                    dados_lidos_bacia = rst_file_bacia.GetRasterBand(1).ReadAsArray()
-                    
-                    # Tratamento de erro: verifica se o arquivo foi aberto corretamente
-                    if rst_file_bacia is not None:
+                # Lendo os dados raster como um array 
+                dados_lidos_bacia = rst_file_bacia.GetRasterBand(1).ReadAsArray()
+                
+                # Tratamento de erro: verifica se o arquivo foi aberto corretamente
+                if rst_file_bacia is not None:
 
-                        # atualizando os valores das variáveis para coletar o número de linhas e colunas do arquivo raster lido
-                        self.rdc_vars.nlin = rst_file_bacia.RasterYSize               
-                        self.rdc_vars.ncol = rst_file_bacia.RasterXSize
+                    # atualizando os valores das variáveis para coletar o número de linhas e colunas do arquivo raster lido
+                    self.rdc_vars.nlin = rst_file_bacia.RasterYSize               
+                    self.rdc_vars.ncol = rst_file_bacia.RasterXSize
 
-                        # Reorganizando os dados lidos da bacia em uma nova matriz chamada bacia.
+                    # Reorganizando os dados lidos da bacia em uma nova matriz chamada bacia.
 
-                        self.global_vars.bacia = dados_lidos_bacia
-                        # Fechando o dataset GDAL
+                    self.global_vars.bacia = dados_lidos_bacia
+                    # Fechando o dataset GDAL
 
-                        rst_file_bacia = None
+                    rst_file_bacia = None
+                else:
+                    """Caso o arquivo raster apresente erros durante a abertura, ocorrerá um erro"""
+                    resulte = f"Failde to open the raster file: {arquivo}"
+                    # QMessageBox.warning(None, "ERROR!", resulte)
 
-                    # Lê informações do arquivo de metadados (.rdc)
-                    arquivo_rdc = arquivo.replace('.rst','.rdc')
-                    if arquivo_rdc is not None:
-                        with open(arquivo_rdc, 'r') as rdc_file:
-                            # Separando os dados do arquivo RDC em função das linhas que contém alguma das palavras abaixo
-                            k_words = ["columns", "rows", "ref. system", "ref. units", "min. X", "max. X", "min. Y", "max. Y", "resolution"]
-                            lines_RDC = [line.strip() for line in rdc_file.readlines() if any(word in line for word in k_words)]
-                            
-                            # Iterando sobre a lista de lines_rdc para guardas as informações das palavras da lista (k_words) nas ruas respectivas variáveis
-                            for line in lines_RDC:
-                                # Separando as linhas de acordo com o refencial (:)
-                                split_line = line.split(":")
-                                # Armazenando o primeiro valor da linha (antes do sinal ":")em uma variável e retirando os espaços (caracter) do inicio e fim da linha repartida
-                                key = split_line[0].strip()
-                                # Armazenando o segundo valor da linha (antes do sinal ":") em uma variáveis e retirando os espaços (caracter) do inicio e fim da linha repartida
-                                value = split_line[-1].strip()
+                # Lê informações do arquivo de metadados (.rdc)
+                arquivo_rdc = arquivo.replace('.rst','.rdc')
+                if arquivo_rdc is not None:
+                    with open(arquivo_rdc, 'r') as rdc_file:
+                        # Separando os dados do arquivo RDC em função das linhas que contém alguma das palavras abaixo
+                        k_words = ["columns", "rows", "ref. system", "ref. units", "min. X", "max. X", "min. Y", "max. Y", "resolution"]
+                        lines_RDC = [line.strip() for line in rdc_file.readlines() if any(word in line for word in k_words)]
+                        
+                        # Iterando sobre a lista de lines_rdc para guardas as informações das palavras da lista (k_words) nas ruas respectivas variáveis
+                        for line in lines_RDC:
+                            # Separando as linhas de acordo com o refencial (:)
+                            split_line = line.split(":")
+                            # Armazenando o primeiro valor da linha (antes do sinal ":")em uma variável e retirando os espaços (caracter) do inicio e fim da linha repartida
+                            key = split_line[0].strip()
+                            # Armazenando o segundo valor da linha (antes do sinal ":") em uma variáveis e retirando os espaços (caracter) do inicio e fim da linha repartida
+                            value = split_line[-1].strip()
 
-                                # Estrutura condicional para verificar quais são as informações de cada linha e armazenando elas em suas respectivas variáveis
-                                if key == "ref. system":
-                                    self.rdc_vars.sistemaref = value
-                                elif key == "ref. units":
-                                    self.rdc_vars.unidaderef3 = value
-                                elif key == "min. X":
-                                    self.X_minimo = float(value)
-                                elif key == "max. X":
-                                    self.X_maximo = float(value)
-                                elif key == "min. Y":
-                                    self.Y_minimo = float(value)
-                                elif key == "max. Y":
-                                    self.Y_maximo = float(value)
-                                elif key == "resolution":
-                                    self.d_x = float(value)
-                    else:
-                        # Arquivo não existente: mostra erro para usuário
-                        resulte = f"There is no file named {arquivo_rdc} in the same directory as {arquivo}!"
-                        # QMessageBox.warning(None, "ERROR!", resulte)                    
-            else:
-                """Caso o arquivo raster apresente erros durante a abertura, ocorrerá um erro"""
-                resulte = f"Failde to open the raster file: {arquivo}"
-                # QMessageBox.warning(None, "ERROR!", resulte)
+                            # Estrutura condicional para verificar quais são as informações de cada linha e armazenando elas em suas respectivas variáveis
+                            if key == "ref. system":
+                                self.rdc_vars.sistemaref = value
+                            elif key == "ref. units":
+                                self.rdc_vars.unidaderef3 = value
+                            elif key == "min. X":
+                                self.X_minimo = float(value)
+                            elif key == "max. X":
+                                self.X_maximo = float(value)
+                            elif key == "min. Y":
+                                self.Y_minimo = float(value)
+                            elif key == "max. Y":
+                                self.Y_maximo = float(value)
+                            elif key == "resolution":
+                                self.d_x = float(value)
+                else:
+                    # Arquivo não existente: mostra erro para usuário
+                    resulte = f"There is no file named {arquivo_rdc} in the same directory as {arquivo}!"
+                    # QMessageBox.warning(None, "ERROR!", resulte)                    
 
         else:
             result ="Nenhum arquivo foi selecionado!"
             # QMessageBox.warning(None, "ERROR!", result)
         
-        print(f'Qtd pix bacia: {np.count_nonzero(self.global_vars.bacia)}\nÁrea da bacia: {(np.count_nonzero(self.global_vars.bacia))*10} m²')
+        print(f'Qtd pix bacia: {np.count_nonzero(self.global_vars.bacia)}\nÁrea da bacia: {(np.count_nonzero(self.global_vars.bacia))*100/1000000} Km²')
 
     def leh_caracteristica_dRios(self):
         """Esta função é utilizada para ler as informações acerca da característica dos rios de uma bacia hidrográfica (texto .rst)"""
@@ -1428,7 +1428,7 @@ class Test():
         '''Esta função enumera e quantifica os píxels presentes na bacia hidrográfica, além de atualizar variáveis inerente ao programa'''
         # Dimensionamento das variáveis
         numero_pixel = 0
-
+        self.numb_pix_bacia = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
         # Enumera os pixels presentes na bacia hidrográfica
         for lin in range(self.rdc_vars.nlin):
             for col in range(self.rdc_vars.ncol):
@@ -1456,7 +1456,7 @@ class Test():
             #  Tratamento de erros: verifica se o arquivo raster foi aberto corretamente
             if rst_file_CN is not None:
                 # Reorganizando os dados lidos em uma nova matriz, essa possui as informações sobre as classes dos rios
-                CN = dados_lidos_raster_CN
+                self.CN = dados_lidos_raster_CN
                 # Fechando o dataset GDAL referente ao arquivo raster
                 rst_file_CN = None
             else:
@@ -1714,6 +1714,7 @@ class Test():
         self.perdas_iniciais = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
         self.chuva_acumulada_pixel = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
         self.chuva_total_pixel = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
+        self.Spotencial = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
 
         arquivo_precipitacao = r"C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\SmallExample\3_Hydrograph\input\3_rainfall_file.txt"
         with open(arquivo_precipitacao, 'r') as arquivo_txt:
@@ -1732,7 +1733,7 @@ class Test():
                     line = arquivo_txt.readline().strip()
                     split_line = line.split(',')
                     for w in range(1, self.quantidade_blocos_chuva):
-                        chuva_distribuida = split_line[w]
+                        chuva_distribuida = float(split_line[w])
                         self.time[w] = self.time[w-1] + self.delta_t
 
                         Pacum += chuva_distribuida 
@@ -1747,7 +1748,7 @@ class Test():
                             self.hexc_pix[lin][w] = self.hacum[w] - self.hacum[w-1]
                             
                     # Chuva excedente acumulada do pixel
-                    self.chuva_acumulada_pixel[lin][col] = self.hacum[self.quantidade_blocos_chuva]
+                    self.chuva_acumulada_pixel[lin][col] = self.hacum[self.quantidade_blocos_chuva-1]
 
                     # Chuva total no pixel
                     self.chuva_total_pixel[lin][col] = Pacum
@@ -3330,6 +3331,7 @@ class Test():
         self.leh_CN()
         self.numera_pix_bacia()
         self.leh_parametros()
+        self.leh_precip_distribuida()
         self.rainfall_excess()    
         # Saindas
         print('Writing outputs...')
