@@ -13,9 +13,8 @@ from modulos_files.global_variables import GlobalVariables
 
 
 class Test():
-    '''
-    Criada para testar e desenvolver as funções do módulo hidroPixel
-    '''
+    '''Criada para testar e desenvolver as funções do módulo hidroPixel'''
+    
     def __init__(self):
         # Criando instâncias das classes
         self.global_vars = GlobalVariables()
@@ -27,7 +26,7 @@ class Test():
         self.quantidade_blocos_chuva = 0
         self.chuva_excedente_calc = 0
         self.blocos_vazao = 0
-        self.Pexc
+        self.Pexc = 0
 
     def leh_bacia(self, file, function):
         """Esta função é utilizada para ler o arquivo raster da bacia hidrográfica (arquivo .rst)
@@ -85,34 +84,34 @@ class Test():
                     arquivo_rdc = arquivo.replace('.rst','.rdc')
                     if arquivo_rdc is not None:
                         with open(arquivo_rdc, 'r') as rdc_file:
-                        # Separando os dados do arquivo RDC em função das linhas que contém alguma das palavras abaixo
-                        k_words = ["columns", "rows", "ref. system", "ref. units", "min. X", "max. X", "min. Y", "max. Y", "resolution"]
-                        lines_RDC = [line.strip() for line in rdc_file.readlines() if any(word in line for word in k_words)]
-                        
-                        # Iterando sobre a lista de lines_rdc para guardas as informações das palavras da lista (k_words) nas ruas respectivas variáveis
-                        for line in lines_RDC:
-                            # Separando as linhas de acordo com o refencial (:)
-                            split_line = line.split(":")
-                            # Armazenando o primeiro valor da linha (antes do sinal ":")em uma variável e retirando os espaços (caracter) do inicio e fim da linha repartida
-                            key = split_line[0].strip()
-                            # Armazenando o segundo valor da linha (antes do sinal ":") em uma variáveis e retirando os espaços (caracter) do inicio e fim da linha repartida
-                            value = split_line[-1].strip()
+                            # Separando os dados do arquivo RDC em função das linhas que contém alguma das palavras abaixo
+                            k_words = ["columns", "rows", "ref. system", "ref. units", "min. X", "max. X", "min. Y", "max. Y", "resolution"]
+                            lines_RDC = [line.strip() for line in rdc_file.readlines() if any(word in line for word in k_words)]
+                            
+                            # Iterando sobre a lista de lines_rdc para guardas as informações das palavras da lista (k_words) nas ruas respectivas variáveis
+                            for line in lines_RDC:
+                                # Separando as linhas de acordo com o refencial (:)
+                                split_line = line.split(":")
+                                # Armazenando o primeiro valor da linha (antes do sinal ":")em uma variável e retirando os espaços (caracter) do inicio e fim da linha repartida
+                                key = split_line[0].strip()
+                                # Armazenando o segundo valor da linha (antes do sinal ":") em uma variáveis e retirando os espaços (caracter) do inicio e fim da linha repartida
+                                value = split_line[-1].strip()
 
-                            # Estrutura condicional para verificar quais são as informações de cada linha e armazenando elas em suas respectivas variáveis
-                            if key == "ref. system":
-                                self.rdc_vars.sistemaref = value
-                            elif key == "ref. units":
-                                self.rdc_vars.unidaderef3 = value
-                            elif key == "min. X":
-                                self.X_minimo = float(value)
-                            elif key == "max. X":
-                                self.X_maximo = float(value)
-                            elif key == "min. Y":
-                                self.Y_minimo = float(value)
-                            elif key == "max. Y":
-                                self.Y_maximo = float(value)
-                            elif key == "resolution":
-                                self.d_x = float(value)
+                                # Estrutura condicional para verificar quais são as informações de cada linha e armazenando elas em suas respectivas variáveis
+                                if key == "ref. system":
+                                    self.rdc_vars.sistemaref = value
+                                elif key == "ref. units":
+                                    self.rdc_vars.unidaderef3 = value
+                                elif key == "min. X":
+                                    self.X_minimo = float(value)
+                                elif key == "max. X":
+                                    self.X_maximo = float(value)
+                                elif key == "min. Y":
+                                    self.Y_minimo = float(value)
+                                elif key == "max. Y":
+                                    self.Y_maximo = float(value)
+                                elif key == "resolution":
+                                    self.d_x = float(value)
                     else:
                         # Arquivo não existente: mostra erro para usuário
                         resulte = f"There is no file named {arquivo_rdc} in the same directory as {arquivo}!"
@@ -1429,7 +1428,6 @@ class Test():
         '''Esta função enumera e quantifica os píxels presentes na bacia hidrográfica, além de atualizar variáveis inerente ao programa'''
         # Dimensionamento das variáveis
         numero_pixel = 0
-        self.CN = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
 
         # Enumera os pixels presentes na bacia hidrográfica
         for lin in range(self.rdc_vars.nlin):
@@ -1444,7 +1442,8 @@ class Test():
 
     def leh_CN(self):
         '''Esta função lê o arquivo enviado pelo usuário contendo os valores do parametro CURVE-NUMBER (CN) para os diferentes pixels da bacia hidrográfica'''
-
+        # Define variáveis
+        self.CN = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
         arquivo = r"C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\Hidropixel - User Manual and algorithms\Algorithms\4 - Hydrograph\Example\Input\2 - CN map\2_CN_map.rst"
         # Tratamento de erros: verifica se o arquivo foi corretamente enviado
         if arquivo:
@@ -1518,7 +1517,7 @@ class Test():
     def leh_parametros(self):
         '''Esta função lê o arquivo enviado pelo usuário contento os parâmetros do modelo: abstração inicial, time step, tempo critério de parada e o beta'''
         values = []
-        arquivo = r'C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\Hidropixel - User Manual and algorithms\Algorithms\4 - Hydrograph\Example\Input\5 - Parameters\5_parameters.txt'
+        arquivo = r"C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\SmallExample\3_Hydrograph\input\5_parameters.txt"
         with open(arquivo, 'r') as arquivo_txt:
             # Lê as linhas do arquivo separando por ','
             for line in arquivo_txt:
@@ -1559,7 +1558,7 @@ class Test():
         self.longitude = np.array(longitude)
         self.numero_posto = np.array(numero_posto)
 
-    def leh_arquivo_chuva():
+    def leh_arquivo_precipitacao(self):
         '''Esta função lê e armazena os valores de precipitação de cada posto ao longo do tempo'''
         # Definição das variáveis
         w = 0
@@ -1590,13 +1589,13 @@ class Test():
                 for c in range(self.quantidade_postos):
                     self.chuva[w][c] = split_line([c])
                 
-
     def rainfall_interpolation(self):
         '''Esta função gera o arquivo com a precipitação por pixel por meio da interpolação dos valores das estações pluviométricas enviadas pelo usuário'''
         # Definição de variáveis
         numero_pixel = 0
         numerador = 0
         denominador = 0
+
         # Gera o arquivo com precipitação interpolada por pixel
         arquivo = r''
         with open(arquivo, 'w', encoding = 'utf-8') as arquivo_txt:
@@ -1606,7 +1605,7 @@ class Test():
                 if w < self.blocos_chuva:
                     arquivo_txt.write(f'{self.tempo[w]},')
                 else:
-                    arquivo_txt.write(f'{self.tempo[w]}')
+                    arquivo_txt.write(f'{self.tempo[w]}\n')
 
             # interpolação da precipitação
             for lin in range(self.rdc_vars.nlin):
@@ -1652,7 +1651,7 @@ class Test():
                         numero_pixel += 1
                         for k in range(self.quantidade_postos):
                             for q in range(self.quantidade_postos):
-                                if self.numero_posto[q] = id[k]
+                                if self.numero_posto[q] == id[k]:
                                     xpixel = self.X_minimo + (col * self.d_x) + (self.d_x / 2)
                                     ypixel = self.Y_minimo - (lin * self.d_y) + (self.d_y / 2)
                                     distancia_y = self.latitude[k] - y_pixel
@@ -1716,7 +1715,7 @@ class Test():
         self.chuva_acumulada_pixel = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
         self.chuva_total_pixel = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
 
-        arquivo_precipitacao = r'C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\Hidropixel - User Manual and algorithms\Algorithms\4 - Hydrograph\Example\Input\3 - Rainfall\3_rainfall_file.txt'
+        arquivo_precipitacao = r"C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\SmallExample\3_Hydrograph\input\3_rainfall_file.txt"
         with open(arquivo_precipitacao, 'r') as arquivo_txt:
             for lin in range(self.rdc_vars.nlin):
                 for col in range(self.rdc_vars.ncol):
@@ -1755,18 +1754,18 @@ class Test():
 
     def hidrograma_dlr(self):
         '''Esta função gera o hidrograma-DLR da bacia hidrográfica conforme os dados de precipitação enviados'''
-        # JVDoptmize: máximo tempo de viagem ao exutório
-        tempo_total_bacia = tempo_total[self.global_vars.bacia == 1]
-        Tmax = np.amax(tempo_total_bacia)
-        
         # Definição das variáveis
-        tempo_total = self.leh_tempo_viagem()
+        self.tempo_total = self.leh_tempo_viagem()
         Tmax = 0
-        self.tempo_total = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
         self.Spotencial = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
         self.volume_total_pix = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
         self.vazao_pico = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
         self.tempo_pico = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
+        self.TempoTotal_reclass = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
+        self.vazao_pixel = np.zeros(50000)
+        # JVDoptmize: máximo tempo de viagem ao exutório
+        tempo_total_bacia = tempo_total[self.global_vars.bacia == 1]
+        Tmax = np.amax(tempo_total_bacia)
         
         # Reclassificação do tempo de viagem ao exutório para multiplos de delta_t
         dim = 0
@@ -1781,13 +1780,13 @@ class Test():
             w += 1
 
         # JVD: correção sintaxe de vb to py
-        # self.num_intervalos = w + 1
+        # self.num_intervalos = w - 1
         self.num_intervalos = w
         diferenca = 0
         diferenca_minima = 100000000
         for lin in range(self.rdc_vars.nlin):
             for col in range(self.rdc_vars.ncol):
-                if self.global_vars.bacia[lin][col] ==1:
+                if self.global_vars.bacia[lin][col] == 1:
                     for w in range(0,self.num_intervalos):
                         if self.tempo_intervalo[w] >= self.tempo_total[lin][col]:
                             diferenca = -(self.tempo_total[lin][col] - self.tempo_intervalo[w])
@@ -1800,7 +1799,6 @@ class Test():
         # Determinação do hidrograma
         # Dadas do arquivo de precipitação enviado
         numero_pixel = 0 
-        self.volume_total = 0
         Pacum = 0
         tempo_exutorio = 0
         k = 0
@@ -1812,9 +1810,11 @@ class Test():
         # lê hietograma 
         arquivo_precipitacao = r'C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\Hidropixel - User Manual and algorithms\Algorithms\4 - Hydrograph\Example\Input\3 - Rainfall\3_rainfall_file.txt'
         with open(arquivo_precipitacao, 'r') as arquivo_txt:
+            # Armazena cabecalho do arquivo com a precipitação efetiva por pixel
+            cabecalho = arquivo_txt.readline().strip()
+
             for lin in range(self.rdc_vars.nlin):
                 for col in range(self.rdc_vars.ncol):
-
                     # Armazena as linha do arquivo de precipitação efetiva
                     line = arquivo_txt.readline().strip()
                     split_line = line.split(',')
@@ -1835,8 +1835,9 @@ class Test():
                             self.vazao_pixel[k] = self.Pexc
 
                     # Volume de água gerado por pixel pixel
-                    self.volume_total_pix[lin][col] += (self.chuva_acumulada_pixel[lin][col]/(10**3)) *(self.global_vars.dx**2) #em m³
-
+                    self.volume_total_pix[lin][col] = (self.chuva_acumulada_pixel[lin][col]/(10**3)) *(self.d_x**2) #em m³
+                    # Volume total de água gerada em todo evento
+                    self.volume_total += self.volume_total_pix[lin][col]
                     # Parâmetro para estimativa do armazenamento
                     storage_coefficient = self.tempo_total[lin][col] / ((1/self.beta) - 1) # em minutos
 
@@ -1846,9 +1847,12 @@ class Test():
                     # Amortecimento do hidrograma do pixel
                     k = 0
                     self.tempo_vazao_pixel = np.zeros(50000)
+                    self.vazao_amortecida_pixel = np.zeros(50000)
+                    self.vazao = np.zeros(50000)
+
                     self.tempo_vazao_pixel[k] = 0
                     self.vazao_amortecida_pixel[k] = c_1 * self.vazao_pixel[k]
-
+                    self.vazao[k] += self.vazao_amortecida_pixel[k]
                     while self.tempo_vazao_pixel[k] <= self.criterio_parada:
                         self.vazao_amortecida_pixel[k+1] = (c_1 * self.vazao_pixel[k+1]) + (c_1 * self.vazao_pixel[k]) + (c_2*self.vazao_amortecida_pixel[k])
                         self.tempo_vazao_pixel[k+1] = self.tempo_vazao_pixel[k] + self.delta_t
@@ -1871,7 +1875,7 @@ class Test():
                         k += 1
 
             # Cálculo da área da bacia
-            area_bacia = self.numero_total_pix * (self.global_vars.dx **2) # em m²
+            area_bacia = self.numero_total_pix * (self.d_x **2) # em m²
 
             # Chuva excedente calculada
             self.chuva_excedente_calc = (self.volume_total / area_bacia) * (10**3) #em mm
@@ -2871,13 +2875,35 @@ class Test():
         self.min_max()
         self.escreve_RDC(nomeRST)       
     
-    def escreve_hidrograma(self):
+    def escreve_hidrograma_dlr(self):
         '''Esta função gera contento o hidrograma total da bacia hidrográfica estudada'''
         file_name = r'C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\resultados_test_modelo\hidrograma.txt'
         with open(file_name, 'w') as arquivo_txt:
             arquivo_txt.write('tempo(min), vazão calculada(m³/s)\n')
             for k in range(self.blocos_vazao):
                 arquivo_txt.write(f'{self.tempo_vazao_pixel[k]}, {self.vazao[k]}\n')
+
+    def escreve_hietograma_pe(self):
+        '''Esta função gera o arquivo contento o valor da precipitação efetiva por pixel durante os blocos de chuva'''
+        numero_pixel = 0
+        # Recebe diretório e nome do arquivo do usurário      
+        arquivo = r''
+        with open(arquivo, 'w', encoding = 'utf-8') as arquivo_txt:
+            # Escreve cabeçalho com o número de pixel e de eventos de precipitação 
+            arquivo_txt.write('Pixel,')
+            for w in range(self.blocos_chuva):
+                if w < self.blocos_chuva:
+                    arquivo_txt.write(f'{self.tempo[w]},')
+                else:
+                    arquivo_txt.write(f'{self.tempo[w]}')
+            
+            # Escreve linhas com dados de precipitação efetiva por pixel
+            for k in range(self.numero_total_pix):
+                for w in range(self.blocos_chuva):
+                    if w < self.blocos_chuva:
+                        arquivo_txt.write(f'{k},{self.hexc_pix[k][w]}')
+                    else:
+                        arquivo_txt.write(f'{self.hexc_pix[k][w]}\n')
 
     def escreve_numb_pix_bacia(self):
         '''Esta função gera o mapa contendo a numeração dos pixels presentes na bacia hidrografíca'''
@@ -3016,7 +3042,7 @@ class Test():
         self.global_vars.metrordc = self.global_vars.metro
         self.escreve_RDC(nomeRST)       
 
-    def escreve_chuva_excedente(self):
+    def escreve_precipitacao_excedente(self):
         '''Esta função é responsável por gerar o arquivo raster contendo os valores da precipitação excedente por pixel presente na baica hidrográfica'''
         # JVDoptmize: determina precipitação excedente máxima
         pe_maxima = np.amax(self.chuva_acumulada_pixel)
@@ -3062,7 +3088,7 @@ class Test():
         self.global_vars.metrordc = self.global_vars.metro
         self.escreve_RDC(nomeRST)  
 
-    def escreve_chuva_total_acum(self):
+    def escreve_precipitacao_total_acum(self):
         '''Esta função gera o arquivo raster contendo a precipitação total acumulada por pixel presente na bacia hidrográfica'''
         # JVDoptmize: determina precipitação máxima acumulada
         p_acum_max = np.amax(self.chuva_total_pixel)
@@ -3098,15 +3124,107 @@ class Test():
         self.rdc_vars.tipoMM = 2
         self.rdc_vars.VarMM2 = self.chuva_total_pixel
         self.rdc_vars.i3 = 0 
-        self.rdc_vars.Xmin3 = self.X_minimo
-        self.rdc_vars.Xmax3 = self.X_maximo
-        self.rdc_vars.Ymin3 = self.Y_minimo
-        self.rdc_vars.Ymax3 = self.Y_maximo
+        self.rdc_vars.Xmin3 = self.rdc_vars.xmin
+        self.rdc_vars.Xmax3 = self.rdc_vars.xmax
+        self.rdc_vars.Ymin3 = self.rdc_vars.ymin
+        self.rdc_vars.Ymax3 = self.rdc_vars.ymax
         self.rdc_vars.Varmax = p_acum_max
         self.rdc_vars.Varmin = 0
         nomeRST = fn_p_acum
         self.global_vars.metrordc = self.global_vars.metro
         self.escreve_RDC(nomeRST)  
+
+    def escreve_volume_gerado_pixel(self):
+        '''Esta função gera o arquivo raster contendo o volume gerado por pixel presente na bacia hidrográfica'''
+        # JVDoptmize: determina precipitação máxima acumulada
+        vol_max = np.amax(self.volume_total_pix)
+
+        # Abrindo o arquivo(fn : file name) para escrita dos resultados
+        file_path = r'C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\resultados_test_modelo'
+        fn_vol = file_path + r'\volume_total_pix.rst'
+        
+        # Define os dados a serem escritos
+        dados_vol = np.array([[float(self.volume_total_pix[lin][col]) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)])
+        tipo_dados = gdalconst.GDT_Float32
+
+        # Obtendo o driver RST do GDAL
+        driver = gdal.GetDriverByName('RST')
+
+        # Cria arquivo final
+        dataset = driver.Create(fn_vol, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
+
+        # Escreve os dados na banda do arquivo
+        banda = dataset.GetRasterBand(1)
+        banda.WriteArray(dados_vol)
+
+        # Fechando o arquivo
+        dataset = None
+        banda = None
+        driver = None
+        tipo_dados = None
+
+        # Alocando as variáveis para escrita da documentação do arquivo rdc para o comprimento da rede de drenagem
+        self.rdc_vars.nlin3 = self.rdc_vars.nlin
+        self.rdc_vars.ncol3 = self.rdc_vars.ncol
+        self.rdc_vars.tipo_dado = 2
+        self.rdc_vars.tipoMM = 2
+        self.rdc_vars.VarMM2 = self.volume_total_pix
+        self.rdc_vars.i3 = 0 
+        self.rdc_vars.Xmin3 = self.rdc_vars.xmin
+        self.rdc_vars.Xmax3 = self.rdc_vars.xmax
+        self.rdc_vars.Ymin3 = self.rdc_vars.ymin
+        self.rdc_vars.Ymax3 = self.rdc_vars.ymax
+        self.rdc_vars.Varmax = vol_max
+        self.rdc_vars.Varmin = 0
+        nomeRST = fn_vol
+        self.global_vars.metrordc = self.global_vars.metro
+        self.escreve_RDC(nomeRST)  
+
+    def escreve_vazao_pico_pixel(self):
+        '''Esta função gera o arquivo raster contendo o volume gerado por pixel presente na bacia hidrográfica'''
+        # JVDoptmize: determina precipitação máxima acumulada
+        vazao_pixo_max = np.amax(self.vazao_pico)
+
+        # Abrindo o arquivo(fn : file name) para escrita dos resultados
+        file_path = r'C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\resultados_test_modelo'
+        fn_vazao_pico = file_path + r'\vazao_pico_pixel.rst'
+        
+        # Define os dados a serem escritos
+        dados_vazao_pico = np.array([[float(self.volume_total_pix[lin][col]) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)])
+        tipo_dados = gdalconst.GDT_Float32
+
+        # Obtendo o driver RST do GDAL
+        driver = gdal.GetDriverByName('RST')
+
+        # Cria arquivo final
+        dataset = driver.Create(fn_vazao_pico, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
+
+        # Escreve os dados na banda do arquivo
+        banda = dataset.GetRasterBand(1)
+        banda.WriteArray(dados_vazao_pico)
+
+        # Fechando o arquivo
+        dataset = None
+        banda = None
+        driver = None
+        tipo_dados = None
+
+        # Alocando as variáveis para escrita da documentação do arquivo rdc para o comprimento da rede de drenagem
+        self.rdc_vars.nlin3 = self.rdc_vars.nlin
+        self.rdc_vars.ncol3 = self.rdc_vars.ncol
+        self.rdc_vars.tipo_dado = 2
+        self.rdc_vars.tipoMM = 2
+        self.rdc_vars.VarMM2 = self.vazao_pico
+        self.rdc_vars.i3 = 0 
+        self.rdc_vars.Xmin3 = self.rdc_vars.xmin
+        self.rdc_vars.Xmax3 = self.rdc_vars.xmax
+        self.rdc_vars.Ymin3 = self.rdc_vars.ymin
+        self.rdc_vars.Ymax3 = self.rdc_vars.ymax
+        self.rdc_vars.Varmax = vazao_pixo_max
+        self.rdc_vars.Varmin = 0
+        nomeRST = fn_vazao_pico
+        self.global_vars.metrordc = self.global_vars.metro
+        self.escreve_RDC(nomeRST) 
 
     def escreve_pe_calculada(self):
         '''Esta função é responsável por gerar o arquivo contento a precipitação efetiva para a bacia hidrográfica em questão'''
@@ -3206,11 +3324,21 @@ class Test():
 
     def run_exc_rain(self):
         '''Esta função configura a ordem de execução da rotina excess rainfall'''
-
+        print('Reading input files')
+        arquivo_bacia = r"C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\SmallExample\3_Hydrograph\input\1_WATERSHED_EX.RST"
+        self.leh_bacia(arquivo_bacia, 2)
+        self.leh_CN()
+        self.numera_pix_bacia()
+        self.leh_parametros()
+        self.rainfall_excess()    
         # Saindas
         print('Writing outputs...')
-        self.numera_pix_bacia()
         self.escreve_numb_pix_bacia()
+        self.escreve_S_potencial()
+        self.escreve_perdas_ini()
+        self.escreve_precipitacao_excedente()
+        self.escreve_precipitacao_total_acum()
+        self.escreve_hietograma_pe()
 
 cla_test = Test()
-cla_test.run()
+cla_test.run_exc_rain()
