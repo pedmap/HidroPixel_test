@@ -85,7 +85,8 @@ class Test():
                     # QMessageBox.warning(None, "ERROR!", resulte)
 
                 # Lê informações do arquivo de metadados (.rdc)
-                arquivo_rdc = arquivo.replace('.rst','.rdc')
+                arquivo_rdc = arquivo.replace('.RST','.RDC')
+                
                 if arquivo_rdc is not None:
                     with open(arquivo_rdc, 'r') as rdc_file:
                         # Separando os dados do arquivo RDC em função das linhas que contém alguma das palavras abaixo
@@ -115,7 +116,10 @@ class Test():
                             elif key == "max. Y":
                                 self.Y_maximo = float(value)
                             elif key == "resolution":
-                                self.d_x = float(value)
+                                self.global_vars.dx = float(value)
+                    # Definição das caracteristicas do pixel
+                    self.d_x = (self.X_maximo - self.X_minimo)/self.rdc_vars.ncol
+                    self.d_y = (self.Y_maximo - self.Y_minimo)/self.rdc_vars.nlin    
                 else:
                     # Arquivo não existente: mostra erro para usuário
                     resulte = f"There is no file named {arquivo_rdc} in the same directory as {arquivo}!"
@@ -1341,7 +1345,7 @@ class Test():
                     if self.global_vars.dren[lin][col]== 1:
                         self.global_vars.caminho = 1
                     else:
-                        while caminho == 0:
+                        while self.global_vars.caminho == 0:
                             condicao = self.global_vars.linaux <= 1 or self.global_vars.linaux >=self.rdc_vars.nlin or self.global_vars.colaux <= 1 or self.global_vars.colaux >=self.rdc_vars.nlin \
                                                                     or self.global_vars.bacia[self.global_vars.colaux][self.global_vars.colaux]==0
                             if condicao:
@@ -1468,7 +1472,7 @@ class Test():
             # Exibe uma mensagem de erro
             result ="Nenhum arquivo foi selecionado!"
             # QMessageBox.warning(None, "ERROR!", result)
-        return CN 
+        return self.CN 
 
     def leh_precip_distribuida(self):
         '''Esta função lê o arquivo enviado pelo usuário contento os valores da precipitação destribuidos ao longo dos pixels pertencentes a baica hidrográfica'''
@@ -1613,14 +1617,14 @@ class Test():
                     if self.global_vars.bacia[lin][col] == 1:
                         numero_pixel += 1
                         linha = numero_pixel
-                        xpixel = self.X_minimo + (col * self.d_x) + (self.d_x / 2)
-                        ypixel = self.Y_minimo - (lin * self.d_y) + (self.d_y / 2)
+                        x_pixel = self.X_minimo + (col * self.d_x) + (self.d_x / 2)
+                        y_pixel = self.Y_minimo - (lin * self.d_y) + (self.d_y / 2)
 
                         # Aplicação da fórmula de interpolação
                         for w in range(self.blocos_chuva):
                             for k in range(self.quantidade_postos):
                                 for q in range(self.quantidade_postos):
-                                    if self.numero_posto[q] == self.id_postos(k):
+                                    if self.numero_posto[q] == self.id_postos[k]:
                                         distancia_y = self.latitude[k] - y_pixel
                                         distancia_x = self.longitude[k] - x_pixel
                                         distancia = ((distancia_x ** 2) + (distancia_y ** 2))**(1/2)
@@ -1642,7 +1646,7 @@ class Test():
         for w in range(self.blocos_chuva):
             # Pasta enviada pelo user
             path = r''
-            arquivo = path + f'\{self.tempo[w]}'
+            arquivo = path + f'\{str(self.tempo[w])}'
 
             # interpolação da pricipitação para o evento em questão
             for lin in range(self.rdc_vars.nlin):
@@ -1651,9 +1655,9 @@ class Test():
                         numero_pixel += 1
                         for k in range(self.quantidade_postos):
                             for q in range(self.quantidade_postos):
-                                if self.numero_posto[q] == id[k]:
-                                    xpixel = self.X_minimo + (col * self.d_x) + (self.d_x / 2)
-                                    ypixel = self.Y_minimo - (lin * self.d_y) + (self.d_y / 2)
+                                if self.numero_posto[q] == self.id_postos[k]:
+                                    x_pixel = self.X_minimo + (col * self.d_x) + (self.d_x / 2)
+                                    y_pixel = self.Y_minimo - (lin * self.d_y) + (self.d_y / 2)
                                     distancia_y = self.latitude[k] - y_pixel
                                     distancia_x = self.longitude[k] - x_pixel
                                     distancia = ((distancia_x ** 2) + (distancia_y ** 2))**(1/2)
@@ -1663,16 +1667,17 @@ class Test():
                         # Armazena o valor da pricipitação do pixel
                         rainfall_pix = numerador / denominador
                         self.chuva_pixel[lin][col] = rainfall_pix
+
             num_pix_max = np.amax(self.chuva_pixel)
             # Escreve arquivo raster (.rst) com a precipitação por pixel em toda bacia para o evento em questão
-            dados_chuva_pixel = np.array([[float(self.chuva_pix[lin][col]) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)])
+            dados_chuva_pixel = np.array([[float(self.chuva_pixel[lin][col]) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)])
             tipo_dados = gdalconst.GDT_Float32
 
             # Obtendo o driver o RST do GDAL
             driver = gdal.GetDriverByName('RST')
 
             # Cria arquivo final
-            dataset = driver.Create(arquivo, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dado)
+            dataset = driver.Create(arquivo, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
 
             # Escreve os dados na banda do arquivo
             banda = dataset.GetRasterBand(1)
@@ -1689,7 +1694,7 @@ class Test():
             self.rdc_vars.ncol3 = self.rdc_vars.ncol
             self.rdc_vars.tipo_dado = 2
             self.rdc_vars.tipoMM = 2
-            self.rdc_vars.VarMM2 = self.chuva_pix
+            self.rdc_vars.VarMM2 = self.chuva_pixel
             self.rdc_vars.i3 = 0 
             self.rdc_vars.Xmin3 = self.X_minimo
             self.rdc_vars.Xmax3 = self.X_maximo
@@ -1703,6 +1708,8 @@ class Test():
 
     def rainfall_excess(self):
         '''Esta função determina gera os arquivos associados a precipitação excedente de cada pixel presente na baica hidrográfica, fumentando-se no método do SCS-CN'''
+        self.fim = time.time()
+        print(f'{(self.fim - self.inicio)/60} min')
         # Definação das variáveis
         Pacum = 0
 
@@ -1732,6 +1739,7 @@ class Test():
                     # Armazena as linha do arquivo de precipitação
                     line = arquivo_txt.readline().strip()
                     split_line = line.split(',')
+                    print(len(split_line))
                     for w in range(1, self.quantidade_blocos_chuva):
                         chuva_distribuida = float(split_line[w])
                         self.time[w] = self.time[w-1] + self.delta_t
@@ -1752,7 +1760,9 @@ class Test():
 
                     # Chuva total no pixel
                     self.chuva_total_pixel[lin][col] = Pacum
-
+                    
+        self.fim = time.time()
+        print(f'{(self.fim - self.inicio)/60} min')
     def hidrograma_dlr(self):
         '''Esta função gera o hidrograma-DLR da bacia hidrográfica conforme os dados de precipitação enviados'''
         # Definição das variáveis
@@ -1765,7 +1775,7 @@ class Test():
         self.TempoTotal_reclass = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
         self.vazao_pixel = np.zeros(50000)
         # JVDoptmize: máximo tempo de viagem ao exutório
-        tempo_total_bacia = tempo_total[self.global_vars.bacia == 1]
+        tempo_total_bacia = self.tempo_total[self.global_vars.bacia == 1]
         Tmax = np.amax(tempo_total_bacia)
         
         # Reclassificação do tempo de viagem ao exutório para multiplos de delta_t
@@ -1836,7 +1846,7 @@ class Test():
                             self.vazao_pixel[k] = self.Pexc
 
                     # Volume de água gerado por pixel pixel
-                    self.volume_total_pix[lin][col] = (self.chuva_acumulada_pixel[lin][col]/(10**3)) *(self.d_x**2) #em m³
+                    self.volume_total_pix[lin][col] = (self.chuva_acumulada_pixel[lin][col]/(10**3)) *(self.global_vars.dx**2) #em m³
                     # Volume total de água gerada em todo evento
                     self.volume_total += self.volume_total_pix[lin][col]
                     # Parâmetro para estimativa do armazenamento
@@ -1876,7 +1886,7 @@ class Test():
                         k += 1
 
             # Cálculo da área da bacia
-            area_bacia = self.numero_total_pix * (self.d_x **2) # em m²
+            area_bacia = self.numero_total_pix * (self.global_vars.dx **2) # em m²
 
             # Chuva excedente calculada
             self.chuva_excedente_calc = (self.volume_total / area_bacia) * (10**3) #em mm
@@ -2228,7 +2238,7 @@ class Test():
 
         # Definindo o caminho para o arquivo RST
         file_path = r'C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\resultados_test_modelo'
-        fn_num_cab = file_path + r'\NUM_CABECEIRAS.rst'
+        fn_num_cab = file_path + r'\numb_pixel_cabeceiras.rst'
 
         # Definindo os dados a serem escritos
         dados_num_cab = np.array([[float(self.global_vars.numcabe[lin][col]) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)])
@@ -2684,7 +2694,7 @@ class Test():
         self.rdc_vars.tipo_dado = 2
         self.rdc_vars.tipoMM = 2
         self.rdc_vars.VarMM2 = self.global_vars.TSnaocabe2d 
-        nomeRST = fn_temp_sup_Ncab
+        nomeRST = fn_temp_sup_Ncabe
         self.min_max()
         self.escreve_RDC(nomeRST)
 
@@ -2859,7 +2869,7 @@ class Test():
         fn_temp_pix_jus_acum = file_path + r'\tempo_pixel_jus_acum.rst'
         # Define os dados a serem escritos
         dados_temp_pix_jus_acum = np.array([[float(self.global_vars.TSpixacum[lin][col]) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)])
-        tipo_dado  -= gdalconst.GDT_Float32
+        tipo_dado = gdalconst.GDT_Float32
 
         # Obtendo o driver RST do GDAL
         driver = gdal.GetDriverByName('RST')
@@ -2912,7 +2922,10 @@ class Test():
         numb_pix_max = np.amax(self.numb_pix_bacia)
 
         # Abrindo o arquivo(fn : file name) para escrita dos resultados
-        fn_numb_pix = self.dlg_exc_rain.le_1_pg4.text()
+        # fn_numb_pix = self.dlg_exc_rain.le_1_pg4.text()
+        file_path = r'C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\resultados_test_modelo'
+        fn_numb_pix = file_path + r'\numb_pixel_bacia.rst'
+
         
         # Define os dados a serem escritos
         dados_numb_pix = np.array([[float(self.numb_pix_bacia[lin][col]) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)])
