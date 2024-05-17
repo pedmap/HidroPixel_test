@@ -28,6 +28,47 @@ class Test():
         self.blocos_vazao = 0
         self.Pexc = 0
 
+    def ascii_para_binary(self,ascii_file_path, binary_file_path, format='GTiff'):
+        '''Esta função realiza altera o formato do arquivo enviado pelo usuário de ASCII para Binary'''
+        # Recebe oa arquivo e abre com o Gdal
+        dataset = gdal.Open(ascii_file_path)
+        
+        #  Verificação de incoerências
+        if dataset is None:
+            raise FileNotFoundError(f"Não foi possível abrir o arquivo: {ascii_file_path}")
+            # Mostra mensagem de erro para usuário
+            exit
+
+        # Armazena os valores do arquivo enviado em um array
+        band = dataset.GetRasterBand(1)
+        data = band.ReadAsArray()
+
+        # Salva o arquivo no formato GeoTiff
+        driver = gdal.GetDriverByName(format)
+        
+        # Crie o novo dataset binário
+        = driver.Create(binary_file_path, cols, rows, 1, band.DataType)
+        
+        # Configure a projeção e a transformação geoespacial
+        out_dataset.SetGeoTransform(geotransform)
+        out_dataset.SetProjection(projection)
+        
+        # Escreva os dados no novo dataset
+        out_band = out_dataset.GetRasterBand(1)
+        out_band.WriteArray(data)
+        
+        # Flush cache para garantir que todos os dados sejam escritos
+        out_band.FlushCache()
+        
+        print(f"Arquivo binário salvo em: {binary_file_path}")
+
+    # Caminhos para os arquivos de entrada e saída
+    ascii_file_path = 'seu_arquivo.asc'
+    binary_file_path = 'seu_arquivo.tif'
+
+    # Chame a função para converter o arquivo ASCII para binário
+    ascii_to_binary(ascii_file_path, binary_file_path)
+
     def leh_bacia(self, file_, function):
         """Esta função é utilizada para ler o arquivo raster da bacia hidrográfica (arquivo .rst)
            funciton == 1: flow travel time
@@ -76,9 +117,17 @@ class Test():
                     # Reorganizando os dados lidos da bacia em uma nova matriz chamada bacia.
 
                     self.global_vars.bacia = dados_lidos_bacia
+                    print(self.global_vars.bacia)
                     # Fechando o dataset GDAL
 
                     rst_file_bacia = None
+                    cont = 0
+                    # print(f'Qtd pix bacia: {np.count_nonzero(self.global_vars.bacia)}\nÁrea da bacia: {(np.count_nonzero(self.global_vars.bacia))*100/1000000} Km²')
+                    # for lin in range(self.rdc_vars.nlin):
+                    #     for col in range(self.rdc_vars.ncol):
+                    #         if self.global_vars.bacia[lin][col]==1:
+                    #             cont +=1
+                    print(cont)
                 else:
                     """Caso o arquivo raster apresente erros durante a abertura, ocorrerá um erro"""
                     resulte = f"Failde to open the raster file: {arquivo}"
@@ -129,7 +178,6 @@ class Test():
             result ="Nenhum arquivo foi selecionado!"
             # QMessageBox.warning(None, "ERROR!", result)
         
-        print(f'Qtd pix bacia: {np.count_nonzero(self.global_vars.bacia)}\nÁrea da bacia: {(np.count_nonzero(self.global_vars.bacia))*100/1000000} Km²')
 
     def leh_caracteristica_dRios(self):
         """Esta função é utilizada para ler as informações acerca da característica dos rios de uma bacia hidrográfica (texto .rst)"""
@@ -1669,8 +1717,8 @@ class Test():
             dados_chuva_pixel = np.array([[float(self.chuva_pixel[lin][col]) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)])
             tipo_dados = gdalconst.GDT_Float32
 
-            # Obtendo o driver o RST do GDAL
-            driver = gdal.GetDriverByName('RST')
+            # Obtendo o driver o para escrita do arquivo em GeoTiff
+            driver = gdal.GetDriverByName('GTiff')
 
             # Cria arquivo final
             dataset = driver.Create(arquivo, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
@@ -1826,7 +1874,7 @@ class Test():
 
             for lin in range(self.rdc_vars.nlin):
                 for col in range(self.rdc_vars.ncol):
-                    if self.global_vars.bacia[lin][col]:
+                    if self.global_vars.bacia[lin][col] == 1:
                         # Armazena as linha do arquivo de precipitação efetiva
                         line = arquivo_txt.readline().strip()
                         split_line = line.split(',')
@@ -2174,7 +2222,7 @@ class Test():
         tipo_dados = gdalconst.GDT_Float32
 
         # Os arquivos terão formato rst
-        driver = gdal.GetDriverByName('RST')
+        driver = gdal.GetDriverByName('GTiff')
 
         # Cria arquivo final
         dataset = driver.Create(fn_comp_acum, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
@@ -2213,7 +2261,7 @@ class Test():
         tipo_dados = gdalconst.GDT_Float32
 
         # Os arquivos terão formato rst
-        driver = gdal.GetDriverByName('RST')
+        driver = gdal.GetDriverByName('GTiff')
 
         # Cria arquivo final
         dataset = driver.Create(fn_comp_foz, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
@@ -2247,8 +2295,8 @@ class Test():
         # Definindo o tipo de dados para Float32
         tipo_dados = gdalconst.GDT_Float32
 
-        # Obtendo o driver RST do GDAL
-        driver = gdal.GetDriverByName('RST')
+        # Obtendo o driver para escrita do arquivo em GeoTiff
+        driver = gdal.GetDriverByName('GTiff')
 
         # Criando o arquivo RST
         dataset = driver.Create(fn_num_cab, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
@@ -2293,7 +2341,7 @@ class Test():
         tipo_dados = gdalconst.GDT_Float32
 
         # Os arquivos terão formato rst
-        driver = gdal.GetDriverByName('RST')
+        driver = gdal.GetDriverByName('GTiff')
 
         # Cria arquivo final
         dataset = driver.Create(fn_cab_pix, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
@@ -2331,8 +2379,8 @@ class Test():
         dados_n_conect_dren = np.array([[float(self.global_vars.pixeldren[lin][col]) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)])
         tipo_dados = gdalconst.GDT_Float32
 
-        # Obtendo o driver RST do GDAL
-        driver = gdal.GetDriverByName('RST')
+        # Obtendo o driver para escrita do arquivo em GeoTiff
+        driver = gdal.GetDriverByName('GTiff')
 
         # Cria arquivo final
         dataset = driver.Create(fn_n_conect_dren, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
@@ -2384,8 +2432,8 @@ class Test():
         dados_decli_pix = np.array([[float(self.global_vars.decliv_pixel[lin][col]) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)])
         tipo_dados = gdalconst.GDT_Float32
 
-        # Obtendo o driver RST do GDAL
-        driver = gdal.GetDriverByName('RST')
+        # Obtendo o driver para escrita do arquivo em GeoTiff
+        driver = gdal.GetDriverByName('GTiff')
         # Cria arquivo final
         dataset = driver.Create(fn_decli_pix, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
 
@@ -2426,8 +2474,8 @@ class Test():
         dados_decli_pix_jus = np.array([[float(self.global_vars.DECLIVpixjus[lin][col]) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)])
         tipo_dados = gdalconst.GDT_Float32
 
-        # Obtendo o driver RST do GDAL
-        driver = gdal.GetDriverByName('RST')
+        # Obtendo o driver para escrita do arquivo em GeoTiff
+        driver = gdal.GetDriverByName('GTiff')
 
         # Cria arquivo final
         dataset = driver.Create(fn_decli_pix_jus, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
@@ -2469,8 +2517,8 @@ class Test():
         dados_dist_rel_tre = np.array([[float(self.global_vars.DISTtre[lin][col]) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)])
         tipo_dados = gdalconst.GDT_Float32
 
-        # Obtendo o driver RST do GDAL
-        driver = gdal.GetDriverByName('RST')
+        # Obtendo o driver para escrita do arquivo em GeoTiff
+        driver = gdal.GetDriverByName('GTiff')
 
         # Cria arquivo final
         dataset = driver.Create(fn_dist_rel_tre, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
@@ -2512,8 +2560,8 @@ class Test():
         dados_num_pix_dren = np.array([[float(self.global_vars.pixeldren[lin][col]) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)])
         tipo_dados = gdalconst.GDT_Float32
 
-        # Obtendo o driver RST do GDAL
-        driver = gdal.GetDriverByName('RST')
+        # Obtendo o driver para escrita do arquivo em GeoTiff
+        driver = gdal.GetDriverByName('GTiff')
 
         # Cria arquivo final
         dataset = driver.Create(fn_num_pix_dren, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
@@ -2553,8 +2601,8 @@ class Test():
         dados_num_tre = np.array([[float(self.global_vars.refcabtre[lin][col]) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)])
         tipo_dados = gdalconst.GDT_Float32
 
-        # Obtendo o driver RST do GDAL
-        driver = gdal.GetDriverByName('RST')
+        # Obtendo o driver para escrita do arquivo em GeoTiff
+        driver = gdal.GetDriverByName('GTiff')
 
         # Cria arquivo final
         dataset = driver.Create(fn_num_tre, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
@@ -2596,8 +2644,8 @@ class Test():
         dados_temp_canal = np.array([[float(self.global_vars.TempoRioR[lin][col]) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)])
         tipo_dados = gdalconst.GDT_Float32
 
-        # Obtendo o driver RST do GDAL
-        driver = gdal.GetDriverByName('RST')
+        # Obtendo o driver para escrita do arquivo em GeoTiff
+        driver = gdal.GetDriverByName('GTiff')
 
         # Cria arquivo final
         dataset = driver.Create(fn_temp_canal, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
@@ -2637,8 +2685,8 @@ class Test():
         dados_temp_sup = np.array([[float(self.global_vars.TScabe2d[lin][col]) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)])
         tipo_dados = gdalconst.GDT_Float32
 
-        # Obtendo o driver RST do GDAL
-        driver = gdal.GetDriverByName('RST')
+        # Obtendo o driver para escrita do arquivo em GeoTiff
+        driver = gdal.GetDriverByName('GTiff')
 
         # Cria arquivo final
         dataset = driver.Create(fn_temp_sup, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
@@ -2676,8 +2724,8 @@ class Test():
         dados_temp_sup_Ncabe = np.array([[float(self.global_vars.TSnaocabe2d[lin][col]) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)])
         tipo_dados = gdalconst.GDT_Float32
 
-        # Obtendo o driver RST do GDAL
-        driver = gdal.GetDriverByName('RST')
+        # Obtendo o driver para escrita do arquivo em GeoTiff
+        driver = gdal.GetDriverByName('GTiff')
 
         # Cria arquivo final
         dataset = driver.Create(fn_temp_sup_Ncabe, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
@@ -2706,8 +2754,8 @@ class Test():
         dados_temp_sup_td = np.array([[float(self.global_vars.TStodos2d[lin][col]) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)])
         tipo_dados = gdalconst.GDT_Float32
 
-        # Obtendo o driver RST do GDAL
-        driver = gdal.GetDriverByName('RST')
+        # Obtendo o driver para escrita do arquivo em GeoTiff
+        driver = gdal.GetDriverByName('GTiff')
 
         # Cria arquivo final
         dataset = driver.Create(fn_temp_sup_td, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
@@ -2740,8 +2788,8 @@ class Test():
         dados_temp_total = np.array([[float(self.global_vars.TempoTot[lin][col]) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)]) #tempo total não exist
         tipo_dados = gdalconst.GDT_Float32
 
-        # Obtendo o driver RST do GDAL
-        driver = gdal.GetDriverByName('RST')
+        # Obtendo o driver para escrita do arquivo em GeoTiff
+        driver = gdal.GetDriverByName('GTiff')
 
         # Cria arquivo final
         dataset = driver.Create(fn_temp_total, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
@@ -2794,8 +2842,8 @@ class Test():
         dados_tre_pix = np.array([[float(self.global_vars.TREpix[lin][col]) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)])
         tipo_dados = gdalconst.GDT_Float32
 
-        # Obtendo o driver RST do GDAL
-        driver = gdal.GetDriverByName('RST')
+        # Obtendo o driver para escrita do arquivo em GeoTiff
+        driver = gdal.GetDriverByName('GTiff')
         
         # Cria arquivo final
         dataset = driver.Create(fn_tre_pix, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
@@ -2836,8 +2884,8 @@ class Test():
         dados_temp_pix_jus = np.array([[float(self.global_vars.TSpix[lin][col]) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)])
         tipo_dados = gdalconst.GDT_Float32
 
-        # Obtendo o driver RST do GDAL
-        driver = gdal.GetDriverByName('RST')
+        # Obtendo o driver para escrita do arquivo em GeoTiff
+        driver = gdal.GetDriverByName('GTiff')
         
         # Cria arquivo final
         dataset = driver.Create(fn_temp_pix_jus, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
@@ -2872,8 +2920,8 @@ class Test():
         dados_temp_pix_jus_acum = np.array([[float(self.global_vars.TSpixacum[lin][col]) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)])
         tipo_dado = gdalconst.GDT_Float32
 
-        # Obtendo o driver RST do GDAL
-        driver = gdal.GetDriverByName('RST')
+        # Obtendo o driver para escrita do arquivo em GeoTiff
+        driver = gdal.GetDriverByName('GTiff')
 
         # Cria o arquivo final
         dataset = driver.Create(fn_temp_pix_jus_acum,self.rdc_vars.ncol, self.rdc_vars.ncol, 1, tipo_dado)
@@ -2932,8 +2980,8 @@ class Test():
         dados_numb_pix = np.array([[float(self.numb_pix_bacia[lin][col]) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)])
         tipo_dados = gdalconst.GDT_Float32
 
-        # Obtendo o driver RST do GDAL
-        driver = gdal.GetDriverByName('RST')
+        # Obtendo o driver para escrita do arquivo em GeoTiff
+        driver = gdal.GetDriverByName('GTiff')
 
         # Cria arquivo final
         dataset = driver.Create(fn_numb_pix, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
@@ -2978,8 +3026,8 @@ class Test():
         dados_perda_ini = np.array([[float(self.perdas_iniciais[lin][col]) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)])
         tipo_dados = gdalconst.GDT_Float32
 
-        # Obtendo o driver RST do GDAL
-        driver = gdal.GetDriverByName('RST')
+        # Obtendo o driver para escrita do arquivo em GeoTiff
+        driver = gdal.GetDriverByName('GTiff')
 
         # Cria arquivo final
         dataset = driver.Create(fn_perda_ini, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
@@ -3024,8 +3072,8 @@ class Test():
         dados_Spotencial = np.array([[float(self.Spotencial[lin][col]) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)])
         tipo_dados = gdalconst.GDT_Float32
 
-        # Obtendo o driver RST do GDAL
-        driver = gdal.GetDriverByName('RST')
+        # Obtendo o driver para escrita do arquivo em GeoTiff
+        driver = gdal.GetDriverByName('GTiff')
 
         # Cria arquivo final
         dataset = driver.Create(fn_Spotencial, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
@@ -3070,8 +3118,8 @@ class Test():
         dados_pe_acum = np.array([[float(self.chuva_acumulada_pixel[lin][col]) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)])
         tipo_dados = gdalconst.GDT_Float32
 
-        # Obtendo o driver RST do GDAL
-        driver = gdal.GetDriverByName('RST')
+        # Obtendo o driver para escrita do arquivo em GeoTiff
+        driver = gdal.GetDriverByName('GTiff')
 
         # Cria arquivo final
         dataset = driver.Create(fn_pe_acum, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
@@ -3116,8 +3164,8 @@ class Test():
         dados_p_acum = np.array([[float(self.chuva_total_pixel[lin][col]) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)])
         tipo_dados = gdalconst.GDT_Float32
 
-        # Obtendo o driver RST do GDAL
-        driver = gdal.GetDriverByName('RST')
+        # Obtendo o driver para escrita do arquivo em GeoTiff
+        driver = gdal.GetDriverByName('GTiff')
 
         # Cria arquivo final
         dataset = driver.Create(fn_p_acum, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
@@ -3162,8 +3210,8 @@ class Test():
         dados_vol = np.array([[float(self.volume_total_pix[lin][col]) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)])
         tipo_dados = gdalconst.GDT_Float32
 
-        # Obtendo o driver RST do GDAL
-        driver = gdal.GetDriverByName('RST')
+        # Obtendo o driver para escrita do arquivo em GeoTiff
+        driver = gdal.GetDriverByName('GTiff')
 
         # Cria arquivo final
         dataset = driver.Create(fn_vol, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
@@ -3208,8 +3256,8 @@ class Test():
         dados_vazao_pico = np.array([[float(self.volume_total_pix[lin][col]) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)])
         tipo_dados = gdalconst.GDT_Float32
 
-        # Obtendo o driver RST do GDAL
-        driver = gdal.GetDriverByName('RST')
+        # Obtendo o driver para escrita do arquivo em GeoTiff
+        driver = gdal.GetDriverByName('GTiff')
 
         # Cria arquivo final
         dataset = driver.Create(fn_vazao_pico, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
@@ -3358,22 +3406,22 @@ class Test():
         '''Esta função configura a ordem de execução da rotina excess rainfall'''
         # Reading input files
         print('Reading input files')
-        arquivo_bacia = r"C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\SmallExample\3_Hydrograph\input\1_WATERSHED_EX.RST"
+        arquivo_bacia = r"c:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\Hidropixel - User Manual and algorithms\Algorithms\2 - Travel time\Example\Input\1 - Watershed\1_watershed.RST"
         self.leh_bacia(arquivo_bacia, 2)
-        self.leh_CN()
-        self.numera_pix_bacia()
-        self.leh_parametros()
-        self.leh_precip_distribuida()
+        # self.leh_CN()
+        # self.numera_pix_bacia()
+        # self.leh_parametros()
+        # self.leh_precip_distribuida()
         
-        # Processing and wrinting output files
-        self.rainfall_excess()    
-        print('Writing outputs...')
-        self.escreve_numb_pix_bacia()
-        self.escreve_S_potencial()
-        self.escreve_perdas_ini()
-        self.escreve_precipitacao_excedente()
-        self.escreve_precipitacao_total_acum()
-        self.escreve_hietograma_pe()
+        # # Processing and wrinting output files
+        # self.rainfall_excess()    
+        # print('Writing outputs...')
+        # self.escreve_numb_pix_bacia()
+        # self.escreve_S_potencial()
+        # self.escreve_perdas_ini()
+        # self.escreve_precipitacao_excedente()
+        # self.escreve_precipitacao_total_acum()
+        # self.escreve_hietograma_pe()
         
     # def run_flow_routing(self):
     #     '''Esta funão ordena a execução das funções pertencentes a rotina flow routing'''
