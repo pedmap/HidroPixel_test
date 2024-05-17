@@ -28,14 +28,14 @@ class Test():
         self.blocos_vazao = 0
         self.Pexc = 0
 
-    def leh_bacia(self, file, function):
+    def leh_bacia(self, file_, function):
         """Esta função é utilizada para ler o arquivo raster da bacia hidrográfica (arquivo .rst)
            funciton == 1: flow travel time
            function == 2: excesse rainfall
            function == 3: flow routing"""
         self.inicio = time.time()
 
-        arquivo = file
+        arquivo = file_
         # Tratamento de erros: verifica se o arquivo foi corretamente enviado
         if arquivo:
             if function == 1:
@@ -1436,7 +1436,6 @@ class Test():
         # Enumera os pixels presentes na bacia hidrográfica
         for lin in range(self.rdc_vars.nlin):
             for col in range(self.rdc_vars.ncol):
-                # delimitaBacia = self.global_vars.bacia[lin][col]
                 if self.global_vars.bacia[lin][col] == 1:
                     numero_pixel += 1
                     self.numb_pix_bacia[lin][col] = numero_pixel
@@ -1541,7 +1540,7 @@ class Test():
         latitude = []
         longitude = []
         numero_posto = []
-        arquivo_posto = r''
+        arquivo_posto = r'c:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\SmallExample\2_Rainfall_Interpolation\input\2_raingauges.txt'
         w = 0
         with open(arquivo_posto, 'r', encoding = 'utf-8') as arquivo_txt:
             # Armazena cabeçalho
@@ -1549,14 +1548,14 @@ class Test():
             # Lê as linhas do arquivo enviado
             for line in arquivo_txt:
                 w+=1
-                split_lines = line.split(',').strip()
+                split_lines = line.split(',')
                 id_postos.append(split_lines[0])
                 latitude.append(split_lines[1])
                 longitude.append(split_lines[2])
                 numero_posto.append(w)
 
         # Redimensiona as variáveis globais
-        self.quantidade_postos = len(values)
+        self.quantidade_postos = len(numero_posto)
         self.id_postos = np.array(id_postos)
         self.latitude = np.array(latitude)
         self.longitude = np.array(longitude)
@@ -1566,11 +1565,8 @@ class Test():
         '''Esta função lê e armazena os valores de precipitação de cada posto ao longo do tempo'''
         # Definição das variáveis
         w = 0
-        tempo = []
-        chuva = []
-
         # Recebe e lê o arquivo
-        arquivo_chuva = r''
+        arquivo_chuva = r'c:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\SmallExample\2_Rainfall_Interpolation\input\3_rainfall_data.txt'
         with open(arquivo_chuva, 'r', encoding = 'utf-8') as arquivo_txt:
             # Armazena cabeçalho
             cabecalho = arquivo_txt.readline().strip()
@@ -1584,14 +1580,14 @@ class Test():
             # Retira informações do arquivo
             w = 0
             for line in linhas:
-                slipt_line = line.split(',').strip()
+                split_line = line.split(',')
 
                 # Armazena tempo
                 self.tempo[w] = split_line[0]
 
                 # Armazena chuva
                 for c in range(self.quantidade_postos):
-                    self.chuva[w][c] = split_line([c])
+                    self.chuva[w][c] = split_line[c]
                 
     def rainfall_interpolation(self):
         '''Esta função gera o arquivo com a precipitação por pixel por meio da interpolação dos valores das estações pluviométricas enviadas pelo usuário'''
@@ -1601,7 +1597,7 @@ class Test():
         denominador = 0
 
         # Gera o arquivo com precipitação interpolada por pixel
-        arquivo = r''
+        arquivo = r'c:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\resultados_test_modelo\rainfall_interpolated.txt'
         with open(arquivo, 'w', encoding = 'utf-8') as arquivo_txt:
             # Escreve cabeçalho
             arquivo_txt.write('Pixel,')
@@ -1645,7 +1641,7 @@ class Test():
         # Gera um arquivo por evento de precipitação
         for w in range(self.blocos_chuva):
             # Pasta enviada pelo user
-            path = r''
+            path = r'c:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\resultados_test_modelo'
             arquivo = path + f'\{str(self.tempo[w])}'
 
             # interpolação da pricipitação para o evento em questão
@@ -1710,12 +1706,10 @@ class Test():
         '''Esta função determina gera os arquivos associados a precipitação excedente de cada pixel presente na baica hidrográfica, fumentando-se no método do SCS-CN'''
         self.fim = time.time()
         print(f'{(self.fim - self.inicio)/60} min')
-        # Definação das variáveis
-        Pacum = 0
-
+        a = 0
         # JVD: estrutura dos arrays
-        self.time = np.zeros(self.quantidade_blocos_chuva)
-        self.hacum = np.zeros(self.quantidade_blocos_chuva)
+        self.time = np.zeros(50000)
+        self.hacum = np.zeros(50000)
         self.hexc_pix = np.zeros((self.numero_total_pix, self.quantidade_blocos_chuva))
         self.hietograma = np.zeros((self.numero_total_pix, self.quantidade_blocos_chuva))
         self.perdas_iniciais = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
@@ -1725,44 +1719,50 @@ class Test():
 
         arquivo_precipitacao = r"C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\SmallExample\3_Hydrograph\input\3_rainfall_file.txt"
         with open(arquivo_precipitacao, 'r') as arquivo_txt:
+            # Armazena cabeçalho do arquivo
+            cabecalho = arquivo_txt.readline().strip()
             for lin in range(self.rdc_vars.nlin):
                 for col in range(self.rdc_vars.ncol):
-                    
-                    # Cálculo do potencial de armazenamento do solo por pixel presente na bacia
-                    self.Spotencial[lin][col] = (25400/self.CN[lin][col])-254
+                    if self.global_vars.bacia[lin][col]==1:
+                        # Cálculo do potencial de armazenamento do solo por pixel presente na bacia
+                        self.Spotencial[lin][col] = (25400/self.CN[lin][col])-254
 
-                    # Cálculo das perdas iniciais por pixel presente na bacia
-                    self.perdas_iniciais[lin][col] = self.alfa * self.Spotencial[lin][col]
+                        # Cálculo das perdas iniciais por pixel presente na bacia
+                        self.perdas_iniciais[lin][col] = self.alfa * self.Spotencial[lin][col]
 
-                    self.time[0] = 0
+                        Pacum = 0
+                        self.time[0] = 0
 
-                    # Armazena as linha do arquivo de precipitação
-                    line = arquivo_txt.readline().strip()
-                    split_line = line.split(',')
-                    print(len(split_line))
-                    for w in range(1, self.quantidade_blocos_chuva):
-                        chuva_distribuida = float(split_line[w])
-                        self.time[w] = self.time[w-1] + self.delta_t
+                        # Armazena as linha do arquivo de precipitação
+                        line = arquivo_txt.readline().strip()
+                        split_line = line.split(',')
+                        a+=1
+                        for w in range(1, self.quantidade_blocos_chuva+1):
+                            chuva_distribuida = float(split_line[w])
+                            self.time[w] = self.time[w-1] + self.delta_t
 
-                        Pacum += chuva_distribuida 
+                            Pacum += chuva_distribuida 
 
-                        # Cálculo da chuva excedente
-                        if Pacum <= self.perdas_iniciais[lin][col]:
-                            self.hacum[w] = 0
-                        else:
-                            self.hacum[w] = ((Pacum - self.perdas_iniciais[lin][col])**2) / (Pacum - self.perdas_iniciais[lin][col] + self.Spotencial[lin][col])
+                            # Cálculo da chuva excedente
+                            if Pacum <= self.perdas_iniciais[lin][col]:
+                                self.hacum[w] = 0
+                            else:
+                                self.hacum[w] = ((Pacum - self.perdas_iniciais[lin][col])**2) / (Pacum - self.perdas_iniciais[lin][col] + self.Spotencial[lin][col])
 
-                            # precipitação efetiva desacumulada por pixel ao longo do evento
-                            self.hexc_pix[lin][w] = self.hacum[w] - self.hacum[w-1]
-                            
-                    # Chuva excedente acumulada do pixel
-                    self.chuva_acumulada_pixel[lin][col] = self.hacum[self.quantidade_blocos_chuva-1]
+                                # precipitação efetiva desacumulada por pixel ao longo do evento
+                                self.hexc_pix[lin][w] = self.hacum[w] - self.hacum[w-1]
+                                
+                        # Chuva excedente acumulada do pixel
+                        
+                        self.chuva_acumulada_pixel[lin][col] = self.hacum[self.quantidade_blocos_chuva-1]
 
-                    # Chuva total no pixel
-                    self.chuva_total_pixel[lin][col] = Pacum
-                    
+                        # Chuva total no pixel
+                        self.chuva_total_pixel[lin][col] = Pacum
+                print('foi-se')
         self.fim = time.time()
         print(f'{(self.fim - self.inicio)/60} min')
+        a=0
+
     def hidrograma_dlr(self):
         '''Esta função gera o hidrograma-DLR da bacia hidrográfica conforme os dados de precipitação enviados'''
         # Definição das variáveis
@@ -1826,64 +1826,65 @@ class Test():
 
             for lin in range(self.rdc_vars.nlin):
                 for col in range(self.rdc_vars.ncol):
-                    # Armazena as linha do arquivo de precipitação efetiva
-                    line = arquivo_txt.readline().strip()
-                    split_line = line.split(',')
-                    for w in range(1, self.quantidade_blocos_chuva + 1):
-                        self.Pexc = split_line[w]
-                        self.time[w] = self.time[w-1] + self.delta_t
+                    if self.global_vars.bacia[lin][col]:
+                        # Armazena as linha do arquivo de precipitação efetiva
+                        line = arquivo_txt.readline().strip()
+                        split_line = line.split(',')
+                        for w in range(1, self.quantidade_blocos_chuva + 1):
+                            self.Pexc = split_line[w]
+                            self.time[w] = self.time[w-1] + self.delta_t
 
-                        if self.Pexc > 0:
-                            self.Pexc /= 1000 #em metros
+                            if self.Pexc > 0:
+                                self.Pexc /= 1000 #em metros
 
-                            # Vazão correspondente no exutório
-                            self.Pexc = ((self.Pexc * (self.global_vars.dx**2))/self.delta_t)*(1/60) # Vazão em m³/s
+                                # Vazão correspondente no exutório
+                                self.Pexc = ((self.Pexc * (self.global_vars.dx**2))/self.delta_t)*(1/60) # Vazão em m³/s
 
-                            # Representação da vazão no exutório (translação)
-                            tempo_exutorio = self.time[w-1] + self.TempoTotal_reclass[lin][col]
-                            k = tempo_exutorio / self.delta_t
+                                # Representação da vazão no exutório (translação)
+                                tempo_exutorio = self.time[w-1] + self.TempoTotal_reclass[lin][col]
+                                k = tempo_exutorio / self.delta_t
 
-                            self.vazao_pixel[k] = self.Pexc
+                                self.vazao_pixel[k] = self.Pexc
 
-                    # Volume de água gerado por pixel pixel
-                    self.volume_total_pix[lin][col] = (self.chuva_acumulada_pixel[lin][col]/(10**3)) *(self.global_vars.dx**2) #em m³
-                    # Volume total de água gerada em todo evento
-                    self.volume_total += self.volume_total_pix[lin][col]
-                    # Parâmetro para estimativa do armazenamento
-                    storage_coefficient = self.tempo_total[lin][col] / ((1/self.beta) - 1) # em minutos
+                        # Volume de água gerado por pixel pixel
+                        self.volume_total_pix[lin][col] = (self.chuva_acumulada_pixel[lin][col]/(10**3)) *(self.global_vars.dx**2) #em m³
+                        # Volume total de água gerada em todo evento
+                        self.volume_total += self.volume_total_pix[lin][col]
+                        # Parâmetro para estimativa do armazenamento
+                        storage_coefficient = self.tempo_total[lin][col] / ((1/self.beta) - 1) # em minutos
 
-                    c_1 = self.delta_t / ((2*storage_coefficient) + self.delta_t)
-                    c_2 = 1 - (2*c_1)
+                        c_1 = self.delta_t / ((2*storage_coefficient) + self.delta_t)
+                        c_2 = 1 - (2*c_1)
 
-                    # Amortecimento do hidrograma do pixel
-                    k = 0
-                    self.tempo_vazao_pixel = np.zeros(50000)
-                    self.vazao_amortecida_pixel = np.zeros(50000)
-                    self.vazao = np.zeros(50000)
+                        # Amortecimento do hidrograma do pixel
+                        k = 0
+                        self.tempo_vazao_pixel = np.zeros(50000)
+                        self.vazao_amortecida_pixel = np.zeros(50000)
+                        self.vazao = np.zeros(50000)
 
-                    self.tempo_vazao_pixel[k] = 0
-                    self.vazao_amortecida_pixel[k] = c_1 * self.vazao_pixel[k]
-                    self.vazao[k] += self.vazao_amortecida_pixel[k]
-                    while self.tempo_vazao_pixel[k] <= self.criterio_parada:
-                        self.vazao_amortecida_pixel[k+1] = (c_1 * self.vazao_pixel[k+1]) + (c_1 * self.vazao_pixel[k]) + (c_2*self.vazao_amortecida_pixel[k])
-                        self.tempo_vazao_pixel[k+1] = self.tempo_vazao_pixel[k] + self.delta_t
-                        k += 1
+                        self.tempo_vazao_pixel[k] = 0
+                        self.vazao_amortecida_pixel[k] = c_1 * self.vazao_pixel[k]
                         self.vazao[k] += self.vazao_amortecida_pixel[k]
+                        while self.tempo_vazao_pixel[k] <= self.criterio_parada:
+                            self.vazao_amortecida_pixel[k+1] = (c_1 * self.vazao_pixel[k+1]) + (c_1 * self.vazao_pixel[k]) + (c_2*self.vazao_amortecida_pixel[k])
+                            self.tempo_vazao_pixel[k+1] = self.tempo_vazao_pixel[k] + self.delta_t
+                            k += 1
+                            self.vazao[k] += self.vazao_amortecida_pixel[k]
 
-                    # Determinação da vazão e do tempo de pico do hidrograma-DLR por pixel
-                    self.vazao_pico[lin][col] = np.amax(self.vazao_amortecida_pixel)
-                    index_vp = np.where(self.vazao_amortecida_pixel == self.vazao_pico[lin][col])
-                    self.tempo_pico[lin][col] = self.tempo_vazao_pixel[index_vp] 
+                        # Determinação da vazão e do tempo de pico do hidrograma-DLR por pixel
+                        self.vazao_pico[lin][col] = np.amax(self.vazao_amortecida_pixel)
+                        index_vp = np.where(self.vazao_amortecida_pixel == self.vazao_pico[lin][col])
+                        self.tempo_pico[lin][col] = self.tempo_vazao_pixel[index_vp] 
 
-                    # Zera vazão no pixel
-                    k = 0
-                    self.tempo_vazao_pixel[k] = 0
-                    self.vazao_amortecida_pixel[k] = 0
-                    while self.tempo_vazao_pixel[k] <= self.criterio_parada:
-                        self.vazao_pixel[k+1] = 0
-                        self.vazao_amortecida_pixel[k + 1] = 0                       
-                        self.tempo_vazao_pixel[k+1] = self.tempo_vazao_pixel[k] + self.delta_t
-                        k += 1
+                        # Zera vazão no pixel
+                        k = 0
+                        self.tempo_vazao_pixel[k] = 0
+                        self.vazao_amortecida_pixel[k] = 0
+                        while self.tempo_vazao_pixel[k] <= self.criterio_parada:
+                            self.vazao_pixel[k+1] = 0
+                            self.vazao_amortecida_pixel[k + 1] = 0                       
+                            self.tempo_vazao_pixel[k+1] = self.tempo_vazao_pixel[k] + self.delta_t
+                            k += 1
 
             # Cálculo da área da bacia
             area_bacia = self.numero_total_pix * (self.global_vars.dx **2) # em m²
@@ -3335,9 +3336,27 @@ class Test():
 
         if self.global_vars.tipo_decliv == 4:
             self.escreve_TS_pix_acum()
+    
+    def run_rainfall_interpolation(self, map_file):
+        '''Esta função organiza a execução da função que realiza a interpolação da precipitação para todos os pixels presentes na bacia hidrográfica
+           '''
+        # Reading input files
+        print('Reading input files')
+        arquivo_bacia = r"C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\SmallExample\3_Hydrograph\input\1_WATERSHED_EX.RST"
+        self.leh_bacia(arquivo_bacia, 2)
+        self.leh_posto_pluv()
+        self.leh_arquivo_precipitacao()
+
+        # Processing and wrinting output files
+        print('Writing outputs...')
+        if map_file == 1:
+            self.rainfall_interpolation_map()
+        else:    
+            self.rainfall_interpolation()
 
     def run_exc_rain(self):
         '''Esta função configura a ordem de execução da rotina excess rainfall'''
+        # Reading input files
         print('Reading input files')
         arquivo_bacia = r"C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\SmallExample\3_Hydrograph\input\1_WATERSHED_EX.RST"
         self.leh_bacia(arquivo_bacia, 2)
@@ -3345,8 +3364,9 @@ class Test():
         self.numera_pix_bacia()
         self.leh_parametros()
         self.leh_precip_distribuida()
+        
+        # Processing and wrinting output files
         self.rainfall_excess()    
-        # Saindas
         print('Writing outputs...')
         self.escreve_numb_pix_bacia()
         self.escreve_S_potencial()
@@ -3354,6 +3374,10 @@ class Test():
         self.escreve_precipitacao_excedente()
         self.escreve_precipitacao_total_acum()
         self.escreve_hietograma_pe()
+        
+    # def run_flow_routing(self):
+    #     '''Esta funão ordena a execução das funções pertencentes a rotina flow routing'''
 
 cla_test = Test()
 cla_test.run_exc_rain()
+# cla_test.run_rainfall_interpolation(2)
