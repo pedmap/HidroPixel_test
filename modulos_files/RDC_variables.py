@@ -37,6 +37,8 @@ class RDCVariables:
         self.nomeRDC = ""
         self.sistemaref = ""
         self.unidaderef = ""
+        self.geotransform = ""
+        self.projection = ""
 
 
         # Int's variables declaration

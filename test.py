@@ -1,9 +1,10 @@
 # Import the code for the dialog
 import os.path
 import sys, os
-import time
+from time import perf_counter
 # Importing libs
 import numpy as np
+from functools import wraps
 # import matplotlib as plt
 from osgeo import ogr, gdal, gdalconst
 # import matplotlib.pyplot as plt
@@ -28,53 +29,27 @@ class Test():
         self.blocos_vazao = 0
         self.Pexc = 0
 
-    def ascii_para_binary(self,ascii_file_path, binary_file_path, format='GTiff'):
-        '''Esta função realiza altera o formato do arquivo enviado pelo usuário de ASCII para Binary'''
-        # Recebe oa arquivo e abre com o Gdal
-        dataset = gdal.Open(ascii_file_path)
-        
-        #  Verificação de incoerências
-        if dataset is None:
-            raise FileNotFoundError(f"Não foi possível abrir o arquivo: {ascii_file_path}")
-            # Mostra mensagem de erro para usuário
-            exit
+    def optimize(func):
+        '''Esta função utiliza métodos python para otimizar o código, gerando um cache para os resultados do usuário'''
+        cache = {}
 
-        # Armazena os valores do arquivo enviado em um array
-        band = dataset.GetRasterBand(1)
-        data = band.ReadAsArray()
+        @wraps(func)
+        def wrapper(*args,**kwargs):
+            key = str(args) + str(kwargs)
 
-        # Salva o arquivo no formato GeoTiff
-        driver = gdal.GetDriverByName(format)
-        
-        # Crie o novo dataset binário
-        = driver.Create(binary_file_path, cols, rows, 1, band.DataType)
-        
-        # Configure a projeção e a transformação geoespacial
-        out_dataset.SetGeoTransform(geotransform)
-        out_dataset.SetProjection(projection)
-        
-        # Escreva os dados no novo dataset
-        out_band = out_dataset.GetRasterBand(1)
-        out_band.WriteArray(data)
-        
-        # Flush cache para garantir que todos os dados sejam escritos
-        out_band.FlushCache()
-        
-        print(f"Arquivo binário salvo em: {binary_file_path}")
+            if key not in cache:
+                cache[key] = func(*args,**kwargs)
 
-    # Caminhos para os arquivos de entrada e saída
-    ascii_file_path = 'seu_arquivo.asc'
-    binary_file_path = 'seu_arquivo.tif'
-
-    # Chame a função para converter o arquivo ASCII para binário
-    ascii_to_binary(ascii_file_path, binary_file_path)
+            return cache[key]
+            
+        return wrapper
 
     def leh_bacia(self, file_, function):
-        """Esta função é utilizada para ler o arquivo raster da bacia hidrográfica (arquivo .rst)
+        """Esta função é utilizada para ler o arquivo raster da bacia hidrográfica (arquivo .RST)
            funciton == 1: flow travel time
            function == 2: excesse rainfall
            function == 3: flow routing"""
-        self.inicio = time.time()
+        self.inicio = perf_counter()
 
         arquivo = file_
         # Tratamento de erros: verifica se o arquivo foi corretamente enviado
@@ -92,7 +67,8 @@ class Test():
                     # atualizando os valores das variáveis para coletar o número de linhas e colunas do arquivo raster lido
                     self.rdc_vars.nlin = rst_file_bacia.RasterYSize               
                     self.rdc_vars.ncol = rst_file_bacia.RasterXSize
-
+                    self.rdc_vars.geotransform = rst_file_bacia.GetGeoTransform()
+                    self.rdc_vars.projection = rst_file_bacia.GetProjection()                 
                     # Reorganizando os dados lidos da bacia em uma nova matriz chamada bacia.
 
                     self.global_vars.bacia = dados_lidos_bacia
@@ -113,31 +89,27 @@ class Test():
                     # atualizando os valores das variáveis para coletar o número de linhas e colunas do arquivo raster lido
                     self.rdc_vars.nlin = rst_file_bacia.RasterYSize               
                     self.rdc_vars.ncol = rst_file_bacia.RasterXSize
+                    self.rdc_vars.geotransform = rst_file_bacia.GetGeoTransform()
+                    self.rdc_vars.projection = rst_file_bacia.GetProjection()  
 
                     # Reorganizando os dados lidos da bacia em uma nova matriz chamada bacia.
-
                     self.global_vars.bacia = dados_lidos_bacia
-                    print(self.global_vars.bacia)
-                    # Fechando o dataset GDAL
 
+                    # Fechando o dataset GDAL
                     rst_file_bacia = None
-                    cont = 0
-                    # print(f'Qtd pix bacia: {np.count_nonzero(self.global_vars.bacia)}\nÁrea da bacia: {(np.count_nonzero(self.global_vars.bacia))*100/1000000} Km²')
-                    # for lin in range(self.rdc_vars.nlin):
-                    #     for col in range(self.rdc_vars.ncol):
-                    #         if self.global_vars.bacia[lin][col]==1:
-                    #             cont +=1
-                    print(cont)
+
+                    print(f'Qtd pix bacia: {np.count_nonzero(self.global_vars.bacia)}\nÁrea da bacia: {(np.count_nonzero(self.global_vars.bacia))*100/1000000} Km²')
+
                 else:
                     """Caso o arquivo raster apresente erros durante a abertura, ocorrerá um erro"""
                     resulte = f"Failde to open the raster file: {arquivo}"
                     # QMessageBox.warning(None, "ERROR!", resulte)
 
                 # Lê informações do arquivo de metadados (.rdc)
-                arquivo_rdc = arquivo.replace('.RST','.RDC')
+                arquivo_rdc = arquivo.replace('.RST','.rdc')
                 
                 if arquivo_rdc is not None:
-                    with open(arquivo_rdc, 'r') as rdc_file:
+                    with open(arquivo_rdc, 'r', encoding = 'utf-8') as rdc_file:
                         # Separando os dados do arquivo RDC em função das linhas que contém alguma das palavras abaixo
                         k_words = ["columns", "rows", "ref. system", "ref. units", "min. X", "max. X", "min. Y", "max. Y", "resolution"]
                         lines_RDC = [line.strip() for line in rdc_file.readlines() if any(word in line for word in k_words)]
@@ -155,7 +127,7 @@ class Test():
                             if key == "ref. system":
                                 self.rdc_vars.sistemaref = value
                             elif key == "ref. units":
-                                self.rdc_vars.unidaderef3 = value
+                                self.rdc_vars.unidaderef = value
                             elif key == "min. X":
                                 self.X_minimo = float(value)
                             elif key == "max. X":
@@ -180,7 +152,7 @@ class Test():
         
 
     def leh_caracteristica_dRios(self):
-        """Esta função é utilizada para ler as informações acerca da característica dos rios de uma bacia hidrográfica (texto .rst)"""
+        """Esta função é utilizada para ler as informações acerca da característica dos rios de uma bacia hidrográfica (texto .RST)"""
 
         # Abrindo o arquivo de texto (.txt) com as informações acerca das classes dos rios
         file = r"C:\Users\joao1\OneDrive\Área de Trabalho\Calcula_Tc_SCS_decliv_indiv_grandesmatrizes_utm_LL\caracteristicas_classes_rios.txt"
@@ -212,8 +184,8 @@ class Test():
         self.global_vars.Rhclasse = np.array(Rhclasse_list)
 
     def leh_classes_rios(self):
-        """Esta função é utilizada para ler as informações acerca da classe dos rios da bacia hidrográfica (arquivo raster -  .rst)"""
-        arquivo = r"C:\Users\joao1\OneDrive\Área de Trabalho\Calcula_Tc_SCS_decliv_indiv_grandesmatrizes_utm_LL\classes_rios.rst"
+        """Esta função é utilizada para ler as informações acerca da classe dos rios da bacia hidrográfica (arquivo raster -  .RST)"""
+        arquivo = r"C:\Users\joao1\OneDrive\Área de Trabalho\Calcula_Tc_SCS_decliv_indiv_grandesmatrizes_utm_LL\classes_rios.RST"
         # Tratamento de erros: verifica se o arquivo foi corretamente enviado
         if arquivo:
             # Realizando a abertura do arquivo raster e coletando as informações referentes as dimensões do mesmo
@@ -239,7 +211,7 @@ class Test():
             # QMessageBox.warning(None, "ERROR!", result)
 
     def leh_direcoes_de_fluxo(self):
-        """Esta função é utilizada para ler as informações acerca da direção de escoamento dos rios (arquivo raster - .rst)"""
+        """Esta função é utilizada para ler as informações acerca da direção de escoamento dos rios (arquivo raster - .RST)"""
 
         # Definindo a numeração das direções &
         # Definindo a posição relativa dos pixels vizinhos
@@ -275,12 +247,12 @@ class Test():
         # - E  D  C                 8  4  2               16   8   4 -
 
         # Recebendo os arquivos necessários
-        self.rdc_vars.nomeRST = r"C:\Users\joao1\OneDrive\Área de Trabalho\Calcula_Tc_SCS_decliv_indiv_grandesmatrizes_utm_LL\dir.rst"
-        self.rdc_vars.nomeRDC = r"C:\Users\joao1\OneDrive\Área de Trabalho\Calcula_Tc_SCS_decliv_indiv_grandesmatrizes_utm_LL\dir.RDC"
+        self.rdc_vars.nomeRST = r"c:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\SmallExample\input_binary\3_DIR_EXbin.RST"
+        self.rdc_vars.nomeRDC = r"c:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\SmallExample\input_binary\3_DIR_EXbin.RDC"
 
         # Abrindo o arquivo RDC
         arquivo = self.rdc_vars.nomeRDC
-        with open(arquivo, 'r') as rdc_file:
+        with open(arquivo, 'r',encoding ='ytf-8') as rdc_file:
             # Separando os dados do arquivo RDC em função das linhas que contém alguma das palavras abaixo
             k_words = ["columns", "rows", "ref. system", "ref. units", "min. X", "max. X", "min. Y", "max. Y", "resolution"]
             lines_RDC = [line.strip() for line in rdc_file.readlines() if any(word in line for word in k_words)]
@@ -302,7 +274,7 @@ class Test():
                 elif key == "ref. system":
                     self.rdc_vars.sistemaref = value
                 elif key == "ref. units":
-                    self.rdc_vars.unidaderef3 = value
+                    self.rdc_vars.unidaderef = value
                 elif key == "min. X":
                     self.rdc_vars.xmin = float(value)
                 elif key == "max. X":
@@ -367,11 +339,10 @@ class Test():
         self.global_vars.direcoes[:, 0] = 32
         self.global_vars.direcoes[:, -1] = 2
 
-
     def leh_drenagem(self):
-        """Esta função é utilizada para ler as informações acerca da drenagem dos rios (arquivo raster - .rst)"""
+        """Esta função é utilizada para ler as informações acerca da drenagem dos rios (arquivo raster - .RST)"""
         # Obtendo o arquivo referente as calasses dos rios da bacia hidrográfica
-        arquivo = r'C:\Users\joao1\OneDrive\Área de Trabalho\Calcula_Tc_SCS_decliv_indiv_grandesmatrizes_utm_LL\DRENAGEM.RST'
+        arquivo = r'c:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\SmallExample\input_binary\5_DRAINAGE_EXbin.RST'
         # Abrindo o arquivo raster com as informações acerda do sistema de drenagem da bacia hidrográfica
         rst_file_drenagem = gdal.Open(arquivo)
         
@@ -392,10 +363,10 @@ class Test():
 
 
     def leh_modelo_numerico_dTerreno(self):
-        """Esta função é utilizada para ler as informações acerca do modelo numérico do terreno (arquivo raster - .rst)"""
+        """Esta função é utilizada para ler as informações acerca do modelo numérico do terreno (arquivo raster - .RST)"""
 
         # Obtendo o arquivo referente ao MDE da bacia hidrográfica
-        arquivo = r'C:\Users\joao1\OneDrive\Área de Trabalho\Calcula_Tc_SCS_decliv_indiv_grandesmatrizes_utm_LL\mntfill.rst'
+        arquivo = r'c:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\SmallExample\input_binary\2_DEM_EXbin.RST'
 
         # Realizando a abertura do arquivo raster e coletando as informações referentes as dimensões do mesmo
         rst_file_MDE = gdal.Open(arquivo)
@@ -430,10 +401,10 @@ class Test():
         self.global_vars.P24 = dados_lidos_P24
 
     def leh_uso_do_solo(self):
-        """Esta função é utilizada para ler as informações acerca do uso do solo (arquivo raster - .rst)"""
+        """Esta função é utilizada para ler as informações acerca do uso do solo (arquivo raster - .RST)"""
 
         # Obtendo o arquivo raster referente ao uso do solo
-        arquivo = r'C:\Users\joao1\OneDrive\Área de Trabalho\Calcula_Tc_SCS_decliv_indiv_grandesmatrizes_utm_LL\uso_solo.RST'
+        arquivo = r'c:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\SmallExample\input_binary\8_LULC_EXbin.RST'
 
         # Abrindo o arquivo raster com as informações acerda do uso do solo da bacia hidrográfica
         rst_file_usoSolo = gdal.Open(arquivo)
@@ -615,8 +586,8 @@ class Test():
                                 self.global_vars.sda = 0
 
                         # Atulizando a variável lfoz
-                        self.Lfoz[lin, col] = self.global_vars.tamfoz
-        self.fim = time.time()
+                        self.global_vars.Lfoz[lin][col] = self.global_vars.tamfoz
+        self.fim = perf_counter()
         print(f'{(self.fim - self.inicio)/60} min')                  
         print('Passou compri_acumulado')
 
@@ -672,7 +643,7 @@ class Test():
 
         # JVD: redundancia de variáveis, Ncabe = numcabeaux
         self.global_vars.numcabeaux = self.numcabeaux
-        self.fim = time.time()
+        self.fim = perf_counter()
         print(f'{(self.fim - self.inicio)/60} min') 
         print('Passou numera_pix')
 
@@ -802,7 +773,7 @@ class Test():
                                             / ((self.global_vars.P24**0.5)*((self.global_vars.Streaux/1000.0)**0.4))
         # Atualiza as variáveis globais
         self.global_vars.DIST = dist
-        self.fim = time.time()
+        self.fim = perf_counter()
         print(f'{(self.fim - self.inicio)/60} min') 
         print('Passou dist_drenagem')
 
@@ -1168,7 +1139,7 @@ class Test():
                                 # ARPdecliv: para a média ponderada
                                 self.global_vars.Somaauxpond[self.global_vars.numcabeaux][self.global_vars.numtreaux2] += self.global_vars.DECLIVpix[self.global_vars.linaux][self.global_vars.colaux] * self.global_vars.DISTtre[self.global_vars.linaux][self.global_vars.colaux]
                                 self.global_vars.SomaauxDist[self.global_vars.numcabeaux][self.global_vars.numtreaux2] += self.global_vars.DISTtre[self.global_vars.linaux][self.global_vars.colaux]
-        self.fim = time.time()
+        self.fim = perf_counter()
         print(f'{(self.fim - self.inicio)/60} min')                        
         print('Passou dist_trecho')
 
@@ -1209,8 +1180,8 @@ class Test():
                                 self.global_vars.caminho = 1
 
                                 # Contabilizando o último trecho
-                                self.global_vars.Lfozaux1 = self.Lfoz[self.global_vars.linaux1][self.global_vars.colaux1]
-                                self.global_vars.Lfozaux2 = self.Lfoz[self.global_vars.linaux2][self.global_vars.colaux2]
+                                self.global_vars.Lfozaux1 = self.global_vars.Lfoz[self.global_vars.linaux1][self.global_vars.colaux1]
+                                self.global_vars.Lfozaux2 = self.global_vars.Lfoz[self.global_vars.linaux2][self.global_vars.colaux2]
                                 # Determina a diferença entre o píxel do Lfoz inicial e o do final
                                 self.global_vars.Laux = self.global_vars.Lfozaux1 - self.global_vars.Lfozaux2
                                 
@@ -1244,8 +1215,8 @@ class Test():
                                 condicao2 = self.global_vars.classerio[self.global_vars.linaux][self.global_vars.colaux] != self.classerio_aux
                                 # Checando se o caminho ainda está no trecho de mesma classe
                                 if condicao2:
-                                    self.global_vars.Lfozaux1 = self.Lfoz[self.global_vars.linaux1][self.global_vars.colaux1]
-                                    self.global_vars.Lfozaux2 = self.Lfoz[self.global_vars.linaux2][self.global_vars.colaux2]
+                                    self.global_vars.Lfozaux1 = self.global_vars.Lfoz[self.global_vars.linaux1][self.global_vars.colaux1]
+                                    self.global_vars.Lfozaux2 = self.global_vars.Lfoz[self.global_vars.linaux2][self.global_vars.colaux2]
 
                                     # Determina a diferença entre o píxel do Lfoz inicial e o do final
                                     self.global_vars.Laux = self.global_vars.Lfozaux1 - self.global_vars.Lfozaux2
@@ -1284,7 +1255,7 @@ class Test():
                                 self.global_vars.caminho = 0 
                                 self.global_vars.linaux += self.global_vars.dlin[self.global_vars.diraux]
                                 self.global_vars.colaux += self.global_vars.dcol[self.global_vars.diraux]
-        self.fim = time.time()
+        self.fim = perf_counter()
         print(f'{(self.fim - self.inicio)/60} min') 
         print('passou tempo canal')
 
@@ -1302,7 +1273,7 @@ class Test():
         TS = np.zeros((self.global_vars.numcabeaux, self.global_vars.Ntre))
         self.global_vars.TS = TS
         TS = None
-        self.global_vars.TScabe = np.zeros(self.global_vars.numcabeaux)
+        TScabe = np.zeros(self.global_vars.numcabeaux)
         self.global_vars.TScabe = TScabe
         TScabe = None
         TScabe2d = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
@@ -1416,18 +1387,18 @@ class Test():
 
                                     # Atualizando o tempo de escoamento desde o píxel inicial
                                     self.global_vars.tempocam += self.global_vars.TSpix[self.global_vars.linaux2][self.global_vars.colaux2]
-        self.fim = time.time()
+        self.fim = perf_counter()
         print(f'{(self.fim - self.inicio)/60} min') 
         print('passou tempo superficie')
         
-    def tempo_total(self):
+    def tempo_total_func(self):
         '''
         Esta função determina o tempo total de escoamento/concentração da bacia hidrográfica
         '''
         # Redimenciona as variáveis necessárias
         TempoTot = np.zeros((self.rdc_vars.nlin,self.rdc_vars.ncol))
         self.global_vars.TempoTot = TempoTot
-        TempoTot = NOne
+        TempoTot = None
 
         for col in range(self.rdc_vars.ncol):
             for lin in range(self.rdc_vars.nlin):
@@ -1490,12 +1461,13 @@ class Test():
 
         # Computa o número total de pixels que são bacia hidrográfica
         self.numero_total_pix = numero_pixel
+        numero_pixel = None
 
     def leh_CN(self):
         '''Esta função lê o arquivo enviado pelo usuário contendo os valores do parametro CURVE-NUMBER (CN) para os diferentes pixels da bacia hidrográfica'''
         # Define variáveis
         self.CN = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
-        arquivo = r"C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\Hidropixel - User Manual and algorithms\Algorithms\4 - Hydrograph\Example\Input\2 - CN map\2_CN_map.rst"
+        arquivo = r"c:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\SmallExample\input_binary\2_CN_MAP_EXbin.RST"
         # Tratamento de erros: verifica se o arquivo foi corretamente enviado
         if arquivo:
             # Realizando a abertura do arquivo raster e coletando as informações referentes as dimensões do mesmo
@@ -1521,24 +1493,11 @@ class Test():
             # QMessageBox.warning(None, "ERROR!", result)
         return self.CN 
 
-    def leh_precip_distribuida(self):
-        '''Esta função lê o arquivo enviado pelo usuário contento os valores da precipitação destribuidos ao longo dos pixels pertencentes a baica hidrográfica'''
-        self.quantidade_blocos_chuva = 0
-        # Lê os dados enviados e os armaneza
-        arquivo = r'C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\Hidropixel - User Manual and algorithms\Algorithms\4 - Hydrograph\Example\Input\3 - Rainfall\3_rainfall_file.txt' 
-        with open(arquivo, 'r') as arquivo_txt:
-            # armazena o cabeçalho (primeira linha)
-            lines = arquivo_txt.readline().strip()
-
-            # Sepera as linhas por vígula (,)
-            split_lines = lines.split(',')
-
-        self.quantidade_blocos_chuva = len(split_lines) - 1 
     
     def leh_tempo_viagem(self):
         '''Esta função lê o arquivo contendo o tempo de concentração de cada pixel presente na bacia hidrográfica e o armazena'''
 
-        arquivo = r"C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\Hidropixel - User Manual and algorithms\Algorithms\4 - Hydrograph\Example\Input\4 - Travel time to the outlet\4_TV_BIN.RST"
+        arquivo = r"c:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\SmallExample\input_binary\TRAVEL_TIME.RST"
         # Tratamento de erros: verifica se o arquivo foi corretamente enviado
         if arquivo:
             # Realizando a abertura do arquivo raster e coletando as informações referentes as dimensões do mesmo
@@ -1581,6 +1540,20 @@ class Test():
         self.criterio_parada = int(values[2])
         self.beta = float(values[3])
 
+    def leh_precip_distribuida(self):
+        '''Esta função lê o arquivo enviado pelo usuário contento os valores da precipitação destribuidos ao longo dos pixels pertencentes a baica hidrográfica'''
+        self.quantidade_blocos_chuva = 0
+        # Lê os dados enviados e os armaneza
+        arquivo = r'c:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\SmallExample\3_Hydrograph\input\3_rainfall_file.txt' 
+        with open(arquivo, 'r', encoding = 'utf-8') as arquivo_txt:
+            # armazena o cabeçalho (primeira linha)
+            lines = arquivo_txt.readline().strip()
+
+            # Sepera as linhas por vígula
+            split_lines = lines.split(',')
+
+        self.quantidade_blocos_chuva = len(split_lines) - 1 
+
     def leh_posto_pluv(self):
         '''Esta função é responsável por ler e armazenar as informações dos postos pluviométricos'''
         # Definição das variáveis
@@ -1588,7 +1561,7 @@ class Test():
         latitude = []
         longitude = []
         numero_posto = []
-        arquivo_posto = r'c:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\SmallExample\2_Rainfall_Interpolation\input\2_raingauges.txt'
+        arquivo_posto = r'c:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\Hidropixel - User Manual and algorithms\Algorithms\3 - Rainfall interpolation\Example\Input\2 - Rain gauges\2_raingauges.txt'
         w = 0
         with open(arquivo_posto, 'r', encoding = 'utf-8') as arquivo_txt:
             # Armazena cabeçalho
@@ -1597,9 +1570,9 @@ class Test():
             for line in arquivo_txt:
                 w+=1
                 split_lines = line.split(',')
-                id_postos.append(split_lines[0])
-                latitude.append(split_lines[1])
-                longitude.append(split_lines[2])
+                id_postos.append(int(split_lines[0]))
+                latitude.append(float(split_lines[1]))
+                longitude.append(float(split_lines[2]))
                 numero_posto.append(w)
 
         # Redimensiona as variáveis globais
@@ -1614,7 +1587,7 @@ class Test():
         # Definição das variáveis
         w = 0
         # Recebe e lê o arquivo
-        arquivo_chuva = r'c:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\SmallExample\2_Rainfall_Interpolation\input\3_rainfall_data.txt'
+        arquivo_chuva = r'c:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\Hidropixel - User Manual and algorithms\Algorithms\3 - Rainfall interpolation\Example\Input\3 - Rainfall data\3_rainfall_data.txt'
         with open(arquivo_chuva, 'r', encoding = 'utf-8') as arquivo_txt:
             # Armazena cabeçalho
             cabecalho = arquivo_txt.readline().strip()
@@ -1623,7 +1596,7 @@ class Test():
             linhas = arquivo_txt.readlines()
             self.blocos_chuva = len(linhas)
             self.tempo = np.zeros(self.blocos_chuva)
-            self.chuva = np.zeros((self.blocos_chuva,self.quantidade_postos))
+            self.chuva = np.zeros((self.blocos_chuva,(self.quantidade_postos)))
 
             # Retira informações do arquivo
             w = 0
@@ -1635,50 +1608,58 @@ class Test():
 
                 # Armazena chuva
                 for c in range(self.quantidade_postos):
-                    self.chuva[w][c] = split_line[c]
-                
+                    self.chuva[w][c] = split_line[c+1]
+                w +=1
+         
+    @optimize           
     def rainfall_interpolation(self):
         '''Esta função gera o arquivo com a precipitação por pixel por meio da interpolação dos valores das estações pluviométricas enviadas pelo usuário'''
         # Definição de variáveis
         numero_pixel = 0
         numerador = 0
         denominador = 0
+        distancia_y = 0
+        distancia_x = 0
+        rainfall = 0
+        numero_total_pix = np.sum(self.global_vars.bacia[self.global_vars.bacia==1])
+        print(numero_total_pix)
 
         # Gera o arquivo com precipitação interpolada por pixel
         arquivo = r'c:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\resultados_test_modelo\rainfall_interpolated.txt'
         with open(arquivo, 'w', encoding = 'utf-8') as arquivo_txt:
-            # Escreve cabeçalho
+            # JVD:optimize: Escreve cabeçalho
             arquivo_txt.write('Pixel,')
-            for w in range(self.blocos_chuva):
-                if w < self.blocos_chuva:
-                    arquivo_txt.write(f'{self.tempo[w]},')
-                else:
-                    arquivo_txt.write(f'{self.tempo[w]}\n')
+            arquivo_txt.write(','.join(map(str, self.tempo)) + '\n')
 
-            # interpolação da precipitação
+            # JVDoptimize: interpolação da precipitação
             for lin in range(self.rdc_vars.nlin):
                 for col in range(self.rdc_vars.ncol):
                     if self.global_vars.bacia[lin][col] == 1:
                         numero_pixel += 1
-                        linha = numero_pixel
+                        linha = str(numero_pixel)
                         x_pixel = self.X_minimo + (col * self.d_x) + (self.d_x / 2)
-                        y_pixel = self.Y_minimo - (lin * self.d_y) + (self.d_y / 2)
+                        y_pixel = self.Y_maximo - (lin * self.d_y) - (self.d_y / 2)
 
                         # Aplicação da fórmula de interpolação
                         for w in range(self.blocos_chuva):
+                            numerador = 0
+                            denominador = 0
                             for k in range(self.quantidade_postos):
                                 for q in range(self.quantidade_postos):
                                     if self.numero_posto[q] == self.id_postos[k]:
                                         distancia_y = self.latitude[k] - y_pixel
-                                        distancia_x = self.longitude[k] - x_pixel
+                                        distancia_x = self.longitude[k] - x_pixel                                
                                         distancia = ((distancia_x ** 2) + (distancia_y ** 2))**(1/2)
-                                        numerador += (self.chuva[w][q] / (distancia**2))
+                                        numerador += (float(self.chuva[w][q]) / (distancia**2))
                                         denominador += (1/(distancia**2))
                             rainfall = numerador / denominador
-                            linha += ',' + str(rainfall)     
-                        # Escreve informação no arquivo
-                        arquivo_txt.write(linha)
+                            linha = linha + ',' + f'{rainfall}'
 
+                        # Escreve informação no arquivo
+                        arquivo_txt.write(linha+'\n')
+                        # Apenas para visualizar o processamento
+                        print(f'[{numero_pixel}/{numero_total_pix}] ({numero_pixel/numero_total_pix*100:.2f}%)', end='\r')
+    @optimize
     def rainfall_interpolation_map(self):
         '''Se o botão save maps for clicado: gera os arquivos raster com precipitação interpolada por pixel por duração do evento'''
         # Cria variáveis
@@ -1690,13 +1671,15 @@ class Test():
         for w in range(self.blocos_chuva):
             # Pasta enviada pelo user
             path = r'c:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\resultados_test_modelo'
-            arquivo = path + f'\{str(self.tempo[w])}'
+            arquivo = path + f'\{str(self.tempo[w])}.RST'
 
             # interpolação da pricipitação para o evento em questão
             for lin in range(self.rdc_vars.nlin):
                 for col in range(self.rdc_vars.ncol):
                     if self.global_vars.bacia[lin][col] == 1:
                         numero_pixel += 1
+                        numerador = 0
+                        denominador = 0
                         for k in range(self.quantidade_postos):
                             for q in range(self.quantidade_postos):
                                 if self.numero_posto[q] == self.id_postos[k]:
@@ -1713,12 +1696,12 @@ class Test():
                         self.chuva_pixel[lin][col] = rainfall_pix
 
             num_pix_max = np.amax(self.chuva_pixel)
-            # Escreve arquivo raster (.rst) com a precipitação por pixel em toda bacia para o evento em questão
+            # Escreve arquivo raster (.RST) com a precipitação por pixel em toda bacia para o evento em questão
             dados_chuva_pixel = np.array([[float(self.chuva_pixel[lin][col]) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)])
             tipo_dados = gdalconst.GDT_Float32
 
             # Obtendo o driver o para escrita do arquivo em GeoTiff
-            driver = gdal.GetDriverByName('GTiff')
+            driver = gdal.GetDriverByName('RST')
 
             # Cria arquivo final
             dataset = driver.Create(arquivo, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
@@ -1749,11 +1732,9 @@ class Test():
             nomeRST = arquivo
             self.global_vars.metrordc = self.global_vars.metro
             self.escreve_RDC(nomeRST)          
-
+    @optimize
     def rainfall_excess(self):
         '''Esta função determina gera os arquivos associados a precipitação excedente de cada pixel presente na baica hidrográfica, fumentando-se no método do SCS-CN'''
-        self.fim = time.time()
-        print(f'{(self.fim - self.inicio)/60} min')
         a = 0
         # JVD: estrutura dos arrays
         self.time = np.zeros(50000)
@@ -1766,7 +1747,7 @@ class Test():
         self.Spotencial = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
 
         arquivo_precipitacao = r"C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\SmallExample\3_Hydrograph\input\3_rainfall_file.txt"
-        with open(arquivo_precipitacao, 'r') as arquivo_txt:
+        with open(arquivo_precipitacao, 'r', encoding = 'utf-8') as arquivo_txt:
             # Armazena cabeçalho do arquivo
             cabecalho = arquivo_txt.readline().strip()
             for lin in range(self.rdc_vars.nlin):
@@ -1785,7 +1766,7 @@ class Test():
                         line = arquivo_txt.readline().strip()
                         split_line = line.split(',')
                         a+=1
-                        for w in range(1, self.quantidade_blocos_chuva+1):
+                        for w in range(1, self.quantidade_blocos_chuva):
                             chuva_distribuida = float(split_line[w])
                             self.time[w] = self.time[w-1] + self.delta_t
 
@@ -1801,27 +1782,25 @@ class Test():
                                 self.hexc_pix[lin][w] = self.hacum[w] - self.hacum[w-1]
                                 
                         # Chuva excedente acumulada do pixel
-                        
                         self.chuva_acumulada_pixel[lin][col] = self.hacum[self.quantidade_blocos_chuva-1]
 
                         # Chuva total no pixel
                         self.chuva_total_pixel[lin][col] = Pacum
-                print('foi-se')
-        self.fim = time.time()
-        print(f'{(self.fim - self.inicio)/60} min')
-        a=0
-
+                        print(f'[{a}/{self.numero_total_pix}] ({a/self.numero_total_pix*100:.2f}%)', end='\r')
+    @optimize       
     def hidrograma_dlr(self):
         '''Esta função gera o hidrograma-DLR da bacia hidrográfica conforme os dados de precipitação enviados'''
         # Definição das variáveis
-        self.tempo_total = self.leh_tempo_viagem()
         Tmax = 0
+        a = 0
+        self.tempo_total = self.leh_tempo_viagem()
         self.Spotencial = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
         self.volume_total_pix = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
         self.vazao_pico = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
         self.tempo_pico = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
         self.TempoTotal_reclass = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
         self.vazao_pixel = np.zeros(50000)
+        self.tempo_intervalo = np.zeros(50000)
         # JVDoptmize: máximo tempo de viagem ao exutório
         tempo_total_bacia = self.tempo_total[self.global_vars.bacia == 1]
         Tmax = np.amax(tempo_total_bacia)
@@ -1846,6 +1825,7 @@ class Test():
         for lin in range(self.rdc_vars.nlin):
             for col in range(self.rdc_vars.ncol):
                 if self.global_vars.bacia[lin][col] == 1:
+                    a +=1
                     for w in range(0,self.num_intervalos):
                         if self.tempo_intervalo[w] >= self.tempo_total[lin][col]:
                             diferenca = -(self.tempo_total[lin][col] - self.tempo_intervalo[w])
@@ -1854,7 +1834,8 @@ class Test():
                         elif diferenca < diferenca_minima:
                             diferenca_minima = diferenca
                             self.TempoTotal_reclass[lin][col] = self.tempo_intervalo[w]
-
+                    print(f'Reclassificando o tempo... [{a}/{self.numero_total_pix}] ({a/self.numero_total_pix*100:.2f}%)', end='\r')
+        a = 0
         # Determinação do hidrograma
         # Dadas do arquivo de precipitação enviado
         numero_pixel = 0 
@@ -1867,19 +1848,21 @@ class Test():
         area_bacia = 0
 
         # lê hietograma 
-        arquivo_precipitacao = r'C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\Hidropixel - User Manual and algorithms\Algorithms\4 - Hydrograph\Example\Input\3 - Rainfall\3_rainfall_file.txt'
-        with open(arquivo_precipitacao, 'r') as arquivo_txt:
+        arquivo_precipitacao = r'c:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\resultados_test_modelo\hietograma_pe.txt'
+        with open(arquivo_precipitacao, 'r', encoding = 'utf-8') as arquivo_txt:
             # Armazena cabecalho do arquivo com a precipitação efetiva por pixel
             cabecalho = arquivo_txt.readline().strip()
 
             for lin in range(self.rdc_vars.nlin):
                 for col in range(self.rdc_vars.ncol):
                     if self.global_vars.bacia[lin][col] == 1:
+                        a+=1
                         # Armazena as linha do arquivo de precipitação efetiva
                         line = arquivo_txt.readline().strip()
                         split_line = line.split(',')
+                        pe_acumulada_pix = np.sum(np.array(list(map(float, split_line))))
                         for w in range(1, self.quantidade_blocos_chuva + 1):
-                            self.Pexc = split_line[w]
+                            self.Pexc = float(split_line[w])
                             self.time[w] = self.time[w-1] + self.delta_t
 
                             if self.Pexc > 0:
@@ -1895,7 +1878,7 @@ class Test():
                                 self.vazao_pixel[k] = self.Pexc
 
                         # Volume de água gerado por pixel pixel
-                        self.volume_total_pix[lin][col] = (self.chuva_acumulada_pixel[lin][col]/(10**3)) *(self.global_vars.dx**2) #em m³
+                        self.volume_total_pix[lin][col] = (pe_acumulada_pix/(10**3)) *(self.global_vars.dx**2) #em m³
                         # Volume total de água gerada em todo evento
                         self.volume_total += self.volume_total_pix[lin][col]
                         # Parâmetro para estimativa do armazenamento
@@ -1933,6 +1916,8 @@ class Test():
                             self.vazao_amortecida_pixel[k + 1] = 0                       
                             self.tempo_vazao_pixel[k+1] = self.tempo_vazao_pixel[k] + self.delta_t
                             k += 1
+
+                        print(f'\nCalculando vazão... [{a}/{self.numero_total_pix}] ({a/self.numero_total_pix*100:.2f}%)', end='\r')
 
             # Cálculo da área da bacia
             area_bacia = self.numero_total_pix * (self.global_vars.dx **2) # em m²
@@ -2064,10 +2049,10 @@ class Test():
         """
         Esta função constrói os arquivos de saída das diferentes funcionalidades do programa
         """
-        # Identifica a posição da extensão no arquivo .rst
-        pos_ext = nome_RST.find('.rst')
+        # Identifica a posição da extensão no arquivo .RST
+        pos_ext = nome_RST.find('.RST')
 
-        # Atribui o nome do arquivo .rst ao novo arquivo .rdc
+        # Atribui o nome do arquivo .RST ao novo arquivo .rdc
         nome_rdc = nome_RST[:pos_ext] + '.rdc'
 
         # Abrindo o arquivo 
@@ -2205,24 +2190,24 @@ class Test():
             rdc_file.write(f'legend cats : {0:1d}\n')
 
             # Escreve a linha sobre a criação da imagem
-            rdc_file.write(f'lineage     : This file was created automatically by an ARP and JVD PYTHON program')
+            rdc_file.write(f'lineage     : This file was created automatically by Hidropixel Plugin')
         
     def escreve_comprimento_acumulado(self):
         """
-        Esta função é responsável por formular os arquivos de saída (tanto o raster (.rst), quanto sua documentação (.rdc))
+        Esta função é responsável por formular os arquivos de saída (tanto o raster (.RST), quanto sua documentação (.rdc))
         para os dados referentes aos comprimentos da rede de drenagem da bacia hidrográfica
         """
 
         # Abrindo o arquivo(fn : file name) para escrita dos resultados
         file_path = r'C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\resultados_test_modelo'
-        fn_comp_acum = file_path  + r'\ComprimAcu.rst'
+        fn_comp_acum = file_path  + r'\ComprimAcu.RST'
 
         # Define os dados a serem escritos
         dados_comp_acum = np.array([[float(self.global_vars.Lac[lin][col]) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)]) #lac n existe
         tipo_dados = gdalconst.GDT_Float32
 
-        # Os arquivos terão formato rst
-        driver = gdal.GetDriverByName('GTiff')
+        # Os arquivos terão formato RST
+        driver = gdal.GetDriverByName('RST')
 
         # Cria arquivo final
         dataset = driver.Create(fn_comp_acum, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
@@ -2254,14 +2239,14 @@ class Test():
         self.escreve_RDC(nomeRST)
 
         # Escrevendo o resultado do comprimento da rede de drenagem
-        fn_comp_foz = file_path + r'\ComprimFoz.rst'
+        fn_comp_foz = file_path + r'\ComprimFoz.RST'
                
          # Define os dados a serem escritos
         dados_comp_foz = np.array([[float(self.global_vars.Lfoz[lin][col]) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)])
         tipo_dados = gdalconst.GDT_Float32
 
-        # Os arquivos terão formato rst
-        driver = gdal.GetDriverByName('GTiff')
+        # Os arquivos terão formato RST
+        driver = gdal.GetDriverByName('RST')
 
         # Cria arquivo final
         dataset = driver.Create(fn_comp_foz, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
@@ -2287,7 +2272,7 @@ class Test():
 
         # Definindo o caminho para o arquivo RST
         file_path = r'C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\resultados_test_modelo'
-        fn_num_cab = file_path + r'\numb_pixel_cabeceiras.rst'
+        fn_num_cab = file_path + r'\numb_pixel_cabeceiras.RST'
 
         # Definindo os dados a serem escritos
         dados_num_cab = np.array([[float(self.global_vars.numcabe[lin][col]) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)])
@@ -2296,7 +2281,7 @@ class Test():
         tipo_dados = gdalconst.GDT_Float32
 
         # Obtendo o driver para escrita do arquivo em GeoTiff
-        driver = gdal.GetDriverByName('GTiff')
+        driver = gdal.GetDriverByName('RST')
 
         # Criando o arquivo RST
         dataset = driver.Create(fn_num_cab, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
@@ -2329,19 +2314,19 @@ class Test():
 
     def escreve_conectividade(self):
         """
-        Esta função é responsável por formular os arquivos de saída (tanto o raster (.rst), quanto sua documentação (.rdc))
+        Esta função é responsável por formular os arquivos de saída (tanto o raster (.RST), quanto sua documentação (.rdc))
         para os dados referentes ao mapa de conectividade das cabeceiras da bacia hidrográfica
         """
         # Abrindo o arquivo(fn : file name) para escrita dos resultados
         file_path = r'C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\resultados_test_modelo'
-        fn_cab_pix = file_path + r'\CABEpix.rst'
+        fn_cab_pix = file_path + r'\CABEpix.RST'
 
         # Define os dados a serem escritos
         dados_cab_pix = np.array([[float(self.global_vars.CABEpix[lin][col]) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)])
         tipo_dados = gdalconst.GDT_Float32
 
-        # Os arquivos terão formato rst
-        driver = gdal.GetDriverByName('GTiff')
+        # Os arquivos terão formato RST
+        driver = gdal.GetDriverByName('RST')
 
         # Cria arquivo final
         dataset = driver.Create(fn_cab_pix, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
@@ -2373,14 +2358,14 @@ class Test():
         self.escreve_RDC(nomeRST)
 
         # Escrevendo o resultado do mapa de conectividade dos pixels da superficie a rede de drenagem
-        fn_n_conect_dren = file_path + r'\num_conexao_drenagem.rst'
+        fn_n_conect_dren = file_path + r'\num_conexao_drenagem.RST'
 
         # Define os dados a serem escritos
         dados_n_conect_dren = np.array([[float(self.global_vars.pixeldren[lin][col]) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)])
         tipo_dados = gdalconst.GDT_Float32
 
         # Obtendo o driver para escrita do arquivo em GeoTiff
-        driver = gdal.GetDriverByName('GTiff')
+        driver = gdal.GetDriverByName('RST')
 
         # Cria arquivo final
         dataset = driver.Create(fn_n_conect_dren, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
@@ -2406,7 +2391,7 @@ class Test():
         file_path = r'C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\resultados_test_modelo'
         fn_dados_tre_sup = file_path + r'\dados_trechos_superf.txt'
 
-        with open(fn_dados_tre_sup, 'w', encodig = 'utf-8') as arquivo_txt:
+        with open(fn_dados_tre_sup, 'w', encoding = 'utf-8') as arquivo_txt:
             arquivo_txt.write('{:<10}{:<6}{:<6}{:<10}{:<10}{:<12}{:<6}\n'.format('Cabeceira', 'Trecho', 'L(m)', 'Z_ini(m)', 'Z_fim(m)','Decliv(m/km)', 'Uso'))
             
             for self.global_vars.numcabeaux in range(self.global_vars.Ncabec):
@@ -2426,14 +2411,14 @@ class Test():
 
         # Abrindo o arquivo(fn : file name) para escrita dos resultados
         file_path = r'C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\resultados_test_modelo'
-        fn_decli_pix = file_path + r'\decliv_pixel.rst'
+        fn_decli_pix = file_path + r'\decliv_pixel.RST'
 
         # Define os dados a serem escritos
         dados_decli_pix = np.array([[float(self.global_vars.decliv_pixel[lin][col]) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)])
         tipo_dados = gdalconst.GDT_Float32
 
         # Obtendo o driver para escrita do arquivo em GeoTiff
-        driver = gdal.GetDriverByName('GTiff')
+        driver = gdal.GetDriverByName('RST')
         # Cria arquivo final
         dataset = driver.Create(fn_decli_pix, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
 
@@ -2468,14 +2453,14 @@ class Test():
 
         # Abrindo o arquivo(fn : file name) para escrita dos resultados
         file_path = r'C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\resultados_test_modelo'
-        fn_decli_pix_jus = file_path + r'\decliv_pixel_jus.rst'
+        fn_decli_pix_jus = file_path + r'\decliv_pixel_jus.RST'
         
         # Define os dados a serem escritos
         dados_decli_pix_jus = np.array([[float(self.global_vars.DECLIVpixjus[lin][col]) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)])
         tipo_dados = gdalconst.GDT_Float32
 
         # Obtendo o driver para escrita do arquivo em GeoTiff
-        driver = gdal.GetDriverByName('GTiff')
+        driver = gdal.GetDriverByName('RST')
 
         # Cria arquivo final
         dataset = driver.Create(fn_decli_pix_jus, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
@@ -2511,14 +2496,14 @@ class Test():
 
         # Abrindo o arquivo(fn : file name) para escrita dos resultados
         file_path = r'C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\resultados_test_modelo'
-        fn_dist_rel_tre = file_path + r'\DISTtre.rst'
+        fn_dist_rel_tre = file_path + r'\DISTtre.RST'
         
         # Define os dados a serem escritos
         dados_dist_rel_tre = np.array([[float(self.global_vars.DISTtre[lin][col]) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)])
         tipo_dados = gdalconst.GDT_Float32
 
         # Obtendo o driver para escrita do arquivo em GeoTiff
-        driver = gdal.GetDriverByName('GTiff')
+        driver = gdal.GetDriverByName('RST')
 
         # Cria arquivo final
         dataset = driver.Create(fn_dist_rel_tre, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
@@ -2554,14 +2539,14 @@ class Test():
 
         # Abrindo o arquivo(fn : file name) para escrita dos resultados
         file_path = r'C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\resultados_test_modelo'
-        fn_num_pix_dren = file_path + 'num_pixels_drenagem.rst'
+        fn_num_pix_dren = file_path + 'num_pixels_drenagem.RST'
         
         # Define os dados a serem escritos
         dados_num_pix_dren = np.array([[float(self.global_vars.pixeldren[lin][col]) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)])
         tipo_dados = gdalconst.GDT_Float32
 
         # Obtendo o driver para escrita do arquivo em GeoTiff
-        driver = gdal.GetDriverByName('GTiff')
+        driver = gdal.GetDriverByName('RST')
 
         # Cria arquivo final
         dataset = driver.Create(fn_num_pix_dren, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
@@ -2595,14 +2580,14 @@ class Test():
         '''Esta função escreve a numeração dos trechos'''
         # Abrindo o arquivo(fn : file name) para escrita dos resultados
         file_path = r'C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\resultados_test_modelo'
-        fn_num_tre = file_path + r'\num_pixels_drenagem.rst'
+        fn_num_tre = file_path + r'\num_pixels_drenagem.RST'
 
         # Define os dados a serem escritos
         dados_num_tre = np.array([[float(self.global_vars.refcabtre[lin][col]) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)])
         tipo_dados = gdalconst.GDT_Float32
 
         # Obtendo o driver para escrita do arquivo em GeoTiff
-        driver = gdal.GetDriverByName('GTiff')
+        driver = gdal.GetDriverByName('RST')
 
         # Cria arquivo final
         dataset = driver.Create(fn_num_tre, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
@@ -2638,14 +2623,14 @@ class Test():
 
         # Abrindo o arquivo(fn : file name) para escrita dos resultados
         file_path = r'C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\resultados_test_modelo'
-        fn_temp_canal = file_path + r'\TempoCanal.rst'
+        fn_temp_canal = file_path + r'\TempoCanal.RST'
 
         # Define os dados a serem escritos
         dados_temp_canal = np.array([[float(self.global_vars.TempoRioR[lin][col]) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)])
         tipo_dados = gdalconst.GDT_Float32
 
         # Obtendo o driver para escrita do arquivo em GeoTiff
-        driver = gdal.GetDriverByName('GTiff')
+        driver = gdal.GetDriverByName('RST')
 
         # Cria arquivo final
         dataset = driver.Create(fn_temp_canal, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
@@ -2679,14 +2664,14 @@ class Test():
         '''Esta função constrói o mapa dos tempos de deslocamento da água para os píxel de superfícies'''
         # Abrindo o arquivo(fn : file name) para escrita dos resultados
         file_path = r'C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\resultados_test_modelo'
-        fn_temp_sup = file_path + r'\TempoSup_por_cabeceira.rst'
+        fn_temp_sup = file_path + r'\TempoSup_por_cabeceira.RST'
         
         # Define os dados a serem escritos
         dados_temp_sup = np.array([[float(self.global_vars.TScabe2d[lin][col]) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)])
         tipo_dados = gdalconst.GDT_Float32
 
         # Obtendo o driver para escrita do arquivo em GeoTiff
-        driver = gdal.GetDriverByName('GTiff')
+        driver = gdal.GetDriverByName('RST')
 
         # Cria arquivo final
         dataset = driver.Create(fn_temp_sup, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
@@ -2718,14 +2703,14 @@ class Test():
 
         # TempoS de deslocamento no mapa - píxels não fazem parte da cabeceira
 
-        fn_temp_sup_Ncabe = file_path + r'\TempoSup_nao_de_cabeceira.rst'
+        fn_temp_sup_Ncabe = file_path + r'\TempoSup_nao_de_cabeceira.RST'
 
         # Define os dados a serem escritos
         dados_temp_sup_Ncabe = np.array([[float(self.global_vars.TSnaocabe2d[lin][col]) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)])
         tipo_dados = gdalconst.GDT_Float32
 
         # Obtendo o driver para escrita do arquivo em GeoTiff
-        driver = gdal.GetDriverByName('GTiff')
+        driver = gdal.GetDriverByName('RST')
 
         # Cria arquivo final
         dataset = driver.Create(fn_temp_sup_Ncabe, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
@@ -2748,14 +2733,14 @@ class Test():
         self.escreve_RDC(nomeRST)
 
         # Tempo de deslocamento no mapa - todos os píxels
-        fn_temp_sup_td = file_path + r'\TempoSup_todos.rst'
+        fn_temp_sup_td = file_path + r'\TempoSup_todos.RST'
 
         # Define os dados a serem escritos
         dados_temp_sup_td = np.array([[float(self.global_vars.TStodos2d[lin][col]) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)])
         tipo_dados = gdalconst.GDT_Float32
 
         # Obtendo o driver para escrita do arquivo em GeoTiff
-        driver = gdal.GetDriverByName('GTiff')
+        driver = gdal.GetDriverByName('RST')
 
         # Cria arquivo final
         dataset = driver.Create(fn_temp_sup_td, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
@@ -2782,14 +2767,14 @@ class Test():
 
         # Abrindo o arquivo(fn : file name) para escrita dos resultados
         file_path = r'C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\resultados_test_modelo'
-        fn_temp_total = file_path + r'\TempoTotal.rst'
+        fn_temp_total = file_path + r'\TempoTotal.RST'
         
         # Define os dados a serem escritos
         dados_temp_total = np.array([[float(self.global_vars.TempoTot[lin][col]) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)]) #tempo total não exist
         tipo_dados = gdalconst.GDT_Float32
 
         # Obtendo o driver para escrita do arquivo em GeoTiff
-        driver = gdal.GetDriverByName('GTiff')
+        driver = gdal.GetDriverByName('RST')
 
         # Cria arquivo final
         dataset = driver.Create(fn_temp_total, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
@@ -2836,14 +2821,14 @@ class Test():
 
         # Abrindo o arquivo(fn : file name) para escrita dos resultados
         file_path = r'C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\resultados_test_modelo'
-        fn_tre_pix = file_path + r'\TREpix.rst'
+        fn_tre_pix = file_path + r'\TREpix.RST'
 
         # Define os dados a serem escritos
         dados_tre_pix = np.array([[float(self.global_vars.TREpix[lin][col]) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)])
         tipo_dados = gdalconst.GDT_Float32
 
         # Obtendo o driver para escrita do arquivo em GeoTiff
-        driver = gdal.GetDriverByName('GTiff')
+        driver = gdal.GetDriverByName('RST')
         
         # Cria arquivo final
         dataset = driver.Create(fn_tre_pix, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
@@ -2878,14 +2863,14 @@ class Test():
 
         # Abrindo o arquivo(fn : file name) para escrita dos resultados
         file_path = r'C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\resultados_test_modelo'
-        fn_temp_pix_jus = file_path + r'\tempo_pixel_jus.rst'
+        fn_temp_pix_jus = file_path + r'\tempo_pixel_jus.RST'
 
         # Define os dados a serem escritos
         dados_temp_pix_jus = np.array([[float(self.global_vars.TSpix[lin][col]) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)])
         tipo_dados = gdalconst.GDT_Float32
 
         # Obtendo o driver para escrita do arquivo em GeoTiff
-        driver = gdal.GetDriverByName('GTiff')
+        driver = gdal.GetDriverByName('RST')
         
         # Cria arquivo final
         dataset = driver.Create(fn_temp_pix_jus, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
@@ -2915,13 +2900,13 @@ class Test():
         self.min_max()
         self.escreve_RDC(nomeRST)
 
-        fn_temp_pix_jus_acum = file_path + r'\tempo_pixel_jus_acum.rst'
+        fn_temp_pix_jus_acum = file_path + r'\tempo_pixel_jus_acum.RST'
         # Define os dados a serem escritos
         dados_temp_pix_jus_acum = np.array([[float(self.global_vars.TSpixacum[lin][col]) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)])
         tipo_dado = gdalconst.GDT_Float32
 
         # Obtendo o driver para escrita do arquivo em GeoTiff
-        driver = gdal.GetDriverByName('GTiff')
+        driver = gdal.GetDriverByName('RST')
 
         # Cria o arquivo final
         dataset = driver.Create(fn_temp_pix_jus_acum,self.rdc_vars.ncol, self.rdc_vars.ncol, 1, tipo_dado)
@@ -2938,29 +2923,25 @@ class Test():
     def escreve_hidrograma_dlr(self):
         '''Esta função gera contento o hidrograma total da bacia hidrográfica estudada'''
         file_name = r'C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\resultados_test_modelo\hidrograma.txt'
-        with open(file_name, 'w') as arquivo_txt:
+        with open(file_name, 'w', encoding = 'utf-8') as arquivo_txt:
             arquivo_txt.write('tempo(min), vazão calculada(m³/s)\n')
             for k in range(self.blocos_vazao):
                 arquivo_txt.write(f'{self.tempo_vazao_pixel[k]}, {self.vazao[k]}\n')
 
     def escreve_hietograma_pe(self):
         '''Esta função gera o arquivo contento o valor da precipitação efetiva por pixel durante os blocos de chuva'''
-        numero_pixel = 0
+
         # Recebe diretório e nome do arquivo do usurário      
-        arquivo = r''
+        arquivo = r'C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\resultados_test_modelo\hietograma_pe.txt'
         with open(arquivo, 'w', encoding = 'utf-8') as arquivo_txt:
-            # Escreve cabeçalho com o número de pixel e de eventos de precipitação 
+            # JVD:optimize: Escreve cabeçalho
             arquivo_txt.write('Pixel,')
-            for w in range(self.blocos_chuva):
-                if w < self.blocos_chuva:
-                    arquivo_txt.write(f'{self.tempo[w]},')
-                else:
-                    arquivo_txt.write(f'{self.tempo[w]}')
+            arquivo_txt.write(','.join(map(str, self.time)) + '\n')
             
             # Escreve linhas com dados de precipitação efetiva por pixel
             for k in range(self.numero_total_pix):
-                for w in range(self.blocos_chuva):
-                    if w < self.blocos_chuva:
+                for w in range(self.quantidade_blocos_chuva):
+                    if w <  self.quantidade_blocos_chuva-1:
                         arquivo_txt.write(f'{k},{self.hexc_pix[k][w]}')
                     else:
                         arquivo_txt.write(f'{self.hexc_pix[k][w]}\n')
@@ -2973,7 +2954,7 @@ class Test():
         # Abrindo o arquivo(fn : file name) para escrita dos resultados
         # fn_numb_pix = self.dlg_exc_rain.le_1_pg4.text()
         file_path = r'C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\resultados_test_modelo'
-        fn_numb_pix = file_path + r'\numb_pixel_bacia.rst'
+        fn_numb_pix = file_path + r'\numb_pixel_bacia.RST'
 
         
         # Define os dados a serem escritos
@@ -2981,10 +2962,12 @@ class Test():
         tipo_dados = gdalconst.GDT_Float32
 
         # Obtendo o driver para escrita do arquivo em GeoTiff
-        driver = gdal.GetDriverByName('GTiff')
+        driver = gdal.GetDriverByName('RST')
 
         # Cria arquivo final
         dataset = driver.Create(fn_numb_pix, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
+        dataset.SetGeoTransform(self.rdc_vars.geotransform)
+        dataset.SetProjection(self.rdc_vars.projection)
 
         # Escreve os dados na banda do arquivo
         banda = dataset.GetRasterBand(1)
@@ -3020,17 +3003,19 @@ class Test():
 
         # Abrindo o arquivo(fn : file name) para escrita dos resultados
         file_path = r'C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\resultados_test_modelo'
-        fn_perda_ini = file_path + r'\perdas_iniciais.rst'
+        fn_perda_ini = file_path + r'\perdas_iniciais.RST'
         
         # Define os dados a serem escritos
         dados_perda_ini = np.array([[float(self.perdas_iniciais[lin][col]) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)])
         tipo_dados = gdalconst.GDT_Float32
 
         # Obtendo o driver para escrita do arquivo em GeoTiff
-        driver = gdal.GetDriverByName('GTiff')
+        driver = gdal.GetDriverByName('RST')
 
         # Cria arquivo final
         dataset = driver.Create(fn_perda_ini, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
+        dataset.SetGeoTransform(self.rdc_vars.geotransform)
+        dataset.SetProjection(self.rdc_vars.projection)
 
         # Escreve os dados na banda do arquivo
         banda = dataset.GetRasterBand(1)
@@ -3066,17 +3051,19 @@ class Test():
 
         # Abrindo o arquivo(fn : file name) para escrita dos resultados
         file_path = r'C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\resultados_test_modelo'
-        fn_Spotencial = file_path + r'\Spotencial.rst'
+        fn_Spotencial = file_path + r'\Spotencial.RST'
         
         # Define os dados a serem escritos
         dados_Spotencial = np.array([[float(self.Spotencial[lin][col]) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)])
         tipo_dados = gdalconst.GDT_Float32
 
         # Obtendo o driver para escrita do arquivo em GeoTiff
-        driver = gdal.GetDriverByName('GTiff')
+        driver = gdal.GetDriverByName('RST')
 
         # Cria arquivo final
         dataset = driver.Create(fn_Spotencial, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
+        dataset.SetGeoTransform(self.rdc_vars.geotransform)
+        dataset.SetProjection(self.rdc_vars.projection)
 
         # Escreve os dados na banda do arquivo
         banda = dataset.GetRasterBand(1)
@@ -3112,17 +3099,19 @@ class Test():
 
         # Abrindo o arquivo(fn : file name) para escrita dos resultados
         file_path = r'C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\resultados_test_modelo'
-        fn_pe_acum = file_path + r'\chuva_acumulada_pixel.rst'
+        fn_pe_acum = file_path + r'\chuva_acumulada_pixel.RST'
         
         # Define os dados a serem escritos
         dados_pe_acum = np.array([[float(self.chuva_acumulada_pixel[lin][col]) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)])
         tipo_dados = gdalconst.GDT_Float32
 
         # Obtendo o driver para escrita do arquivo em GeoTiff
-        driver = gdal.GetDriverByName('GTiff')
+        driver = gdal.GetDriverByName('RST')
 
         # Cria arquivo final
         dataset = driver.Create(fn_pe_acum, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
+        dataset.SetGeoTransform(self.rdc_vars.geotransform)
+        dataset.SetProjection(self.rdc_vars.projection)
 
         # Escreve os dados na banda do arquivo
         banda = dataset.GetRasterBand(1)
@@ -3158,17 +3147,19 @@ class Test():
 
         # Abrindo o arquivo(fn : file name) para escrita dos resultados
         file_path = r'C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\resultados_test_modelo'
-        fn_p_acum = file_path + r'\chuva_total_pixel.rst'
+        fn_p_acum = file_path + r'\chuva_total_pixel.RST'
         
         # Define os dados a serem escritos
         dados_p_acum = np.array([[float(self.chuva_total_pixel[lin][col]) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)])
         tipo_dados = gdalconst.GDT_Float32
 
         # Obtendo o driver para escrita do arquivo em GeoTiff
-        driver = gdal.GetDriverByName('GTiff')
+        driver = gdal.GetDriverByName('RST')
 
         # Cria arquivo final
         dataset = driver.Create(fn_p_acum, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
+        dataset.SetGeoTransform(self.rdc_vars.geotransform)
+        dataset.SetProjection(self.rdc_vars.projection)
 
         # Escreve os dados na banda do arquivo
         banda = dataset.GetRasterBand(1)
@@ -3187,10 +3178,10 @@ class Test():
         self.rdc_vars.tipoMM = 2
         self.rdc_vars.VarMM2 = self.chuva_total_pixel
         self.rdc_vars.i3 = 0 
-        self.rdc_vars.Xmin3 = self.rdc_vars.xmin
-        self.rdc_vars.Xmax3 = self.rdc_vars.xmax
-        self.rdc_vars.Ymin3 = self.rdc_vars.ymin
-        self.rdc_vars.Ymax3 = self.rdc_vars.ymax
+        self.rdc_vars.Xmin3 = self.X_minimo
+        self.rdc_vars.Xmax3 = self.X_maximo
+        self.rdc_vars.Ymin3 = self.Y_minimo
+        self.rdc_vars.Ymax3 = self.Y_maximo
         self.rdc_vars.Varmax = p_acum_max
         self.rdc_vars.Varmin = 0
         nomeRST = fn_p_acum
@@ -3204,17 +3195,19 @@ class Test():
 
         # Abrindo o arquivo(fn : file name) para escrita dos resultados
         file_path = r'C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\resultados_test_modelo'
-        fn_vol = file_path + r'\volume_total_pix.rst'
+        fn_vol = file_path + r'\volume_total_pix.RST'
         
         # Define os dados a serem escritos
         dados_vol = np.array([[float(self.volume_total_pix[lin][col]) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)])
         tipo_dados = gdalconst.GDT_Float32
 
         # Obtendo o driver para escrita do arquivo em GeoTiff
-        driver = gdal.GetDriverByName('GTiff')
+        driver = gdal.GetDriverByName('RST')
 
         # Cria arquivo final
         dataset = driver.Create(fn_vol, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
+        dataset.SetGeoTransform(self.rdc_vars.geotransform)
+        dataset.SetProjection(self.rdc_vars.projection)
 
         # Escreve os dados na banda do arquivo
         banda = dataset.GetRasterBand(1)
@@ -3233,34 +3226,42 @@ class Test():
         self.rdc_vars.tipoMM = 2
         self.rdc_vars.VarMM2 = self.volume_total_pix
         self.rdc_vars.i3 = 0 
-        self.rdc_vars.Xmin3 = self.rdc_vars.xmin
-        self.rdc_vars.Xmax3 = self.rdc_vars.xmax
-        self.rdc_vars.Ymin3 = self.rdc_vars.ymin
-        self.rdc_vars.Ymax3 = self.rdc_vars.ymax
+        self.rdc_vars.Xmin3 = self.X_minimo
+        self.rdc_vars.Xmax3 = self.X_maximo
+        self.rdc_vars.Ymin3 = self.Y_minimo
+        self.rdc_vars.Ymax3 = self.Y_maximo
         self.rdc_vars.Varmax = vol_max
         self.rdc_vars.Varmin = 0
         nomeRST = fn_vol
         self.global_vars.metrordc = self.global_vars.metro
         self.escreve_RDC(nomeRST)  
 
-    def escreve_vazao_pico_pixel(self):
-        '''Esta função gera o arquivo raster contendo o volume gerado por pixel presente na bacia hidrográfica'''
+    def escreve_vazao_pico_pixel(self, unit):
+        '''Esta função gera o arquivo raster contendo o volume gerado por pixel presente na bacia hidrográfica
+           unit: identifica a unidade da vazão escolhida pelo usuário;
+                - unit == 1: m³/s
+                - unit != 1: L/s'''
         # JVDoptmize: determina precipitação máxima acumulada
         vazao_pixo_max = np.amax(self.vazao_pico)
 
         # Abrindo o arquivo(fn : file name) para escrita dos resultados
         file_path = r'C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\resultados_test_modelo'
-        fn_vazao_pico = file_path + r'\vazao_pico_pixel.rst'
-        
-        # Define os dados a serem escritos
-        dados_vazao_pico = np.array([[float(self.volume_total_pix[lin][col]) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)])
-        tipo_dados = gdalconst.GDT_Float32
+        fn_vazao_pico = file_path + r'\vazao_pico_pixel.RST'
 
+        # Define os dados a serem escritos
+        if unit == 1:
+            dados_vazao_pico = np.array([[float(self.volume_total_pix[lin][col]) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)])
+            tipo_dados = gdalconst.GDT_Float32
+        else:
+            dados_vazao_pico = np.array([[float(self.volume_total_pix[lin][col]/1000) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)])
+            tipo_dados = gdalconst.GDT_Float32            
         # Obtendo o driver para escrita do arquivo em GeoTiff
-        driver = gdal.GetDriverByName('GTiff')
+        driver = gdal.GetDriverByName('RST')
 
         # Cria arquivo final
         dataset = driver.Create(fn_vazao_pico, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
+        dataset.SetGeoTransform(self.rdc_vars.geotransform)
+        dataset.SetProjection(self.rdc_vars.projection)
 
         # Escreve os dados na banda do arquivo
         banda = dataset.GetRasterBand(1)
@@ -3279,10 +3280,10 @@ class Test():
         self.rdc_vars.tipoMM = 2
         self.rdc_vars.VarMM2 = self.vazao_pico
         self.rdc_vars.i3 = 0 
-        self.rdc_vars.Xmin3 = self.rdc_vars.xmin
-        self.rdc_vars.Xmax3 = self.rdc_vars.xmax
-        self.rdc_vars.Ymin3 = self.rdc_vars.ymin
-        self.rdc_vars.Ymax3 = self.rdc_vars.ymax
+        self.rdc_vars.Xmin3 = self.X_minimo
+        self.rdc_vars.Xmax3 = self.X_maximo
+        self.rdc_vars.Ymin3 = self.Y_minimo
+        self.rdc_vars.Ymax3 = self.Y_maximo
         self.rdc_vars.Varmax = vazao_pixo_max
         self.rdc_vars.Varmin = 0
         nomeRST = fn_vazao_pico
@@ -3293,8 +3294,8 @@ class Test():
         '''Esta função é responsável por gerar o arquivo contento a precipitação efetiva para a bacia hidrográfica em questão'''
         # Abrindo o arquivo(fn : file name) para escrita dos resultados
         file_path = r'C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\resultados_test_modelo'
-        fn_p_calc = file_path + r'\precipitacao_efetiva_calculada.txt'
-        with open(fn_p_calc, 'w') as arquivo_txt:
+        fn_p_calc = file_path + r'\pe_calculada.txt'
+        with open(fn_p_calc, 'w', encoding='utf-8') as arquivo_txt:
             arquivo_txt.write(f'Calculated excess rainfall (mm) = {self.chuva_excedente_calc}')
 
     def run_flow_tt(self):
@@ -3319,7 +3320,8 @@ class Test():
         self.global_vars.diagonal = 1.4142
         # Funções de leitura dos arquivos
         print('Lendo arquivos de entrada...')
-        self.leh_bacia()
+        arquivo_bacia = r'c:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\SmallExample\input_binary\1_WATERSHED_EXbin.RST'
+        self.leh_bacia(arquivo_bacia, 1)
         self.leh_caracteristica_dRios()
         self.leh_classes_rios()
         self.leh_direcoes_de_fluxo()
@@ -3332,7 +3334,7 @@ class Test():
         # Funções de processamento
         print('\nIniciando processamento...\n')
 
-        if self.rdc_vars.unidaderef3 =='deg':
+        if self.rdc_vars.unidaderef =='deg':
             # Sistema está em graus, assumindo lat e long: será feita a projeção para metros
             self.global_vars.metro = 0
         else:
@@ -3366,7 +3368,7 @@ class Test():
         self.tempo_canal()
         
         print('Processando tempo total...\n')
-        self.tempo_total()
+        self.tempo_total_func()
 
         print('\nEscrevendo arquivos de saída...\n')  
         self.escreve_conectividade()
@@ -3388,44 +3390,92 @@ class Test():
     def run_rainfall_interpolation(self, map_file):
         '''Esta função organiza a execução da função que realiza a interpolação da precipitação para todos os pixels presentes na bacia hidrográfica
            '''
+        start = perf_counter()
+        # Initial configuration
+        if self.rdc_vars.unidaderef =='deg':
+            # Sistema está em graus, assumindo lat e long: será feita a projeção para metros
+            self.global_vars.metro = 0
+        else:
+            # Sistema está em metros, não é preciso fazer a projeção para metros
+            self.global_vars.metro = 1
+
         # Reading input files
         print('Reading input files')
-        arquivo_bacia = r"C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\SmallExample\3_Hydrograph\input\1_WATERSHED_EX.RST"
+        arquivo_bacia = r"c:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\SmallExample\input_binary\1_WATERSHED_EXbin.RST"
         self.leh_bacia(arquivo_bacia, 2)
         self.leh_posto_pluv()
         self.leh_arquivo_precipitacao()
 
         # Processing and wrinting output files
-        print('Writing outputs...')
+        print('\nWriting outputs...')
         if map_file == 1:
             self.rainfall_interpolation_map()
         else:    
             self.rainfall_interpolation()
+        end = perf_counter()
+        print(f'The processing time was{end-start}')
 
     def run_exc_rain(self):
         '''Esta função configura a ordem de execução da rotina excess rainfall'''
+        start = perf_counter()
+        # Initial configuration
+        if self.rdc_vars.unidaderef =='deg':
+            # Sistema está em graus, assumindo lat e long: será feita a projeção para metros
+            self.global_vars.metro = 0
+        else:
+            # Sistema está em metros, não é preciso fazer a projeção para metros
+            self.global_vars.metro = 1
+
         # Reading input files
         print('Reading input files')
-        arquivo_bacia = r"c:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\Hidropixel - User Manual and algorithms\Algorithms\2 - Travel time\Example\Input\1 - Watershed\1_watershed.RST"
+        arquivo_bacia = r"c:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\SmallExample\input_binary\1_WATERSHED_EXbin.RST"
         self.leh_bacia(arquivo_bacia, 2)
-        # self.leh_CN()
-        # self.numera_pix_bacia()
-        # self.leh_parametros()
-        # self.leh_precip_distribuida()
+        self.leh_CN()
+        self.numera_pix_bacia()
+        self.leh_parametros()
+        self.leh_precip_distribuida()
         
-        # # Processing and wrinting output files
-        # self.rainfall_excess()    
-        # print('Writing outputs...')
-        # self.escreve_numb_pix_bacia()
-        # self.escreve_S_potencial()
-        # self.escreve_perdas_ini()
-        # self.escreve_precipitacao_excedente()
-        # self.escreve_precipitacao_total_acum()
-        # self.escreve_hietograma_pe()
-        
-    # def run_flow_routing(self):
-    #     '''Esta funão ordena a execução das funções pertencentes a rotina flow routing'''
+        # Processing and wrinting output files
+        self.rainfall_excess()    
+        print('Writing outputs...')
+        self.escreve_numb_pix_bacia()
+        self.escreve_S_potencial()
+        self.escreve_perdas_ini()
+        self.escreve_precipitacao_total_acum()
+        self.escreve_precipitacao_excedente()
+        self.escreve_hietograma_pe()
+        end = perf_counter()
+        print(f'The processing time was: {(end-start)/60} min')     
+
+    def run_flow_routing(self):
+        '''Esta função ordena a execução das funções pertencentes a rotina flow routing'''
+        start = perf_counter()
+        # Initial configuration
+        if self.rdc_vars.unidaderef =='deg':
+            # Sistema está em graus, assumindo lat e long: será feita a projeção para metros
+            self.global_vars.metro = 0
+        else:
+            # Sistema está em metros, não é preciso fazer a projeção para metros
+            self.global_vars.metro = 1
+            
+        # Reading input files
+        print('Reading input files')
+        arquivo_bacia = r"c:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\SmallExample\input_binary\1_WATERSHED_EXbin.RST"
+        self.leh_bacia(arquivo_bacia, 3)
+        self.numera_pix_bacia()
+        self.leh_precip_distribuida()
+        self.leh_parametros()
+        # Processing and wrinting output files
+        print('Processing and Writing outputs...')
+        self.hidrograma_dlr()
+        self.escreve_vazao_pico_pixel(1)
+        self.escreve_volume_gerado_pixel()
+        self.escreve_pe_calculada()
+        self.escreve_hietograma_pe()
+        end = perf_counter()
+        print(f'The processing time was: {(end-start)/60} min')
 
 cla_test = Test()
-cla_test.run_exc_rain()
 # cla_test.run_rainfall_interpolation(2)
+# cla_test.run_exc_rain()
+cla_test.run_flow_routing()

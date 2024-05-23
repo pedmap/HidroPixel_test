@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>724</width>
-    <height>627</height>
+    <width>720</width>
+    <height>620</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -3104,7 +3104,7 @@ li.checked::marker { content: &quot;\2612&quot;; }
                  <string notr="true"/>
                 </property>
                 <property name="value">
-                 <number>24</number>
+                 <number>0</number>
                 </property>
                </widget>
               </item>
