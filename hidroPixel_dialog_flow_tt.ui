@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>720</width>
+    <width>744</width>
     <height>620</height>
    </rect>
   </property>
@@ -80,7 +80,7 @@
             <item row="2" column="0">
              <widget class="QScrollArea" name="scrollArea">
               <property name="sizePolicy">
-               <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+               <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
                 <horstretch>0</horstretch>
                 <verstretch>0</verstretch>
                </sizepolicy>
@@ -99,8 +99,8 @@
                 <rect>
                  <x>0</x>
                  <y>0</y>
-                 <width>658</width>
-                 <height>448</height>
+                 <width>682</width>
+                 <height>451</height>
                 </rect>
                </property>
                <layout class="QGridLayout" name="gridLayout_5">
@@ -158,57 +158,6 @@
                    <enum>QFrame::Raised</enum>
                   </property>
                   <layout class="QGridLayout" name="gridLayout_11">
-                   <item row="0" column="0">
-                    <widget class="QLabel" name="label_23">
-                     <property name="text">
-                      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;justify&quot;&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Flow direction code:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                     </property>
-                    </widget>
-                   </item>
-                   <item row="0" column="4">
-                    <widget class="QLabel" name="label_24">
-                     <property name="sizePolicy">
-                      <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-                       <horstretch>0</horstretch>
-                       <verstretch>0</verstretch>
-                      </sizepolicy>
-                     </property>
-                     <property name="minimumSize">
-                      <size>
-                       <width>16</width>
-                       <height>16</height>
-                      </size>
-                     </property>
-                     <property name="maximumSize">
-                      <size>
-                       <width>16</width>
-                       <height>16</height>
-                      </size>
-                     </property>
-                     <property name="toolTip">
-                      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Add the flow direction code. The value for each direction code might be an integer type and different from each other.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                     </property>
-                     <property name="whatsThis">
-                      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Add the description or function of the object&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                     </property>
-                     <property name="text">
-                      <string/>
-                     </property>
-                     <property name="pixmap">
-                      <pixmap>tip_icon.png</pixmap>
-                     </property>
-                    </widget>
-                   </item>
-                   <item row="1" column="0">
-                    <widget class="QLabel" name="label_65">
-                     <property name="text">
-                      <string/>
-                     </property>
-                     <property name="pixmap">
-                      <pixmap>flowdirs.png</pixmap>
-                     </property>
-                    </widget>
-                   </item>
                    <item row="1" column="1">
                     <spacer name="horizontalSpacer_5">
                      <property name="orientation">
@@ -226,8 +175,8 @@
                     </spacer>
                    </item>
                    <item row="1" column="2">
-                    <layout class="QHBoxLayout" name="horizontalLayout_24">
-                     <item>
+                    <layout class="QGridLayout" name="gridLayout_20">
+                     <item row="0" column="0">
                       <layout class="QVBoxLayout" name="verticalLayout_3">
                        <item>
                         <layout class="QHBoxLayout" name="horizontalLayout_11">
@@ -339,7 +288,7 @@
                        </item>
                       </layout>
                      </item>
-                     <item>
+                     <item row="0" column="1">
                       <layout class="QVBoxLayout" name="verticalLayout_9">
                        <item>
                         <layout class="QHBoxLayout" name="horizontalLayout_20">
@@ -453,6 +402,23 @@
                      </item>
                     </layout>
                    </item>
+                   <item row="0" column="0">
+                    <widget class="QLabel" name="label_23">
+                     <property name="text">
+                      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;justify&quot;&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Flow direction code:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="1" column="0">
+                    <widget class="QLabel" name="label_65">
+                     <property name="text">
+                      <string/>
+                     </property>
+                     <property name="pixmap">
+                      <pixmap>flowdirs.png</pixmap>
+                     </property>
+                    </widget>
+                   </item>
                    <item row="1" column="3">
                     <spacer name="horizontalSpacer_2">
                      <property name="orientation">
@@ -465,6 +431,40 @@
                       </size>
                      </property>
                     </spacer>
+                   </item>
+                   <item row="0" column="4">
+                    <widget class="QLabel" name="label_24">
+                     <property name="sizePolicy">
+                      <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                       <horstretch>0</horstretch>
+                       <verstretch>0</verstretch>
+                      </sizepolicy>
+                     </property>
+                     <property name="minimumSize">
+                      <size>
+                       <width>16</width>
+                       <height>16</height>
+                      </size>
+                     </property>
+                     <property name="maximumSize">
+                      <size>
+                       <width>16</width>
+                       <height>16</height>
+                      </size>
+                     </property>
+                     <property name="toolTip">
+                      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Add the flow direction code. The value for each direction code might be an integer type and different from each other.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                     </property>
+                     <property name="whatsThis">
+                      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Add the description or function of the object&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                     </property>
+                     <property name="text">
+                      <string/>
+                     </property>
+                     <property name="pixmap">
+                      <pixmap>tip_icon.png</pixmap>
+                     </property>
+                    </widget>
                    </item>
                   </layout>
                  </widget>
@@ -843,7 +843,7 @@
                 <rect>
                  <x>0</x>
                  <y>0</y>
-                 <width>641</width>
+                 <width>674</width>
                  <height>874</height>
                 </rect>
                </property>
@@ -2010,7 +2010,7 @@
                 <rect>
                  <x>0</x>
                  <y>0</y>
-                 <width>658</width>
+                 <width>691</width>
                  <height>481</height>
                 </rect>
                </property>
@@ -2059,7 +2059,7 @@
                 <rect>
                  <x>0</x>
                  <y>0</y>
-                 <width>658</width>
+                 <width>682</width>
                  <height>481</height>
                 </rect>
                </property>

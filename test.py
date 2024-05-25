@@ -150,7 +150,6 @@ class Test():
             result ="Nenhum arquivo foi selecionado!"
             # QMessageBox.warning(None, "ERROR!", result)
         
-
     def leh_caracteristica_dRios(self):
         """Esta função é utilizada para ler as informações acerca da característica dos rios de uma bacia hidrográfica (texto .RST)"""
 
@@ -1536,7 +1535,7 @@ class Test():
 
         # Armazena as informações coletadas
         self.alfa = float(values[0])
-        self.delta_t = int(values[1])
+        self.delta_t = float(values[1])
         self.criterio_parada = int(values[2])
         self.beta = float(values[3])
 
@@ -1740,7 +1739,6 @@ class Test():
         self.time = np.zeros(50000)
         self.hacum = np.zeros(50000)
         self.hexc_pix = np.zeros((self.numero_total_pix, self.quantidade_blocos_chuva))
-        self.hietograma = np.zeros((self.numero_total_pix, self.quantidade_blocos_chuva))
         self.perdas_iniciais = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
         self.chuva_acumulada_pixel = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
         self.chuva_total_pixel = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
@@ -1766,7 +1764,7 @@ class Test():
                         line = arquivo_txt.readline().strip()
                         split_line = line.split(',')
                         a+=1
-                        for w in range(1, self.quantidade_blocos_chuva):
+                        for w in range(1, self.quantidade_blocos_chuva+1):
                             chuva_distribuida = float(split_line[w])
                             self.time[w] = self.time[w-1] + self.delta_t
 
@@ -1779,14 +1777,15 @@ class Test():
                                 self.hacum[w] = ((Pacum - self.perdas_iniciais[lin][col])**2) / (Pacum - self.perdas_iniciais[lin][col] + self.Spotencial[lin][col])
 
                                 # precipitação efetiva desacumulada por pixel ao longo do evento
-                                self.hexc_pix[lin][w] = self.hacum[w] - self.hacum[w-1]
-                                
+                                self.hexc_pix[lin][w-1] = self.hacum[w] - self.hacum[w-1]
+
                         # Chuva excedente acumulada do pixel
-                        self.chuva_acumulada_pixel[lin][col] = self.hacum[self.quantidade_blocos_chuva-1]
+                        self.chuva_acumulada_pixel[lin][col] = self.hacum[self.quantidade_blocos_chuva]
 
                         # Chuva total no pixel
                         self.chuva_total_pixel[lin][col] = Pacum
                         print(f'[{a}/{self.numero_total_pix}] ({a/self.numero_total_pix*100:.2f}%)', end='\r')
+
     @optimize       
     def hidrograma_dlr(self):
         '''Esta função gera o hidrograma-DLR da bacia hidrográfica conforme os dados de precipitação enviados'''
@@ -1806,11 +1805,6 @@ class Test():
         Tmax = np.amax(tempo_total_bacia)
         
         # Reclassificação do tempo de viagem ao exutório para multiplos de delta_t
-        dim = 0
-        while dim <= Tmax + self.delta_t:
-            dim += 1
-        self.tempo_intervalo = np.zeros(dim)
-
         w = 0
         self.tempo_intervalo[w] = 0
         while self.tempo_intervalo[w] <= Tmax + self.delta_t:
@@ -1826,14 +1820,14 @@ class Test():
             for col in range(self.rdc_vars.ncol):
                 if self.global_vars.bacia[lin][col] == 1:
                     a +=1
-                    for w in range(0,self.num_intervalos):
-                        if self.tempo_intervalo[w] >= self.tempo_total[lin][col]:
-                            diferenca = -(self.tempo_total[lin][col] - self.tempo_intervalo[w])
-                        elif self.tempo_intervalo[w] < self.tempo_total[lin][col]:
-                            diferenca = (self.tempo_total[lin][col] - self.tempo_intervalo[w])
-                        elif diferenca < diferenca_minima:
+                    for g in range(0,self.num_intervalos):
+                        if self.tempo_intervalo[g] >= self.tempo_total[lin][col]:
+                            diferenca = -(self.tempo_total[lin][col] - self.tempo_intervalo[g])
+                        if self.tempo_intervalo[g] < self.tempo_total[lin][col]:
+                            diferenca = (self.tempo_total[lin][col] - self.tempo_intervalo[g])
+                        if diferenca < diferenca_minima:
                             diferenca_minima = diferenca
-                            self.TempoTotal_reclass[lin][col] = self.tempo_intervalo[w]
+                            self.TempoTotal_reclass[lin][col] = float(self.tempo_intervalo[g])
                     print(f'Reclassificando o tempo... [{a}/{self.numero_total_pix}] ({a/self.numero_total_pix*100:.2f}%)', end='\r')
         a = 0
         # Determinação do hidrograma
@@ -1861,9 +1855,9 @@ class Test():
                         line = arquivo_txt.readline().strip()
                         split_line = line.split(',')
                         pe_acumulada_pix = np.sum(np.array(list(map(float, split_line))))
-                        for w in range(1, self.quantidade_blocos_chuva + 1):
-                            self.Pexc = float(split_line[w])
-                            self.time[w] = self.time[w-1] + self.delta_t
+                        for h in range(1, self.quantidade_blocos_chuva + 1):
+                            self.Pexc = float(split_line[h])
+                            self.tempo_intervalo[h] = self.tempo_intervalo[h-1] + self.delta_t
 
                             if self.Pexc > 0:
                                 self.Pexc /= 1000 #em metros
@@ -1872,8 +1866,8 @@ class Test():
                                 self.Pexc = ((self.Pexc * (self.global_vars.dx**2))/self.delta_t)*(1/60) # Vazão em m³/s
 
                                 # Representação da vazão no exutório (translação)
-                                tempo_exutorio = self.time[w-1] + self.TempoTotal_reclass[lin][col]
-                                k = tempo_exutorio / self.delta_t
+                                tempo_exutorio = self.tempo_intervalo[h-1] + self.TempoTotal_reclass[lin][col]
+                                k = int(tempo_exutorio / self.delta_t)
 
                                 self.vazao_pixel[k] = self.Pexc
 
@@ -1904,8 +1898,6 @@ class Test():
 
                         # Determinação da vazão e do tempo de pico do hidrograma-DLR por pixel
                         self.vazao_pico[lin][col] = np.amax(self.vazao_amortecida_pixel)
-                        index_vp = np.where(self.vazao_amortecida_pixel == self.vazao_pico[lin][col])
-                        self.tempo_pico[lin][col] = self.tempo_vazao_pixel[index_vp] 
 
                         # Zera vazão no pixel
                         k = 0
@@ -1916,8 +1908,8 @@ class Test():
                             self.vazao_amortecida_pixel[k + 1] = 0                       
                             self.tempo_vazao_pixel[k+1] = self.tempo_vazao_pixel[k] + self.delta_t
                             k += 1
-
-                        print(f'\nCalculando vazão... [{a}/{self.numero_total_pix}] ({a/self.numero_total_pix*100:.2f}%)', end='\r')
+                        
+                        print(f'Calculando vazão... [{a}/{self.numero_total_pix}] ({a/self.numero_total_pix*100:.2f}%)', end='\r')
 
             # Cálculo da área da bacia
             area_bacia = self.numero_total_pix * (self.global_vars.dx **2) # em m²
@@ -2810,7 +2802,7 @@ class Test():
         # Abrindo o arquivo(fn : file name) para escrita dos resultados
         file_path = r'C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\resultados_test_modelo'
         fn_tre_cabec = file_path + r'\relacao_trechos_cabec.txt'
-        with open(fn_tre_cabec, 'w') as arquivo_txt:
+        with open(fn_tre_cabec, 'w', encoding = 'utf-8') as arquivo_txt:
             arquivo_txt.write('{:<12}{:<12}'.format('Cabeceira', 'Num.trechos'))
             for self.global_vars.numcabeaux in range(self.global_vars.Ncabec):
                 arquivo_txt.write(f'{self.global_vars.numcabeaux:12d}{self.global_vars.numtre[self.global_vars.numcabeaux]:12d}')
@@ -2936,15 +2928,17 @@ class Test():
         with open(arquivo, 'w', encoding = 'utf-8') as arquivo_txt:
             # JVD:optimize: Escreve cabeçalho
             arquivo_txt.write('Pixel,')
-            arquivo_txt.write(','.join(map(str, self.time)) + '\n')
-            
+            for k in range(1,self.quantidade_blocos_chuva+1):
+                arquivo_txt.write(f'{self.time[k]},')
+            arquivo_txt.write('\n')
+
             # Escreve linhas com dados de precipitação efetiva por pixel
-            for k in range(self.numero_total_pix):
+            for k in range(1,self.numero_total_pix+1):
                 for w in range(self.quantidade_blocos_chuva):
                     if w <  self.quantidade_blocos_chuva-1:
-                        arquivo_txt.write(f'{k},{self.hexc_pix[k][w]}')
+                        arquivo_txt.write(f'{k},{self.hexc_pix[k-1][w]}')
                     else:
-                        arquivo_txt.write(f'{self.hexc_pix[k][w]}\n')
+                        arquivo_txt.write(f',{self.hexc_pix[k-1][w]}'+'\n')
 
     def escreve_numb_pix_bacia(self):
         '''Esta função gera o mapa contendo a numeração dos pixels presentes na bacia hidrografíca'''
@@ -3250,10 +3244,10 @@ class Test():
 
         # Define os dados a serem escritos
         if unit == 1:
-            dados_vazao_pico = np.array([[float(self.volume_total_pix[lin][col]) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)])
+            dados_vazao_pico = np.array([[float(self.vazao_pico[lin][col]) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)])
             tipo_dados = gdalconst.GDT_Float32
         else:
-            dados_vazao_pico = np.array([[float(self.volume_total_pix[lin][col]/1000) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)])
+            dados_vazao_pico = np.array([[float(self.vazao_pico[lin][col]/1000) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)])
             tipo_dados = gdalconst.GDT_Float32            
         # Obtendo o driver para escrita do arquivo em GeoTiff
         driver = gdal.GetDriverByName('RST')
@@ -3470,8 +3464,8 @@ class Test():
         self.hidrograma_dlr()
         self.escreve_vazao_pico_pixel(1)
         self.escreve_volume_gerado_pixel()
+        self.escreve_hidrograma_dlr()
         self.escreve_pe_calculada()
-        self.escreve_hietograma_pe()
         end = perf_counter()
         print(f'The processing time was: {(end-start)/60} min')
 
