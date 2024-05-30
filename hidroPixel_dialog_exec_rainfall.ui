@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>632</width>
-    <height>608</height>
+    <width>636</width>
+    <height>615</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -160,8 +160,8 @@
                 <rect>
                  <x>0</x>
                  <y>0</y>
-                 <width>570</width>
-                 <height>439</height>
+                 <width>574</width>
+                 <height>446</height>
                 </rect>
                </property>
                <layout class="QGridLayout" name="gridLayout_13">
@@ -591,8 +591,8 @@
                 <rect>
                  <x>0</x>
                  <y>0</y>
-                 <width>570</width>
-                 <height>469</height>
+                 <width>574</width>
+                 <height>476</height>
                 </rect>
                </property>
                <layout class="QGridLayout" name="gridLayout_36">
@@ -600,6 +600,31 @@
                  <layout class="QVBoxLayout" name="verticalLayout_7">
                   <item>
                    <layout class="QGridLayout" name="gridLayout_37">
+                    <item row="1" column="1">
+                     <widget class="QLineEdit" name="le_1_pg_ri">
+                      <property name="sizePolicy">
+                       <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+                        <horstretch>0</horstretch>
+                        <verstretch>0</verstretch>
+                       </sizepolicy>
+                      </property>
+                      <property name="minimumSize">
+                       <size>
+                        <width>60</width>
+                        <height>24</height>
+                       </size>
+                      </property>
+                      <property name="maximumSize">
+                       <size>
+                        <width>360</width>
+                        <height>24</height>
+                       </size>
+                      </property>
+                      <property name="clearButtonEnabled">
+                       <bool>true</bool>
+                      </property>
+                     </widget>
+                    </item>
                     <item row="1" column="2">
                      <widget class="QToolButton" name="tbtn_pg_r_1">
                       <property name="text">
@@ -645,31 +670,6 @@
                       </property>
                      </widget>
                     </item>
-                    <item row="1" column="1">
-                     <widget class="QLineEdit" name="le_1_pg_ri">
-                      <property name="sizePolicy">
-                       <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-                        <horstretch>0</horstretch>
-                        <verstretch>0</verstretch>
-                       </sizepolicy>
-                      </property>
-                      <property name="minimumSize">
-                       <size>
-                        <width>60</width>
-                        <height>24</height>
-                       </size>
-                      </property>
-                      <property name="maximumSize">
-                       <size>
-                        <width>360</width>
-                        <height>24</height>
-                       </size>
-                      </property>
-                      <property name="clearButtonEnabled">
-                       <bool>true</bool>
-                      </property>
-                     </widget>
-                    </item>
                    </layout>
                   </item>
                   <item>
@@ -683,7 +683,7 @@
                     <property name="sizeHint" stdset="0">
                      <size>
                       <width>20</width>
-                      <height>8</height>
+                      <height>13</height>
                      </size>
                     </property>
                    </spacer>
@@ -773,7 +773,7 @@
                     <property name="sizeHint" stdset="0">
                      <size>
                       <width>20</width>
-                      <height>8</height>
+                      <height>13</height>
                      </size>
                     </property>
                    </spacer>
@@ -854,47 +854,18 @@
                   </item>
                  </layout>
                 </item>
-                <item row="5" column="0">
-                 <layout class="QGridLayout" name="gridLayout_46">
-                  <item row="0" column="0">
-                   <widget class="QPushButton" name="btn_read_pg_ri">
-                    <property name="text">
-                     <string>Read from file</string>
-                    </property>
-                   </widget>
-                  </item>
-                  <item row="0" column="1">
-                   <widget class="QPushButton" name="btn_save_file_pg_ri">
-                    <property name="text">
-                     <string>Save to file</string>
-                    </property>
-                   </widget>
-                  </item>
-                  <item row="0" column="2">
-                   <widget class="QPushButton" name="btn_save_pg_ri">
-                    <property name="text">
-                     <string>Save</string>
-                    </property>
-                   </widget>
-                  </item>
-                  <item row="0" column="3">
-                   <widget class="QPushButton" name="btn_help_pg_ri">
-                    <property name="text">
-                     <string>Help</string>
-                    </property>
-                   </widget>
-                  </item>
-                 </layout>
-                </item>
-                <item row="4" column="0">
-                 <spacer name="verticalSpacer_16">
+                <item row="2" column="0">
+                 <spacer name="verticalSpacer_17">
                   <property name="orientation">
                    <enum>Qt::Vertical</enum>
+                  </property>
+                  <property name="sizeType">
+                   <enum>QSizePolicy::Fixed</enum>
                   </property>
                   <property name="sizeHint" stdset="0">
                    <size>
                     <width>20</width>
-                    <height>40</height>
+                    <height>20</height>
                    </size>
                   </property>
                  </spacer>
@@ -1022,7 +993,7 @@
                             </widget>
                            </item>
                            <item>
-                            <widget class="QPushButton" name="btn_save1_pg_ri">
+                            <widget class="QPushButton" name="btn_save_1_pg_ri">
                              <property name="text">
                               <string>Save</string>
                              </property>
@@ -1071,7 +1042,7 @@
                             </widget>
                            </item>
                            <item>
-                            <widget class="QPushButton" name="pushButton">
+                            <widget class="QPushButton" name="btn_save_2_pg_ri">
                              <property name="text">
                               <string>Save</string>
                              </property>
@@ -1126,21 +1097,50 @@
                   </layout>
                  </widget>
                 </item>
-                <item row="2" column="0">
-                 <spacer name="verticalSpacer_17">
+                <item row="4" column="0">
+                 <spacer name="verticalSpacer_16">
                   <property name="orientation">
                    <enum>Qt::Vertical</enum>
-                  </property>
-                  <property name="sizeType">
-                   <enum>QSizePolicy::Fixed</enum>
                   </property>
                   <property name="sizeHint" stdset="0">
                    <size>
                     <width>20</width>
-                    <height>20</height>
+                    <height>40</height>
                    </size>
                   </property>
                  </spacer>
+                </item>
+                <item row="5" column="0">
+                 <layout class="QGridLayout" name="gridLayout_46">
+                  <item row="0" column="0">
+                   <widget class="QPushButton" name="btn_read_pg_ri">
+                    <property name="text">
+                     <string>Read from file</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="0" column="1">
+                   <widget class="QPushButton" name="btn_save_file_pg_ri">
+                    <property name="text">
+                     <string>Save to file</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="0" column="2">
+                   <widget class="QPushButton" name="btn_save_pg_ri">
+                    <property name="text">
+                     <string>Save</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="0" column="3">
+                   <widget class="QPushButton" name="btn_help_pg_ri">
+                    <property name="text">
+                     <string>Help</string>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
                 </item>
                </layout>
               </widget>
@@ -1160,8 +1160,8 @@
                 <rect>
                  <x>0</x>
                  <y>0</y>
-                 <width>570</width>
-                 <height>469</height>
+                 <width>574</width>
+                 <height>476</height>
                 </rect>
                </property>
                <layout class="QGridLayout" name="gridLayout_14">
@@ -1595,8 +1595,8 @@
                 <rect>
                  <x>0</x>
                  <y>0</y>
-                 <width>570</width>
-                 <height>469</height>
+                 <width>574</width>
+                 <height>476</height>
                 </rect>
                </property>
                <layout class="QGridLayout" name="gridLayout_30">
@@ -1644,8 +1644,8 @@
                 <rect>
                  <x>0</x>
                  <y>0</y>
-                 <width>570</width>
-                 <height>469</height>
+                 <width>574</width>
+                 <height>476</height>
                 </rect>
                </property>
                <layout class="QGridLayout" name="gridLayout_17">
@@ -2344,7 +2344,7 @@ color: rgb(0, 0, 0);
                       <item row="0" column="0">
                        <widget class="QLabel" name="label_71">
                         <property name="text">
-                         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;justify&quot;&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Total excess rainfall (mm):&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;justify&quot;&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Total excess rainfall per pixel (mm):&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                         </property>
                        </widget>
                       </item>
@@ -2482,6 +2482,38 @@ color: rgb(0, 0, 0);
                     </item>
                     <item>
                      <layout class="QGridLayout" name="gridLayout_53">
+                      <item row="0" column="1">
+                       <widget class="QLineEdit" name="le_6_pg4">
+                        <property name="sizePolicy">
+                         <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+                          <horstretch>0</horstretch>
+                          <verstretch>0</verstretch>
+                         </sizepolicy>
+                        </property>
+                        <property name="minimumSize">
+                         <size>
+                          <width>60</width>
+                          <height>0</height>
+                         </size>
+                        </property>
+                        <property name="maximumSize">
+                         <size>
+                          <width>220</width>
+                          <height>24</height>
+                         </size>
+                        </property>
+                        <property name="clearButtonEnabled">
+                         <bool>true</bool>
+                        </property>
+                       </widget>
+                      </item>
+                      <item row="0" column="0">
+                       <widget class="QLabel" name="label_63">
+                        <property name="text">
+                         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;justify&quot;&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Excess hyetographs per pixel (mm):&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                        </property>
+                       </widget>
+                      </item>
                       <item row="0" column="3">
                        <widget class="QLabel" name="label_54">
                         <property name="sizePolicy">
@@ -2513,13 +2545,6 @@ color: rgb(0, 0, 0);
                         </property>
                        </widget>
                       </item>
-                      <item row="0" column="0">
-                       <widget class="QLabel" name="label_63">
-                        <property name="text">
-                         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;justify&quot;&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Excess hyetographs per pixel (mm):&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                        </property>
-                       </widget>
-                      </item>
                       <item row="0" column="2">
                        <widget class="QToolButton" name="tbtn_pg4_6">
                         <property name="text">
@@ -2527,28 +2552,37 @@ color: rgb(0, 0, 0);
                         </property>
                        </widget>
                       </item>
-                      <item row="0" column="1">
-                       <widget class="QLineEdit" name="le_6_pg4">
+                      <item row="0" column="4">
+                       <widget class="QCheckBox" name="ch_11_pg4_2">
+                        <property name="enabled">
+                         <bool>false</bool>
+                        </property>
                         <property name="sizePolicy">
-                         <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+                         <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
                           <horstretch>0</horstretch>
                           <verstretch>0</verstretch>
                          </sizepolicy>
                         </property>
                         <property name="minimumSize">
                          <size>
-                          <width>60</width>
-                          <height>0</height>
+                          <width>16</width>
+                          <height>16</height>
                          </size>
                         </property>
                         <property name="maximumSize">
                          <size>
-                          <width>220</width>
-                          <height>24</height>
+                          <width>16</width>
+                          <height>16</height>
                          </size>
                         </property>
-                        <property name="clearButtonEnabled">
+                        <property name="text">
+                         <string/>
+                        </property>
+                        <property name="checkable">
                          <bool>true</bool>
+                        </property>
+                        <property name="checked">
+                         <bool>false</bool>
                         </property>
                        </widget>
                       </item>
