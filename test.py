@@ -1472,7 +1472,7 @@ class Test():
             # Realizando a abertura do arquivo raster e coletando as informações referentes as dimensões do mesmo
             rst_file_CN = gdal.Open(arquivo)
             
-            # Lendo os dados raste como um array 
+            # Lendo os dados raste como um array
             dados_lidos_raster_CN = rst_file_CN.GetRasterBand(1).ReadAsArray()
 
             #  Tratamento de erros: verifica se o arquivo raster foi aberto corretamente
@@ -1556,7 +1556,7 @@ class Test():
     def leh_parametros(self):
         '''Esta função lê o arquivo enviado pelo usuário contento os parâmetros do modelo: abstração inicial, time step, tempo critério de parada e o beta'''
         values = []
-        arquivo = r"C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\SmallExample\3_Hydrograph\input\5_parameters.txt"
+        arquivo = r"c:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\SmallExample\3_Hydrograph\input\5_parameters.txt"
         with open(arquivo, 'r') as arquivo_txt:
             # Lê as linhas do arquivo separando por ','
             for line in arquivo_txt:
@@ -1770,12 +1770,13 @@ class Test():
         # JVD: estrutura dos arrays
         self.time = np.zeros(50000)
         self.hacum = np.zeros(50000)
-        self.hexc_pix = np.zeros((self.numero_total_pix, self.quantidade_blocos_chuva))
         self.perdas_iniciais = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
         self.pe_acumulada_pixel = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
         self.chuva_total_pixel = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
         self.Spotencial = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
 
+        self.hexc_pix = np.zeros((self.numero_total_pix, self.quantidade_blocos_chuva))
+        
         arquivo_precipitacao = r"C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\SmallExample\3_Hydrograph\input\3_rainfall_file.txt"
         with open(arquivo_precipitacao, 'r', encoding = 'utf-8') as arquivo_txt:
             # Armazena cabeçalho do arquivo
