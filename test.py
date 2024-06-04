@@ -73,8 +73,9 @@ class Test():
 
                     self.global_vars.bacia = dados_lidos_bacia
                     # Fechando o dataset GDAL
-
                     rst_file_bacia = None
+
+                    print(f'Qtd pix bacia: {np.count_nonzero(self.global_vars.bacia)}\nÁrea da bacia: {(np.count_nonzero(self.global_vars.bacia))*100/1000000} Km²')
 
             elif function == 2 or function == 3:
                 # Realizando a abertura do arquivo raster e coletando as informações referentes as dimensões do mesmo
@@ -101,7 +102,7 @@ class Test():
                     print(f'Qtd pix bacia: {np.count_nonzero(self.global_vars.bacia)}\nÁrea da bacia: {(np.count_nonzero(self.global_vars.bacia))*100/1000000} Km²')
 
                 else:
-                    """Caso o arquivo raster apresente erros durante a abertura, ocorrerá um erro"""
+                    # Caso o arquivo raster apresente erros durante a abertura, ocorrerá um erro
                     resulte = f"Failde to open the raster file: {arquivo}"
                     # QMessageBox.warning(None, "ERROR!", resulte)
 
@@ -154,7 +155,7 @@ class Test():
         """Esta função é utilizada para ler as informações acerca da característica dos rios de uma bacia hidrográfica (texto .RST)"""
 
         # Abrindo o arquivo de texto (.txt) com as informações acerca das classes dos rios
-        file = r"C:\Users\joao1\OneDrive\Área de Trabalho\Calcula_Tc_SCS_decliv_indiv_grandesmatrizes_utm_LL\caracteristicas_classes_rios.txt"
+        file = r"c:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\SmallExample\1_TravelTime\Input_binary\caracteristicas_classes_rios.txt"
         with open(file, 'r', encoding='utf-8') as arquivo_txt:
             #  Atualizando as variáveis que dependem
             self.global_vars.nclasses =int(arquivo_txt.readline().strip().split(':')[1])
@@ -168,7 +169,7 @@ class Test():
             # Iterando sobre as linhas do arquivo
             for line in arquivo_txt:
                 # Divide a linha nos espaços em branco e converte para float
-                indice, Scla, Mann, Rh = map(float, line.split())
+                indice, Scla, Mann, Rh = map(float, line.split(','))
 
                 # Adiciona os valores às listas
                 j_list.append(indice)
@@ -184,7 +185,8 @@ class Test():
 
     def leh_classes_rios(self):
         """Esta função é utilizada para ler as informações acerca da classe dos rios da bacia hidrográfica (arquivo raster -  .RST)"""
-        arquivo = r"C:\Users\joao1\OneDrive\Área de Trabalho\Calcula_Tc_SCS_decliv_indiv_grandesmatrizes_utm_LL\classes_rios.RST"
+
+        arquivo = r"c:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\SmallExample\input_binary\6_RIVER_SEGMENTS_EXbin.RST"
         # Tratamento de erros: verifica se o arquivo foi corretamente enviado
         if arquivo:
             # Realizando a abertura do arquivo raster e coletando as informações referentes as dimensões do mesmo
@@ -251,7 +253,7 @@ class Test():
 
         # Abrindo o arquivo RDC
         arquivo = self.rdc_vars.nomeRDC
-        with open(arquivo, 'r',encoding ='ytf-8') as rdc_file:
+        with open(arquivo, 'r',encoding ='utf-8') as rdc_file:
             # Separando os dados do arquivo RDC em função das linhas que contém alguma das palavras abaixo
             k_words = ["columns", "rows", "ref. system", "ref. units", "min. X", "max. X", "min. Y", "max. Y", "resolution"]
             lines_RDC = [line.strip() for line in rdc_file.readlines() if any(word in line for word in k_words)]
@@ -340,6 +342,7 @@ class Test():
 
     def leh_drenagem(self):
         """Esta função é utilizada para ler as informações acerca da drenagem dos rios (arquivo raster - .RST)"""
+
         # Obtendo o arquivo referente as calasses dos rios da bacia hidrográfica
         arquivo = r'c:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\SmallExample\input_binary\5_DRAINAGE_EXbin.RST'
         # Abrindo o arquivo raster com as informações acerda do sistema de drenagem da bacia hidrográfica
@@ -352,7 +355,7 @@ class Test():
         if rst_file_drenagem is not None:
             # Reorganizando os dados lidos na matriz destinadas às informações da drenagem da bacia hidrográfica
             self.global_vars.dren = dados_lidos_drenagem
-            
+            print(np.count_nonzero(self.global_vars.dren))
             # Fechando o dataset GDAl referente ao arquivo raster
             rst_file_drenagem = None
         else:
@@ -389,7 +392,7 @@ class Test():
         """Esta função é utilizada para ler as informações acerca da precipitação das últimas 24 horas, P24 (arquivo texto - .txt)"""
 
         # Coledando os arquivo fornecido
-        arquivo = r'C:\Users\joao1\OneDrive\Área de Trabalho\Calcula_Tc_SCS_decliv_indiv_grandesmatrizes_utm_LL\info_P24.txt'
+        arquivo = r'C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\Calcula_Tc_SCS_decliv_indiv_grandesmatrizes_utm_LL\info_P24.txt'
 
         # lendo os arquivos acerda da precipitação das últimas 24 horas
         with open(arquivo, 'r', encoding = 'utf-8') as arquivo_txt:
@@ -403,7 +406,7 @@ class Test():
         """Esta função é utilizada para ler as informações acerca do uso do solo (arquivo raster - .RST)"""
 
         # Obtendo o arquivo raster referente ao uso do solo
-        arquivo = r'c:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\SmallExample\input_binary\8_LULC_EXbin.RST'
+        arquivo = r'c:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\SmallExample\1_TravelTime\Input_binary\uso_solo.rst'
 
         # Abrindo o arquivo raster com as informações acerda do uso do solo da bacia hidrográfica
         rst_file_usoSolo = gdal.Open(arquivo)
@@ -429,7 +432,7 @@ class Test():
         """Esta função é utilizada para ler as informações acerca do uso do solo e o coeficiente de rugosidade de Manning (arquivo texto - .txt)"""
 
         # Onbtendo o arquivo de texto (.txt) com as informações acerca dos coeficientes De Manning para as zonas da bacia hidrográfica
-        arquivo = r'C:\Users\joao1\OneDrive\Área de Trabalho\Calcula_Tc_SCS_decliv_indiv_grandesmatrizes_utm_LL\relacao_uso_Manning.txt'
+        arquivo = r'c:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\SmallExample\1_TravelTime\Input_binary\relacao_uso_Manning.txt'
 
         # Criando variável extra, para armazenar os tipos de uso e coeficente de Manning
         uso_manning = []
@@ -443,7 +446,7 @@ class Test():
             # Lê as informações de uso do solo e coeficiente de Manning 
             for line in arquivo_txt:
                 # Coletando as informações de cada linha
-                info = line.strip().split()
+                info = line.split()
                 # Armazenando os valores das linhas nas suas respectivas variáveis
                 uso_manning = int(info[0])
                 coef_maning = float(info[1])
@@ -504,23 +507,24 @@ class Test():
         self.global_vars.Lac = Lac
         Lac = None
         Lfoz = None
-    
+        contador = 0
+        pixel_atual = 0 
         # Iniciando a iteração para varrer todos os elementos da bacia hidrográfica
         for col in range(self.rdc_vars.ncol):
             for lin in range(self.rdc_vars.nlin):
                 # Delimitando apenas os elementos que estão presentes na bacia hidrográfica
-                if self.global_vars.bacia[lin,col] == 1:
+                if self.global_vars.bacia[lin][col] == 1:
                     # Coletando as informações referentes ao sistema de drenagem da bacia hidrográfica
-                    if self.global_vars.dren[lin,col] == 1:
+                    pixel_atual +=1
+                    if self.global_vars.dren[lin][col] == 1:
                         self.global_vars.linaux = lin
                         self.global_vars.colaux = col
                         self.global_vars.caminho = 0
                         
                         while self.global_vars.caminho == 0:
-
                             # Criando condição de parada
-                            condicao = self.global_vars.linaux <= 1 or self.global_vars.linaux >= self.rdc_vars.nlin \
-                            or self.global_vars.colaux<=1 or self.global_vars.colaux>= self.rdc_vars.ncol \
+                            condicao = self.global_vars.linaux < 1 or self.global_vars.linaux > self.rdc_vars.nlin \
+                            or self.global_vars.colaux< 1 or self.global_vars.colaux >  self.rdc_vars.ncol \
                             or self.global_vars.bacia[self.global_vars.linaux][self.global_vars.colaux] == 0
 
                             if condicao:
@@ -528,11 +532,11 @@ class Test():
 
                             else:
                                 # Continuar caminho: determina a contagem das distâncias projetadas (WGS84) e \
-                                # determina as coordenadas verticais do pixel+
+                                # determina as coordenadas verticais do pixel
 
-                                self.global_vars.Xesq = self.rdc_vars.xmin + (self.global_vars.colaux - 1)*self.global_vars.Xres
+                                self.global_vars.Xesq = self.rdc_vars.xmin + (self.global_vars.colaux - 1) * self.global_vars.Xres
                                 self.global_vars.Xdir = self.global_vars.Xesq + self.global_vars.Xres
-                                self.global_vars.Yinf = self.global_vars.ymax - self.global_vars.linaux*self.global_vars.Yres
+                                self.global_vars.Yinf = self.rdc_vars.ymax - (self.global_vars.linaux*self.global_vars.Yres)
                                 self.global_vars.Ysup = self.global_vars.Yinf + self.global_vars.Yres
 
                                 # Determinando a posição relativa ao pixel anterior
@@ -558,20 +562,20 @@ class Test():
                                     
                                 else:
                                     if self.rdc_vars.tipo == 1 or self.rdc_vars.tipo == 2:
-                                        self.global_vars.auxdist = self.global_vars.dx*self.global_vars.lado
+                                        self.global_vars.auxdist = self.global_vars.dx * self.global_vars.lado
 
                                     else:
-                                        self.global_vars.auxdist = self.global_vars.dx*self.global_vars.diagonal
+                                        self.global_vars.auxdist = self.global_vars.dx * self.global_vars.diagonal
                                         
                                 # Atualizando o comprimento do rio desde o pixel inicial
                                 self.global_vars.tamcam += self.global_vars.auxdist
                                 self.global_vars.tamfoz = self.global_vars.tamcam
 
                                 # Condição para verificar se o tamanho do rio é maior que o armazenameto do pixel
-                                condicao3 = self.global_vars.tamcam > self.global_vars.Lac[self.global_vars.linaux, self.global_vars.colaux]
+                                condicao3 = self.global_vars.tamcam > self.global_vars.Lac[self.global_vars.linaux][self.global_vars.colaux]
                                 if condicao3:
                                     # O valor do pixel é armazenado em um novo rio
-                                    self.global_vars.Lac[self.global_vars.linaux, self.global_vars.colaux] = self.global_vars.tamcam
+                                    self.global_vars.Lac[self.global_vars.linaux][self.global_vars.colaux] = self.global_vars.tamcam
                                 
                                 # Armazena o pixel contabilizado
                                 self.global_vars.linaux2 = self.global_vars.linaux
@@ -581,19 +585,20 @@ class Test():
                                 self.global_vars.diraux = self.global_vars.direcoes[self.global_vars.linaux, self.global_vars.colaux]
                                 self.global_vars.linaux += self.global_vars.dlin[self.global_vars.diraux]
                                 self.global_vars.colaux += self.global_vars.dcol[self.global_vars.diraux]
-                                # JVD: alocação redundante(caminho = 0)
-                                self.global_vars.sda = 0
+                                self.global_vars.caminho = 0
 
                         # Atulizando a variável lfoz
                         self.global_vars.Lfoz[lin][col] = self.global_vars.tamfoz
+
+                    print(f'[{pixel_atual}/{353707}] ({pixel_atual/353707*100:.2f}%)', end='\r')
+
         self.fim = perf_counter()
         print(f'{(self.fim - self.inicio)/60} min')                  
         print('Passou compri_acumulado')
 
     def numera_pixel(self):
-        '''
-        Esta função enumera os píxels presentes na rede de drenagem
-        '''
+        '''Esta função enumera os píxels presentes na rede de drenagem'''
+
         # Define variáveis
         self.contadren = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
         self.numcabe = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
@@ -1409,7 +1414,7 @@ class Test():
                     else:
                         # ARPlidar: otimização
                         self.global_vars.pixel_ref_dren = self.global_vars.pixeldren[lin][col]
-                        if self.global_vars.pixel_ref_dren != 0:
+                        if self.global_vars.pixel_ref_dren == 1:
                             self.global_vars.ll = self.global_vars.lincontadren[self.global_vars.pixel_ref_dren]
                             self.global_vars.cc = self.global_vars.colcontadren[self.global_vars.pixel_ref_dren]
                             self.global_vars.auxTempoCanal = self.global_vars.TempoRio[self.global_vars.ll][self.global_vars.cc]
@@ -1496,7 +1501,7 @@ class Test():
     def leh_tempo_viagem(self):
         '''Esta função lê o arquivo contendo o tempo de concentração de cada pixel presente na bacia hidrográfica e o armazena'''
 
-        arquivo = r"c:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\SmallExample\input_binary\TRAVEL_TIME.RST"
+        arquivo = r"c:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\SmallExample\input_binary\4_TRAVELTIME_BIN.RST"
         # Tratamento de erros: verifica se o arquivo foi corretamente enviado
         if arquivo:
             # Realizando a abertura do arquivo raster e coletando as informações referentes as dimensões do mesmo
@@ -1953,145 +1958,6 @@ class Test():
 
             # Chuva excedente calculada
             self.chuva_excedente_calc = (self.volume_total / area_bacia) * (10**3) #em mm
-
-    def hidrograma_dlr1(self):
-        '''Esta função determina gera os arquivos associados a precipitação excedente de cada pixel presente na baica hidrográfica, fumentando-se no método do SCS-CN'''
-        # Definição de variáveis
-        pixel_atual = 0
-        # JVD: estrutura dos arrays
-        self.time = np.zeros(50000)
-        self.hacum = np.zeros(50000)
-        self.hexc_pix = np.zeros((self.numero_total_pix, self.quantidade_blocos_chuva))
-        self.perdas_iniciais = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
-        self.pe_acumulada_pixel = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
-        self.chuva_total_pixel = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
-        self.Spotencial = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
-        Tmax = 0
-        a = 0
-        self.tempo_total = self.leh_tempo_viagem()
-        self.Spotencial = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
-        self.volume_total_pix = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
-        self.vazao_pico = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
-        self.tempo_pico = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
-        self.TempoTotal_reclass = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
-        self.vazao_pixel = np.zeros(50000)
-        self.tempo_intervalo = np.zeros(50000)
-        time = np.zeros(50000)
-        pe_acumulada_pixel = self.precipitacao_acumulada()
-        self.tempo_vazao_pixel = np.zeros(50000)
-        self.vazao_amortecida_pixel = np.zeros(50000)
-        self.vazao = np.zeros(50000)
-        # JVDoptmize: máximo tempo de viagem ao exutório
-        tempo_total_bacia = self.tempo_total[self.global_vars.bacia == 1]
-        Tmax = np.amax(tempo_total_bacia)
-        
-        # Reclassificação do tempo de viagem ao exutório para multiplos de delta_t
-        w = 0
-        self.tempo_intervalo[w] = 0
-        while self.tempo_intervalo[w] <= Tmax + self.delta_t:
-            self.tempo_intervalo[w + 1] = self.tempo_intervalo[w] + self.delta_t
-            w += 1
-
-        # JVD: correção sintaxe de vb to py
-        # self.num_intervalos = w - 1
-        self.num_intervalos = w
-        diferenca = 0
-        for lin in range(self.rdc_vars.nlin):
-            for col in range(self.rdc_vars.ncol):
-                diferenca_minima = 100000000
-                if self.global_vars.bacia[lin][col] == 1:
-                    for g in range(self.num_intervalos):
-                        if self.tempo_intervalo[g] >= self.tempo_total[lin][col]:
-                            diferenca = -(self.tempo_total[lin][col] - self.tempo_intervalo[g])
-
-                        else:
-                            diferenca = (self.tempo_total[lin][col] - self.tempo_intervalo[g])
-
-                        if diferenca < diferenca_minima:
-                            diferenca_minima = diferenca
-                            self.TempoTotal_reclass[lin][col] = float(self.tempo_intervalo[g])
-
-        print('Reclassificou o tempo!')
-        a = 0
-        # Determinação do hidrograma
-        # Dados do arquivo de precipitação enviado
-        tempo_exutorio = 0
-        k = 0
-        storage_coefficient = 0
-        c_1 = 0
-        c_2 = 0
-        area_bacia = 0
-
-        arquivo_precipitacao = r"C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\SmallExample\3_Hydrograph\input\3_rainfall_file.txt"
-        with open(arquivo_precipitacao, 'r', encoding = 'utf-8') as arquivo_txt:
-            # Armazena cabeçalho do arquivo
-            cabecalho = arquivo_txt.readline().strip()
-            for lin in range(self.rdc_vars.nlin):
-                for col in range(self.rdc_vars.ncol):
-                    if self.global_vars.bacia[lin][col]==1:
-                        # Cálculo do potencial de armazenamento do solo por pixel presente na bacia
-                        self.Spotencial[lin][col] = (25400/self.CN[lin][col])-254
-
-                        # Cálculo das perdas iniciais por pixel presente na bacia
-                        self.perdas_iniciais[lin][col] = self.alfa * self.Spotencial[lin][col]
-
-                        Pacum = 0
-                        self.time[0] = 0
-
-                        # Armazena as linha do arquivo de precipitação
-                        line = arquivo_txt.readline().strip()
-                        split_line = line.split(',')
-
-                        for w in range(1, self.quantidade_blocos_chuva+1):
-                            chuva_distribuida = float(split_line[w])
-                            self.time[w] = self.time[w-1] + self.delta_t
-
-                            Pacum += chuva_distribuida 
-
-                            # Cálculo da chuva excedente
-                            if Pacum <= self.perdas_iniciais[lin][col]:
-                                self.hacum[w] = 0
-                            else:
-                                self.hacum[w] = ((Pacum - self.perdas_iniciais[lin][col])**2) / (Pacum - self.perdas_iniciais[lin][col] + self.Spotencial[lin][col])
-
-                            if self.Pexc > 0:
-                                # Vazão correspondente no exutório
-                                self.Pexc = (((self.Pexc/1000) * (self.global_vars.dx ** 2)) / self.delta_t) * (1 / 60)  # Vazão em m³/s
-
-                                # Representação da vazão no exutório (translação)
-                                tempo_exutorio = time[h-1] + self.TempoTotal_reclass[lin][col]
-
-                                k = int(tempo_exutorio / self.delta_t)
-                                self.vazao_pixel[k] = self.Pexc
-
-                        # Parâmetro para estimativa do armazenamento
-                        storage_coefficient = self.tempo_total[lin][col] / ((1 / self.beta) - 1)  # em minutos
-
-                        c_1 = self.delta_t / ((2 * storage_coefficient) + self.delta_t)
-                        c_2 = 1 - (2 * c_1)
-
-                        # Amortecimento do hidrograma do pixel
-                        k = 0
-                        blocos_vazao = 0
-                        self.tempo_vazao_pixel[k] = 0
-                        self.vazao_amortecida_pixel[k] = c_1 * self.vazao_pixel[k]
-                        self.vazao[k] = self.vazao[k] + self.vazao_amortecida_pixel[k]
-                        while self.tempo_vazao_pixel[k] <= self.criterio_parada:
-                            self.vazao_amortecida_pixel[k+1] = (c_1 * self.vazao_pixel[k+1]) + (c_1 * self.vazao_pixel[k]) + (c_2 * self.vazao_amortecida_pixel[k])
-                            self.tempo_vazao_pixel[k+1] = self.tempo_vazao_pixel[k] + self.delta_t
-                            k += 1
-                            blocos_vazao += 1
-                            self.vazao[k] = self.vazao[k] + self.vazao_amortecida_pixel[k]
-
-                        # Determinação da vazão e do tempo de pico do hidrograma-DLR por pixel
-                        self.vazao_pico[lin][col] = np.amax(self.vazao)
-                        self.blocos_vazao = blocos_vazao
-
-                        # Zera vazão no pixel
-                        self.vazao_pixel.fill(0)
-                        self.vazao_amortecida_pixel.fill(0)
-
-                        print(f'Calculando vazão... [{a}/{self.numero_total_pix}] ({a/self.numero_total_pix*100:.2f}%)', end='\r')
 
     def tamanho_numero(self, varaux, num):
         '''
@@ -3505,6 +3371,9 @@ class Test():
             # Sistema está em metros, não é preciso fazer a projeção para metros
             self.global_vars.metro = 1
 
+        print('Processando comprimento acumulado...\n')
+        self.comprimento_acumulado()
+        self.escreve_comprimento_acumulado()
         print('Processando numera pixel...\n')
         self.numera_pixel()
         self.escreve_num_pix_cabec()
@@ -3525,8 +3394,6 @@ class Test():
         self.escreve_num_trechos()
         self.escreve_dist_rel_trechos()
 
-        print('Processando comprimento acumulado...\n')
-        self.comprimento_acumulado()
         
         print('Processando tempo canal...\n')
         self.tempo_canal()
@@ -3543,7 +3410,6 @@ class Test():
         else:
             self.escreve_tempo_sup()
 
-        self.escreve_comprimento_acumulado()
         self.escreve_tempo_canal()
         self.escreve_tempo_total()
         self.escreve_trecho_pixel()
@@ -3624,7 +3490,7 @@ class Test():
             
         # Reading input files
         print('Reading input files')
-        arquivo_bacia = r"c:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\SmallExample\input_binary\1_WATERSHED_EXbin.RST"
+        arquivo_bacia = r"c:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\SmallExample\1_TravelTime\Input_binary\bacia.rst"
         self.leh_bacia(arquivo_bacia, 3)
         self.numera_pix_bacia()
         self.leh_precip_distribuida()
@@ -3665,6 +3531,7 @@ class Test():
         print(f'The processing time was: {(end-start)/60} min')
 
 cla_test = Test()
+cla_test.run_flow_tt()
 # cla_test.run_rainfall_interpolation(2)
 # cla_test.run_exc_rain()
-cla_test.run_flow_routing()
+# cla_test.run_flow_routing()

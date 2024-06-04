@@ -141,7 +141,6 @@ class GlobalVariables:
         self.numtreaux = 0
         self.numtreaux2 = 0
         self.tipo_decliv = 4
-        self.sda = 0
         self.hexc = 0
         self.numero_total_pix = 0
         self.num_intervalos = 0
