@@ -79,6 +79,7 @@ class GlobalVariables:
         self.colcabe = np.empty([], dtype = np.int16)
         self.Sclasse = np.empty([], dtype = np.int16)
         self.usaux = np.empty([], dtype = np.int16)
+        self.uso_mann = np.empty([], dtype = np.int16)
         self.usaux2 = np.empty([], dtype = np.int16)
         self.Mann = np.empty([], dtype = np.int16)
         self.Mannclasse = np.empty([], dtype = np.int16)

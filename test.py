@@ -329,9 +329,9 @@ class Test():
             for lin in range(self.rdc_vars.nlin):
                 for col in range(self.rdc_vars.ncol):
                     # Verifica se o valor atual da variável maxdir está presente no mapeamento
-                    if self.global_vars.direcoes[lin, col] in idrisi_map:
+                    if self.global_vars.direcoes[lin][col] in idrisi_map:
                         # Atualiza o valor do elemento atual da matriz dir de acordo com os novos valores
-                        self.global_vars.direcoes[lin, col] = idrisi_map[self.global_vars.direcoes[lin, col]]
+                        self.global_vars.direcoes[lin][col] = idrisi_map[self.global_vars.direcoes[lin][col]]
 
 
         # Tratamento das direções na borda
@@ -435,28 +435,29 @@ class Test():
         arquivo = r'c:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\SmallExample\1_TravelTime\Input_binary\relacao_uso_Manning.txt'
 
         # Criando variável extra, para armazenar os tipos de uso e coeficente de Manning
-        uso_manning = []
-        coef_maning = []
-        uso_manning_val = []
-        coef_maning_val = []
+        class_id:int = 0
+        uso_manning: list = []
+        coef_maning: list = []
+        uso_manning_val: dict = {}
+        coef_maning_val:list = []
         # Abrindo o arquivo que contém o coeficiente de Manning para os diferentes usos do solo
         with open(arquivo, 'r', encoding='utf-8') as arquivo_txt:
         #  Ignora a primeira linha, pois ela contém apenas o cabeçalho
-            firt_line = arquivo_txt.readline()
+            cabecalho = arquivo_txt.readline()
             # Lê as informações de uso do solo e coeficiente de Manning 
             for line in arquivo_txt:
                 # Coletando as informações de cada linha
                 info = line.split()
                 # Armazenando os valores das linhas nas suas respectivas variáveis
-                uso_manning = int(info[0])
+                class_id_key = int(info[0])
                 coef_maning = float(info[1])
-
                 # Adicionando os valores nas variáveis destinadas
-                uso_manning_val = np.append(uso_manning_val, uso_manning)
+                uso_manning_val[class_id_key] = class_id
                 coef_maning_val = np.append(coef_maning_val, coef_maning)
+                class_id +=1
 
         # Adicionando cada valor às suas respectivas variáveis
-        self.global_vars.usaux = uso_manning_val
+        self.global_vars.uso_mann = uso_manning_val
         self.global_vars.Mann = coef_maning_val
 
 
@@ -627,9 +628,9 @@ class Test():
         # Numeração dos píxels internos a bacia: São chamados de cabeceira, pois o caminho do fluxo é iniciado a partir de cada um deles
         for col in range(1, self.rdc_vars.ncol - 1):
             for lin in range(1, self.rdc_vars.nlin - 1):
-                pixel_atual +=1
                 # Atualizará apenas os píxel que estão na bacia hidrográfica(cabeceira == 1)
                 if self.global_vars.bacia[lin][col] == 1:
+                    pixel_atual +=1
                     # A priori, todos os píxels serão considerados de cabeceira
                     self.cabeceira[lin][col] = 1
                     # Cria vizinhança 3x3 para estudar a direção de fluxo do píxel central.
@@ -676,12 +677,14 @@ class Test():
         TSpix = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
         self.global_vars.TSpix = TSpix
         TSpix = None
+        pixel_atual: int = 0
 
         # iterando sobre os elementos do arquivo raster
         for col in range(self.rdc_vars.ncol):
             for lin in range(self.rdc_vars.nlin):
                 # Relaizando operações no apenas na região da bacia hidográfica
                 if self.global_vars.bacia[lin][col] == 1:
+                    pixel_atual +=1
                     self.global_vars.linaux: int = lin
                     self.global_vars.colaux: int = col
                     self.global_vars.caminho: int = 0
@@ -779,8 +782,9 @@ class Test():
 
                                         # JVD: correção da indexação para o python (inicia no zero)
                                         # Calcula o TS por píxel
-                                        self.global_vars.TSpix[self.global_vars.linaux2][self.global_vars.colaux2] = 5.474 * ((self.global_vars.Mann[self.global_vars.usaux - 1] *self.global_vars.Ltreaux)**0.8) \
-                                            / ((self.global_vars.P24**0.5)*((self.global_vars.Streaux/1000.0)**0.4))
+                                        self.global_vars.TSpix[self.global_vars.linaux2][self.global_vars.colaux2] = 5.474 * ((self.global_vars.Mann[self.global_vars.uso_mann[self.global_vars.usaux]] * self.global_vars.Ltreaux)**0.8) / ((self.global_vars.P24**0.5)*((self.global_vars.Streaux/1000.0)**0.4))
+                    print(f'[{pixel_atual}/{353707}] ({pixel_atual/353707*100:.2f}%)', end='\r')
+
         # Atualiza as variáveis globais
         self.global_vars.DIST = dist
         self.fim = perf_counter()
