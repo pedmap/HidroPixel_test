@@ -169,6 +169,7 @@ class GlobalVariables:
         self.lado = 0.0
         self.auxdist = 0.0
         self.tamcam = np.float64(0.0)
+        self.Ncabe = np.float64(0.0)
         self.Ltreaux = np.float64(0.0)
         self.Streaux = np.float64(0.0)
         self.Lfozaux1 = np.float64(0.0)

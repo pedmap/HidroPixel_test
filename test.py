@@ -107,10 +107,10 @@ class Test():
                     # QMessageBox.warning(None, "ERROR!", resulte)
 
                 # Lê informações do arquivo de metadados (.rdc)
-                arquivo_rdc = arquivo.replace('.RST','.rdc')
+                arquivo_rdc = r"C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\Bacia_mulugun\hidropixel_files\bacia.RDC"
                 
                 if arquivo_rdc is not None:
-                    with open(arquivo_rdc, 'r', encoding = 'utf-8') as rdc_file:
+                    with open(arquivo_rdc, 'r') as rdc_file:
                         # Separando os dados do arquivo RDC em função das linhas que contém alguma das palavras abaixo
                         k_words = ["columns", "rows", "ref. system", "ref. units", "min. X", "max. X", "min. Y", "max. Y", "resolution"]
                         lines_RDC = [line.strip() for line in rdc_file.readlines() if any(word in line for word in k_words)]
@@ -344,7 +344,7 @@ class Test():
         """Esta função é utilizada para ler as informações acerca da drenagem dos rios (arquivo raster - .RST)"""
 
         # Obtendo o arquivo referente as calasses dos rios da bacia hidrográfica
-        arquivo = r'c:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\SmallExample\input_binary\5_DRAINAGE_EXbin.RST'
+        arquivo = r"C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\SmallExample\input_binary\5_DRAINAGE_EX_BIN_2.RST"
         # Abrindo o arquivo raster com as informações acerda do sistema de drenagem da bacia hidrográfica
         rst_file_drenagem = gdal.Open(arquivo)
         
@@ -522,7 +522,7 @@ class Test():
                         self.global_vars.colaux = col
                         self.global_vars.caminho = 0
                         self.global_vars.tamcam:float = 0.0
-                        self.global_vars.tamfoz:float = 0.0    
+                        self.global_vars.tamfoz:float = 0.0 
 
                         while self.global_vars.caminho == 0:
                             
@@ -595,7 +595,7 @@ class Test():
                         # Atulizando a variável lfoz
                         self.global_vars.Lfoz[lin][col] = self.global_vars.tamfoz
 
-                    print(f'[{pixel_atual}/{3922}] ({pixel_atual/3922*100:.2f}%)', end='\r')
+                        print(f'[{pixel_atual}/{61}] ({pixel_atual/61*100:.2f}%)', end='\r')
 
         self.fim = perf_counter()
         print(f'{(self.fim - self.inicio)/60} min')                  
@@ -654,6 +654,7 @@ class Test():
 
         # Atualiza variáveis globais
         self.global_vars.numcabe = self.numcabe
+        self.global_vars.Ncabe = self.global_vars.numcabeaux
 
         self.fim = perf_counter()
         print(f'{(self.fim - self.inicio)/60} min') 
@@ -682,7 +683,7 @@ class Test():
         # iterando sobre os elementos do arquivo raster
         for col in range(self.rdc_vars.ncol):
             for lin in range(self.rdc_vars.nlin):
-                # Relaizando operações no apenas na região da bacia hidográfica
+                # Realiza as operações no apenas na região da bacia hidográfica
                 if self.global_vars.bacia[lin][col] == 1:
                     pixel_atual +=1
                     self.global_vars.linaux: int = lin
@@ -783,6 +784,7 @@ class Test():
                                         # JVD: correção da indexação para o python (inicia no zero)
                                         # Calcula o TS por píxel
                                         self.global_vars.TSpix[self.global_vars.linaux2][self.global_vars.colaux2] = 5.474 * ((self.global_vars.Mann[self.global_vars.uso_mann[self.global_vars.usaux]] * self.global_vars.Ltreaux)**0.8) / ((self.global_vars.P24**0.5)*((self.global_vars.Streaux/1000.0)**0.4))
+                    
                     print(f'[{pixel_atual}/{353707}] ({pixel_atual/353707*100:.2f}%)', end='\r')
 
         # Atualiza as variáveis globais
@@ -798,16 +800,16 @@ class Test():
         self.global_vars.TREpix = TREpix
         TREpix = None
         condicao1 = None
-        
+        pixel_atual = 0
         #ARPlidar: loop para contar o número máximo de trechos
         for col in range(1, self.rdc_vars.ncol-1):
             for lin in range(1, self.rdc_vars.nlin-1):
-
                 # Ações realizadas apenas na região da bacia
                 if self.global_vars.bacia[lin][col] == 1:
 
                     # ARPlidar
                     if self.global_vars.numcabe[lin][col] > 0:
+                        pixel_atual +=1
                         self.global_vars.numcabeaux = int(self.global_vars.numcabe[lin][col])
                         self.global_vars.linaux = lin
                         self.global_vars.colaux = col
@@ -861,27 +863,29 @@ class Test():
                                 self.global_vars.colaux2 = self.global_vars.colaux
                                 self.global_vars.usaux = self.global_vars.usosolo[self.global_vars.linaux][self.global_vars.colaux]
 
+                        print(f'[{pixel_atual}/{80493}] ({pixel_atual/80493*100:.2f}%)', end='\r')
+
         self.global_vars.Ntre = self.global_vars.numtreauxmax + 1
 
         # Percorrendo o caminho desde as cabeceiras e granvando as distâncias relativas de cada trecho de uso do solo contínuo
 
         # Redimenciona variáveis necessárias
-        cotaini = np.zeros((self.global_vars.numcabeaux,self.global_vars.Ntre))
+        cotaini = np.zeros((self.global_vars.Ncabe,self.global_vars.Ntre))
         self.global_vars.cotaini = cotaini
-        containi = None
-        cotafim = np.zeros((self.global_vars.numcabeaux,self.global_vars.Ntre))
+        cotaini = None
+        cotafim = np.zeros((self.global_vars.Ncabe,self.global_vars.Ntre))
         self.global_vars.cotafim = cotafim
         cotafim = None
-        Ltre = np.zeros((self.global_vars.numcabeaux,self.global_vars.Ntre))
+        Ltre = np.zeros((self.global_vars.Ncabe,self.global_vars.Ntre))
         self.global_vars.Ltre = Ltre
         Ltre = None
-        Stre = np.zeros((self.global_vars.numcabeaux,self.global_vars.Ntre))
+        Stre = np.zeros((self.global_vars.Ncabe,self.global_vars.Ntre))
         self.global_vars.Stre = Stre
         Stre = None
-        usotre = np.zeros((self.global_vars.numcabeaux,self.global_vars.Ntre))
+        usotre = np.zeros((self.global_vars.Ncabe,self.global_vars.Ntre))
         self.global_vars.usotre = usotre
         usotre = None
-        DISTult = np.zeros((self.global_vars.numcabeaux,self.global_vars.Ntre))
+        DISTult = np.zeros((self.global_vars.Ncabe,self.global_vars.Ntre))
         self.global_vars.DISTult = DISTult
         DISTult = None
         refcabtre  = np.zeros((self.rdc_vars.nlin,self.rdc_vars.ncol))
@@ -895,99 +899,108 @@ class Test():
         CABEpix = np.zeros((self.rdc_vars.nlin,self.rdc_vars.ncol))
         self.global_vars.CABEpix = CABEpix
         CABEpix = None
-        numtre = np.zeros(self.global_vars.numcabeaux)
+        numtre = np.zeros(self.global_vars.Ncabe)
         self.global_vars.numtre = numtre
         numtre = None
 
+        pixel_atual = 0
         # Continua o cálculo dos trechos
         for col in range(1, self.rdc_vars.ncol-1):
             for lin in range(1, self.rdc_vars.nlin-1):
                 # Verificando os elementos da região da bacia
-                if self.global_vars.numcabe[lin][col] > 0:
-                    self.global_vars.numcabeaux = int(self.global_vars.numcabe[lin][col])
-                    self.global_vars.linaux = lin
-                    self.global_vars.colaux = col
-                    self.global_vars.linaux2 = lin
-                    self.global_vars.colaux2 = col
-                    self.global_vars.linaux3 = lin
-                    self.global_vars.colaux3 = col
-                    self.global_vars.numtreaux = 0
-                    self.global_vars.caminho = 0
-                    self.global_vars.usaux = self.global_vars.usosolo[lin][col]
-                    self.global_vars.usaux2 = self.global_vars.usaux
+                if self.global_vars.bacia[lin][col] == 1:
+                    if self.global_vars.numcabe[lin][col] > 0:
+                        pixel_atual +=1
+                        self.global_vars.numcabeaux = int(self.global_vars.numcabe[lin][col])
+                        self.global_vars.linaux = lin
+                        self.global_vars.colaux = col
+                        self.global_vars.linaux2 = lin
+                        self.global_vars.colaux2 = col
+                        self.global_vars.linaux3 = lin
+                        self.global_vars.colaux3 = col
+                        self.global_vars.numtreaux = 0
+                        self.global_vars.caminho = 0
+                        self.global_vars.usaux = self.global_vars.usosolo[lin][col]
+                        self.global_vars.usaux2 = self.global_vars.usaux
 
-                    # ARPdecliv
-                    # Grava qual trecho o píxel em questão pertence
-                    self.global_vars.numtreaux2 = 1
-                    self.global_vars.TREpix[self.global_vars.linaux2][self.global_vars.colaux2] = self.global_vars.numcabeaux2
+                        # ARPdecliv
+                        # Grava qual trecho o píxel em questão pertence
+                        self.global_vars.numtreaux2 = 1
+                        self.global_vars.TREpix[self.global_vars.linaux2][self.global_vars.colaux2] = self.global_vars.numcabeaux2
 
-                    while self.global_vars.caminho == 0:
-                        self.global_vars.diraux = self.global_vars.direcoes[self.global_vars.linaux][self.global_vars.colaux]
-                        self.global_vars.linaux += self.global_vars.dlin[self.global_vars.diraux]
-                        self.global_vars.colaux += self.global_vars.dcol[self.global_vars.diraux]
+                        while self.global_vars.caminho == 0:
+                            self.global_vars.diraux = self.global_vars.direcoes[self.global_vars.linaux][self.global_vars.colaux]
+                            self.global_vars.linaux += self.global_vars.dlin[self.global_vars.diraux]
+                            self.global_vars.colaux += self.global_vars.dcol[self.global_vars.diraux]
 
-                        if condicao1 or condicao2:
-                            # Mudou o tipo de uso do solo ou alcançou a rede de drenagem,
-                            # então terminou o trecho no píxel anterior
-                            self.global_vars.numtreaux +=1
-                            self.global_vars.numtre[self.global_vars.numcabeaux-1] = self.global_vars.numtreaux
-                            self.global_vars.Ltre[self.global_vars.numcabeaux-1][self.global_vars.numtreaux-1] = self.global_vars.DIST[self.global_vars.linaux3][self.global_vars.colaux3] \
-                                                                                                            - self.global_vars.DIST[self.global_vars.linaux][self.global_vars.colaux] 
-                                                                                                            
-                            # Grava a distância (DIST) do último píxel do trecho
-                            self.global_vars.DISTult[self.global_vars.numcabeaux-1][self.global_vars.numtreaux-1] = self.global_vars.DIST[self.global_vars.linaux][self.global_vars.colaux]
-                            self.global_vars.cotaini[self.global_vars.numcabeaux-1][self.global_vars.numtreaux-1] = self.global_vars.MDE[self.global_vars.linaux3][self.global_vars.colaux3]
-                            self.global_vars.cotafim[self.global_vars.numcabeaux-1][self.global_vars.numtreaux-1] = self.global_vars.MDE[self.global_vars.linaux][self.global_vars.colaux]
-                            
-                            a1 = (self.global_vars.cotaini[self.global_vars.numcabeaux][self.global_vars.numtreaux-1] - self.global_vars.cotafim[self.global_vars.numcabeaux][self.global_vars.numtreaux-1])
-                            b1 = self.global_vars.Ltre[self.global_vars.numcabeaux][self.global_vars.numtreaux-1]*1000.0
-                            self.global_vars.Stre[self.global_vars.numcabeaux][self.global_vars.numtreaux-1] = a1 / b1
-                            self.global_vars.usotre[self.global_vars.numcabeaux][self.global_vars.numtreaux-1] = self.global_vars.usaux
+                            condicao1 = self.global_vars.usaux != self.global_vars.usosolo[self.global_vars.linaux][self.global_vars.colaux]
+                            condicao2 = self.global_vars.dren[self.global_vars.linaux][self.global_vars.colaux] == 1
 
-                            # ARPlidar: adiciona a bacia como condição; chegar na rede de drenagem ou sair da baica, finaliza while
-                            condicao4 = self.global_vars.dren[self.global_vars.linaux][self.global_vars.colaux] == 1 or self.global_vars.bacia[self.global_vars.linaux][self.global_vars.colaux] == 0
-                            if condicao4:
-                                self.global_vars.caminho = 1
-                                self.global_vars.refcabtre[self.global_vars.linaux3][self.global_vars.colaux3] = self.global_vars.numtreaux
-                                self.global_vars.refcabtre[self.global_vars.linaux2][self.global_vars.colaux2] = self.global_vars.numtreaux
+                            if condicao1 or condicao2:
+                                # Mudou o tipo de uso do solo ou alcançou a rede de drenagem,
+                                # então terminou o trecho no píxel anterior
+                                self.global_vars.numtreaux += 1
+                                self.global_vars.numtre[self.global_vars.numcabeaux-1] = self.global_vars.numtreaux
+                                self.global_vars.Ltre[self.global_vars.numcabeaux-1][self.global_vars.numtreaux-1] = self.global_vars.DIST[self.global_vars.linaux3][self.global_vars.colaux3] \
+                                                                                                                - self.global_vars.DIST[self.global_vars.linaux][self.global_vars.colaux] 
+                                                                                                                
+                                # Grava a distância (DIST) do último píxel do trecho
+                                self.global_vars.DISTult[self.global_vars.numcabeaux-1][self.global_vars.numtreaux-1] = self.global_vars.DIST[self.global_vars.linaux][self.global_vars.colaux]
+                                self.global_vars.cotaini[self.global_vars.numcabeaux-1][self.global_vars.numtreaux-1] = self.global_vars.MDE[self.global_vars.linaux3][self.global_vars.colaux3]
+                                self.global_vars.cotafim[self.global_vars.numcabeaux-1][self.global_vars.numtreaux-1] = self.global_vars.MDE[self.global_vars.linaux][self.global_vars.colaux]
+                                
+                                self.global_vars.Stre[self.global_vars.numcabeaux-1][self.global_vars.numtreaux-1] = (self.global_vars.cotaini[self.global_vars.numcabeaux-1][self.global_vars.numtreaux-1] - self.global_vars.cotafim[self.global_vars.numcabeaux-1][self.global_vars.numtreaux-1]) / self.global_vars.Ltre[self.global_vars.numcabeaux-1][self.global_vars.numtreaux-1]*1000.0
+
+                                self.global_vars.usotre[self.global_vars.numcabeaux-1][self.global_vars.numtreaux-1] = self.global_vars.usaux
+
+                                # ARPlidar: adiciona a bacia como condição; chegar na rede de drenagem ou sair da baica, finaliza while
+                                condicao4 = self.global_vars.dren[self.global_vars.linaux][self.global_vars.colaux] == 1 or self.global_vars.bacia[self.global_vars.linaux][self.global_vars.colaux] == 0
+                                if condicao4:
+                                    self.global_vars.caminho = 1
+                                    self.global_vars.refcabtre[self.global_vars.linaux3][self.global_vars.colaux3] = self.global_vars.numtreaux
+                                    self.global_vars.refcabtre[self.global_vars.linaux2][self.global_vars.colaux2] = self.global_vars.numtreaux
+
+                                else:
+                                    # Vai continuar o caminho, mas em um novo trecho
+                                    self.global_vars.refcabtre[self.global_vars.linaux3][self.global_vars.colaux3] = self.global_vars.numtreaux
+                                    self.global_vars.refcabtre[self.global_vars.linaux2][self.global_vars.colaux2] = self.global_vars.numtreaux
+
+                                    self.global_vars.linaux3 = self.global_vars.linaux
+                                    self.global_vars.colaux3 = self.global_vars.colaux
+                                    self.global_vars.linaux2 = self.global_vars.linaux
+                                    self.global_vars.colaux2 = self.global_vars.colaux
+                                    self.global_vars.usaux = self.global_vars.usosolo[self.global_vars.linaux][self.global_vars.colaux]
+
+                                    # ARPdecliv
+                                    # Grava qual trecho o píxel em questão pertence
+                                    self.global_vars.numtreaux2 += 1
+                                    self.global_vars.TREpix[self.global_vars.linaux2][self.global_vars.colaux2] = self.global_vars.numtreaux2
 
                             else:
-                                # Vai continuar o cominho, mas em um novo trecho
-                                self.global_vars.refcabtre[self.global_vars.linaux3][self.global_vars.colaux3] = self.global_vars.numtreaux
-                                self.global_vars.refcabtre[self.global_vars.linaux2][self.global_vars.colaux2] = self.global_vars.numtreaux
-
-                                self.global_vars.linaux3 = self.global_vars.linaux
-                                self.global_vars.colaux3 = self.global_vars.colaux
+                                # Vai continuar caminhando, mas grava o valor do par (lin,col) do último píxel acessado
+                                self.global_vars.refcabtre[self.global_vars.linaux3][self.global_vars.colaux3] = self.global_vars.numtreaux + 1
+                                self.global_vars.refcabtre[self.global_vars.linaux2][self.global_vars.colaux2] = self.global_vars.numtreaux + 1
+                                
                                 self.global_vars.linaux2 = self.global_vars.linaux
                                 self.global_vars.colaux2 = self.global_vars.colaux
                                 self.global_vars.usaux = self.global_vars.usosolo[self.global_vars.linaux][self.global_vars.colaux]
 
                                 # ARPdecliv
                                 # Grava qual trecho o píxel em questão pertence
-                                self.global_vars.numtreaux2 += 1
                                 self.global_vars.TREpix[self.global_vars.linaux2][self.global_vars.colaux2] = self.global_vars.numtreaux2
 
-                        else:
-                            # Vai continuar caminhando, mas grava o valor do par (lin,col) do último píxel acessado
-                            self.global_vars.refcabtre[self.global_vars.linaux3][self.global_vars.colaux3] = self.global_vars.numtreaux + 1
-                            self.global_vars.refcabtre[self.global_vars.linaux2][self.global_vars.colaux2] = self.global_vars.numtreaux + 1
-                            
-                            self.global_vars.linaux2 = self.global_vars.linaux
-                            self.global_vars.colaux2 = self.global_vars.colaux
-                            self.global_vars.usaux = self.global_vars.usosolo[self.global_vars.linaux][self.global_vars.colaux]
-
-                            # ARPdecliv
-                            # Grava qual trecho o píxel em questão pertence
-                            self.global_vars.TREpix[self.global_vars.linaux2][self.global_vars.colaux2] = self.global_vars.numtreaux2
-
+                        print(f'[{pixel_atual}/{80493}] ({pixel_atual/80493*100:.2f}%)', end='\r')
+        
         # Percorre novamente o caminho desde às cabeceiras, gravando distancias relativas de cada pixel dentro de cada trecho de uso do solo continuo
         # Percorrendo os elementos da bacia hidrográfica
+        pixel_atual = 0
         for col in range(1, self.rdc_vars.ncol-1):
             for lin in range(1, self.rdc_vars.nlin-1):
                 # Os cálculos são executados apenas na região da bacia hidrográfica
                 if self.global_vars.bacia[lin][col] == 1:
                     # ARPlidar
                     if self.global_vars.numcabe[lin][col] > 0:
+                        pixel_atual += 1
                         self.global_vars.numcabeaux = int(self.global_vars.numcabe[lin][col])
                         self.global_vars.linaux = lin
                         self.global_vars.colaux = col
@@ -1001,12 +1014,10 @@ class Test():
                         self.global_vars.usaux2 = self.global_vars.usaux
 
                         # Grava a distância do píxel relativo ao trecho
-                        self.global_vars.DISTtre[self.global_vars.linaux2][self.global_vars.colaux2] = self.global_vars.DIST[lin][col] - self.global_vars.DISTult[self.global_vars.numcabeaux][1]
+                        self.global_vars.DISTtre[self.global_vars.linaux2][self.global_vars.colaux2] = self.global_vars.DIST[lin][col] - self.global_vars.DISTult[self.global_vars.numcabeaux - 1][1]
 
                         # ARPdecliv: calcula a declividade do píxel relativo ao último píxel do trecho
-                        c1 = (self.global_vars.MDE[self.global_vars.linaux2][self.global_vars.colaux2] - self.global_vars.cotafim[self.global_vars.numcabeaux][1])
-                        d1 = self.global_vars.DISTtre[self.global_vars.linaux2][self.global_vars.colaux2]*1000.0 
-                        self.global_vars.DECLIVpix[[self.global_vars.linaux2][self.global_vars.colaux2]] = c1 / d1
+                        self.global_vars.DECLIVpix[self.global_vars.linaux2][self.global_vars.colaux2] = (self.global_vars.MDE[self.global_vars.linaux2][self.global_vars.colaux2] - self.global_vars.cotafim[self.global_vars.numcabeaux - 1][1]) / self.global_vars.DISTtre[self.global_vars.linaux2][self.global_vars.colaux2]*1000.0
 
                         # Grava qual cabeceira o píxel em questão faz parte
                         self.global_vars.CABEpix[self.global_vars.linaux2][self.global_vars.colaux2] = self.global_vars.numcabeaux
@@ -1015,7 +1026,10 @@ class Test():
                             self.global_vars.diraux = self.global_vars.direcoes[self.global_vars.linaux][self.global_vars.colaux]
                             self.global_vars.linaux += self.global_vars.dlin[self.global_vars.diraux]
                             self.global_vars.colaux += self.global_vars.dcol[self.global_vars.diraux]
-                            
+
+                            condicao1 = self.global_vars.usaux != self.global_vars.usosolo[self.global_vars.linaux][self.global_vars.colaux]
+                            condicao2 = self.global_vars.dren[self.global_vars.linaux][self.global_vars.colaux] == 1     
+
                             if condicao1 or condicao2:
                                 # Mudou o tipo de uso do solo ou alcançou a rede de drenagem, 
                                 # então terminou um trecho no píxel anterior
@@ -1023,13 +1037,15 @@ class Test():
                                 self.global_vars.numtre[self.global_vars.numtreaux-1] = self.global_vars.numtreaux
                                 
                                 # Grava a distância do píxel relativo ao trecho
-                                self.global_vars.DISTtre[self.global_vars.linaux][self.global_vars.colaux] = self.global_vars.DIST[self.global_vars.linaux][self.global_vars.colaux] - self.global_vars.DISTult[self.global_vars.numcabeaux][self.global_vars.numcabeaux + 1]
+                                self.global_vars.DISTtre[self.global_vars.linaux][self.global_vars.colaux] = self.global_vars.DIST[self.global_vars.linaux][self.global_vars.colaux] - self.global_vars.DISTult[self.global_vars.numcabeaux-2][self.global_vars.numtreaux-1]
 
-                                self.global_vars.usotre[self.global_vars.numcabeaux][self.global_vars.numtreaux -1] = self.global_vars.usaux
+                                self.global_vars.usotre[self.global_vars.numcabeaux-1][self.global_vars.numtreaux-1] = self.global_vars.usaux
 
                                 # ARPlidar: adiciona a bacia hidrográfica como uma condição
-                                if self.global_vars.dren[self.global_vars.linaux][self.global_vars.colaux] ==1 or self.global_vars.bacia[self.global_vars.linaux][self.global_vars.colaux] == 0:
+                                condicao5 = self.global_vars.dren[self.global_vars.linaux][self.global_vars.colaux] == 1 or self.global_vars.bacia[self.global_vars.linaux][self.global_vars.colaux] == 0
+                                if condicao5:
                                     self.global_vars.caminho = 1
+
                                 else:
                                     # Vai continuar o caminho, porém em um novo trecho
                                     self.global_vars.linaux3 = self.global_vars.linaux
@@ -1041,13 +1057,12 @@ class Test():
                                     # Grava qual cabeceira o píxel em questão faz parte
                                     self.global_vars.CABEpix[self.global_vars.linaux2][self.global_vars.colaux2] = self.global_vars.numcabeaux
 
-                                    # Calcula a declividade do píxel relativo ao último píxel do trecho
-                                    e1 = self.global_vars.MDE[self.global_vars.linaux2][self.global_vars.colaux2] - self.global_vars.cotafim[self.global_vars.numcabeaux][self.global_vars.numcabeaux + 1] 
-                                    f1 = self.global_vars.DISTtre[self.global_vars.linaux2][self.global_vars.colaux2]*1000.0
-                                    self.global_vars.DECLIVpix[self.global_vars.linaux2][self.global_vars.colaux2] = e1 / f1
+                                    # ARPdecliv: cálcula a declividade do píxel relativo ao último píxel do trecho
+                                    self.global_vars.DECLIVpix[self.global_vars.linaux2][self.global_vars.colaux2] = (self.global_vars.MDE[self.global_vars.linaux2][self.global_vars.colaux2] - self.global_vars.cotafim[self.global_vars.numcabeaux - 2][self.global_vars.numtreaux - 1]) / float(self.global_vars.DISTtre[self.global_vars.linaux2][self.global_vars.colaux2])*1000.0
 
-                            else:
-                                # Vai continuar caminhando, e grava os valores dos pares (nlin,ncol) do último píxel que passou           
+
+                            else:                     
+                            # Vai continuar caminhando, e grava os valores dos pares (nlin,ncol) do último píxel que passou           
                                 self.global_vars.linaux2 = self.global_vars.linaux
                                 self.global_vars.colaux2 = self.global_vars.colaux
                                 self.global_vars.usaux = self.global_vars.usosolo[self.global_vars.linaux][self.global_vars.colaux]
@@ -1057,102 +1072,10 @@ class Test():
 
                                 # Grava a DIST do píxel relativo ao trecho
                                 self.global_vars.DISTtre[self.global_vars.linaux2][self.global_vars.colaux2] = self.global_vars.DIST[self.global_vars.linaux2][self.global_vars.colaux2] \
-                                                                                                               - self.global_vars.DISTult[self.global_vars.numcabeaux][self.global_vars.numtreaux + 1]
+                                                                                                                - self.global_vars.DISTult[self.global_vars.numcabeaux - 2][self.global_vars.numtreaux - 1]
 
-                                # ARPdecliv: Calcula a declividade o píxel relativo ao último píxel do trecho  
-                                g1 = self.global_vars.MDE[self.global_vars.linaux2][self.global_vars.colaux2] - self.global_vars.cotafim[self.global_vars.numcabeaux][self.global_vars.numtreaux + 1]
-                                h1 = self.global_vars.DISTtre[self.global_vars.linaux2][self.global_vars.colaux2]*1000.0
-                                self.global_vars.DECLIVpix[self.global_vars.linaux2][self.global_vars.colaux2] =  g1/h1
-        
-        # Redimenciona variáveis necessárias
-        Somaaux = np.zeros((self.global_vars.numcabeaux,self.global_vars.Ntre))
-        self.global_vars.Somaaux = Somaaux
-        Somaaux = None
-        SomaauxPond = np.zeros((self.global_vars.numcabeaux,self.global_vars.Ntre))
-        self.global_vars.SomaauxPond = SomaauxPond
-        SomaauxPond = None
-        SomaauxDist = np.zeros((self.global_vars.numcabeaux,self.global_vars.Ntre))
-        self.global_vars.SomaauxDist = SomaauxDist
-        SomaauxDist = None
-        contaaux = np.zeros((self.global_vars.numcabeaux,self.global_vars.Ntre))
-        self.global_vars.contaaux = contaaux
-        contaaux = None
+                        print(f'[{pixel_atual}/{80493}] ({pixel_atual/80493*100:.2f}%)', end='\r')
 
-        for col in range(1, self.rdc_vars.ncol-1):
-            for lin in range(1, self.rdc_vars.nlin-1):
-                # Os cálculo são realizados apenas na região da baica hidrográficia 
-                if self.global_vars.bacia[lin][col] == 1:
-                    # ARPlidar
-                    if self.global_vars.numcabe[lin][col] > 0:
-                        self.global_vars.numcabeaux = self.global_vars.numcabe[lin][col]
-                        self.global_vars.linaux = lin
-                        self.global_vars.colaux = col
-                        self.global_vars.linaux2 = lin
-                        self.global_vars.colaux2 = col
-                        self.global_vars.linaux3 = lin
-                        self.global_vars.colaux3 = col
-                        self.global_vars.numtreaux = 0
-                        self.global_vars.caminho = 0
-                        self.global_vars.usaux = self.global_vars.usosolo[lin][col]
-                        self.global_vars.usaux2 = self.global_vars.usaux
-
-                        # ARPdecliv
-                        self.global_vars.numtreaux2 = 1
-
-                        # Para o cálculo da média aritmética
-                        self.global_vars.Somaaux[self.global_vars.numcabeaux][self.global_vars.numtreaux2] += self.global_vars.DECLIVpix[lin][col]
-                        self.global_vars.contaaux[self.global_vars.numcabeaux][self.global_vars.numtreaux2] = self.global_vars.Somaaux[self.global_vars.numcabeaux][self.global_vars.numtreaux2] + 1
-
-                        # Para o cálculo da média ponderada
-                        self.global_vars.Somaauxpond[self.global_vars.numcabeaux][self.global_vars.numtreaux2] += self.global_vars.DECLIVpix[lin][col] * self.global_vars.DISTtre[lin][col]
-                        self.global_vars.SomaauxDist[self.global_vars.numcabeaux][self.global_vars.numtreaux2] += self.global_vars.DISTtre[lin][col]
-
-                        while self.global_vars.caminho == 0:
-                            self.global_vars.diraux = self.global_vars.direcoes[self.global_vars.linaux][self.global_vars.colaux]
-                            self.global_vars.linaux += self.global_vars.dlin[self.global_vars.diraux]
-                            self.global_vars.colaux += self.global_vars.dcol[self.global_vars.diraux]
-                            
-
-                            if condicao1 or condicao2:
-                                # Mudou o tipo de uso do solo ou alcançou a rede de drenagem, 
-                                # então terminou um trecho no píxel anterior
-                                self.global_vars.numtreaux += 1
-                                 # ARPlidar: adiciona a bacia hidrográfica como uma condição
-                                if self.global_vars.dren[self.global_vars.linaux][self.global_vars.colaux] == 1 or self.global_vars.bacia[self.global_vars.linaux][self.global_vars.colaux] == 0:
-                                    self.global_vars.caminho = 1
-                                else:
-                                    # Vai continuar o caminho, porém em um novo trecho
-                                    self.global_vars.linaux3 = self.global_vars.linaux
-                                    self.global_vars.colaux3 = self.global_vars.colaux
-                                    self.global_vars.linaux2 = self.global_vars.linaux
-                                    self.global_vars.colaux2 = self.global_vars.colaux
-                                    self.global_vars.usaux = self.global_vars.usosolo[self.global_vars.linaux][self.global_vars.colaux]
-
-                                    # ARPdecliv: grava qual trecho o píxel em questão pertence
-                                    self.global_vars.numtreaux2 += 1
-
-                                    # ARPdecliv: para a média aritmética
-                                    self.global_vars.Somaaux[self.global_vars.numcabeaux][self.global_vars.numtreaux2] += self.global_vars.DECLIVpix[self.global_vars.linaux][self.global_vars.colaux]
-                                    self.global_vars.contaaux[self.global_vars.numcabeaux][self.global_vars.numtreaux2] += 1
-
-                                    # ARPdecliv: para a média ponderada
-                                    self.global_vars.Somaauxpond[self.global_vars.numcabeaux][self.global_vars.numtreaux2] += self.global_vars.DECLIVpix[self.global_vars.linaux][self.global_vars.colaux] * self.global_vars.DISTtre[self.global_vars.linaux][self.global_vars.colaux]
-                                    self.global_vars.SomaauxDist[self.global_vars.numcabeaux][self.global_vars.numtreaux2] += self.global_vars.DISTtre[self.global_vars.linaux][self.global_vars.colaux]
-                            
-                            else:
-                                # Vai continuar caminhando, e grava os valores dos pares (nlin,ncol) do último píxel que passou        
-                                self.global_vars.linaux2 = self.global_vars.linaux
-                                self.global_vars.colaux2 = self.global_vars.colaux
-                                self.global_vars.usaux = self.global_vars.usosolo[self.global_vars.linaux][self.global_vars.colaux]
-
-
-                                # ARPdecliv: para a média aritmética
-                                self.global_vars.Somaaux[self.global_vars.numcabeaux][self.global_vars.numtreaux2] += self.global_vars.DECLIVpix[self.global_vars.linaux][self.global_vars.colaux]
-                                self.global_vars.contaaux[self.global_vars.numcabeaux][self.global_vars.numtreaux2] += 1
-
-                                # ARPdecliv: para a média ponderada
-                                self.global_vars.Somaauxpond[self.global_vars.numcabeaux][self.global_vars.numtreaux2] += self.global_vars.DECLIVpix[self.global_vars.linaux][self.global_vars.colaux] * self.global_vars.DISTtre[self.global_vars.linaux][self.global_vars.colaux]
-                                self.global_vars.SomaauxDist[self.global_vars.numcabeaux][self.global_vars.numtreaux2] += self.global_vars.DISTtre[self.global_vars.linaux][self.global_vars.colaux]
         self.fim = perf_counter()
         print(f'{(self.fim - self.inicio)/60} min')                        
         print('Passou dist_trecho')
@@ -1598,25 +1521,26 @@ class Test():
 
         self.quantidade_blocos_chuva = len(split_lines) - 1 
 
-    def leh_posto_pluv(self):
+    def leh_posto_pluv(self, arquivo):
         '''Esta função é responsável por ler e armazenar as informações dos postos pluviométricos'''
         # Definição das variáveis
         id_postos = []
         latitude = []
         longitude = []
         numero_posto = []
-        arquivo_posto = r'c:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\Hidropixel - User Manual and algorithms\Algorithms\3 - Rainfall interpolation\Example\Input\2 - Rain gauges\2_raingauges.txt'
+        dict_numero_posto = {}
         w = 0
-        with open(arquivo_posto, 'r', encoding = 'utf-8') as arquivo_txt:
+        with open(arquivo, 'r', encoding = 'utf-8') as arquivo_txt:
             # Armazena cabeçalho
             cabecalho = arquivo_txt.readline().strip()
             # Lê as linhas do arquivo enviado
             for line in arquivo_txt:
-                w+=1
                 split_lines = line.split(',')
                 id_postos.append(int(split_lines[0]))
                 latitude.append(float(split_lines[1]))
                 longitude.append(float(split_lines[2]))
+                dict_numero_posto[w] = id_postos[w]
+                w+=1
                 numero_posto.append(w)
 
         # Redimensiona as variáveis globais
@@ -1624,15 +1548,14 @@ class Test():
         self.id_postos = np.array(id_postos)
         self.latitude = np.array(latitude)
         self.longitude = np.array(longitude)
-        self.numero_posto = np.array(numero_posto)
+        self.numero_posto = dict_numero_posto
 
-    def leh_arquivo_precipitacao(self):
+    def leh_arquivo_precipitacao(self, arquivo):
         '''Esta função lê e armazena os valores de precipitação de cada posto ao longo do tempo'''
         # Definição das variáveis
         w = 0
         # Recebe e lê o arquivo
-        arquivo_chuva = r'c:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\Hidropixel - User Manual and algorithms\Algorithms\3 - Rainfall interpolation\Example\Input\3 - Rainfall data\3_rainfall_data.txt'
-        with open(arquivo_chuva, 'r', encoding = 'utf-8') as arquivo_txt:
+        with open(arquivo, 'r', encoding = 'utf-8') as arquivo_txt:
             # Armazena cabeçalho
             cabecalho = arquivo_txt.readline().strip()
 
@@ -1666,14 +1589,13 @@ class Test():
         distancia_x = 0
         rainfall = 0
         numero_total_pix = np.sum(self.global_vars.bacia[self.global_vars.bacia==1])
-        print(numero_total_pix)
 
         # Gera o arquivo com precipitação interpolada por pixel
-        arquivo = r'c:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\resultados_test_modelo\rainfall_interpolated.txt'
+        arquivo = r'C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\Bacia_mulugun\hidropixel_files\rainfall_interpolated.txt'
         with open(arquivo, 'w', encoding = 'utf-8') as arquivo_txt:
             # JVD:optimize: Escreve cabeçalho
             arquivo_txt.write('Pixel,')
-            arquivo_txt.write(','.join(map(str, self.tempo)) + '\n')
+            arquivo_txt.write(','.join(map(str, int(self.tempo))) + '\n')
 
             # JVDoptimize: interpolação da precipitação
             for lin in range(self.rdc_vars.nlin):
@@ -2433,13 +2355,13 @@ class Test():
                 self.global_vars.numcabeaux = self.global_vars.numtre[self.global_vars.numcabeaux]
 
             for t in range(self.global_vars.numtreaux):
-                if self.global_vars.usotre[self.global_vars.numcabeaux][t] == 0:
+                if self.global_vars.usotre[self.global_vars.numcabeaux-1][t] == 0:
                         print(f'{t}; {self.global_vars.numcabeaux}  Uso zero')
                         input('Press enter to continue...')
                         pass
                 # Escrevendo as linhas do arquivo conforme os valores das variáveis
-                arquivo_txt.write('{:<10}{:<6}{:<10.2f}{:<10.2f}{:<10.2f}{:<12.6f}{:<6}\n'.format(self.global_vars.numcabeaux, t, self.global_vars.Ltre[self.global_vars.numcabeaux][t], self.global_vars.cotaini[self.global_vars.numcabeaux][t], self.global_vars.cotafim[self.global_vars.numcabeaux][t],\
-                                                                                    self.global_vars.Stre[self.global_vars.numcabeaux][t],self.global_vars.usotre[self.global_vars.numcabeaux][t]))
+                arquivo_txt.write('{:<10}{:<6}{:<10.2f}{:<10.2f}{:<10.2f}{:<12.6f}{:<6}\n'.format(self.global_vars.numcabeaux, t, self.global_vars.Ltre[self.global_vars.numcabeaux-1][t], self.global_vars.cotaini[self.global_vars.numcabeaux-1][t], self.global_vars.cotafim[self.global_vars.numcabeaux-1][t],\
+                                                                                    self.global_vars.Stre[self.global_vars.numcabeaux-1][t],self.global_vars.usotre[self.global_vars.numcabeaux-1][t]))
 
     def escreve_declivi_pixel(self):
         '''Esta função gera o mapa de numeração dos pixels da rede de drenagem'''
@@ -3397,12 +3319,12 @@ class Test():
         print('Processando distância de trecho...\n')
         self.dist_trecho()
         self.escreve_dados_trecho()
+        self.escreve_num_trechos()
+        self.escreve_dist_rel_trechos()
 
         print('Processando tempo de superfície...\n')
         self.tempo_sup()
         self.escreve_tre_cabec()
-        self.escreve_num_trechos()
-        self.escreve_dist_rel_trechos()
 
         
         print('Processando tempo canal...\n')
@@ -3441,10 +3363,12 @@ class Test():
 
         # Reading input files
         print('Reading input files')
-        arquivo_bacia = r"c:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\SmallExample\input_binary\1_WATERSHED_EXbin.RST"
+        arquivo_bacia = r"C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\Bacia_mulugun\hidropixel_files\bacia.rst"
         self.leh_bacia(arquivo_bacia, 2)
-        self.leh_posto_pluv()
-        self.leh_arquivo_precipitacao()
+        arquivo_posto = r"C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\Bacia_mulugun\dados_postos_pluviometricos\localizao_postos.txt"
+        self.leh_posto_pluv(arquivo_posto)
+        arquivo_precipitacao = r"C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\Bacia_mulugun\dados_postos_pluviometricos\rainfall_data.txt"
+        self.leh_arquivo_precipitacao(arquivo_precipitacao )
 
         # Processing and wrinting output files
         print('\nWriting outputs...')
@@ -3541,7 +3465,7 @@ class Test():
         print(f'The processing time was: {(end-start)/60} min')
 
 cla_test = Test()
-cla_test.run_flow_tt()
-# cla_test.run_rainfall_interpolation(2)
+# cla_test.run_flow_tt()
+cla_test.run_rainfall_interpolation(2)
 # cla_test.run_exc_rain()
 # cla_test.run_flow_routing()
