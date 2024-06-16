@@ -5083,6 +5083,7 @@ class HidroPixel:
             self.dlg_exc_rain.tbtn_pg4_6.clicked.connect(lambda: self.save_buttons(self.dlg_exc_rain.le_6_pg4))
             
             # configura botões da página run : excess rainfall
+            self.dlg_exc_rain.btn_run_2.clicked.connect(lambda: self.run_exc_rain())
             self.dlg_exc_rain.btn_close_pg4.clicked.connect(lambda: self.close_gui(2))
             
             # Configura botões da página rainfall interpolation
@@ -5135,6 +5136,7 @@ class HidroPixel:
             self.dlg_flow_rout.tbtn_pg4_6.clicked.connect(lambda: self.save_buttons(self.dlg_flow_rout.le_6_pg4))            
             
             # configura botões da página run : flow routing
+            self.dlg_flow_rout.btn_run_2.clicked.connect(lambda: self.run_flow_routing())
             self.dlg_flow_rout.btn_close_pg4.clicked.connect(lambda: self.close_gui(3))
 
             '''Menu Hidropixel Plugin'''
