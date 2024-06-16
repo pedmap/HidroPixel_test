@@ -3686,8 +3686,8 @@ class HidroPixel:
                         self.dlg_flow_rout.le_2_pg4.setText(str(value[3]))           
                         self.dlg_flow_rout.le_3_pg4.setText(str(value[4]))           
                         self.dlg_flow_rout.le_4_pg4.setText(str(value[5]))
-                        self.dlg_flow_rout.rb_4_pg4.setChecked(bool(values[6]))                 
-                        self.dlg_flow_rout.rb_5_pg4.setChecked(bool(values[7])) 
+                        self.dlg_flow_rout.rb_3_pg4.setChecked(bool(values[6]))                 
+                        self.dlg_flow_rout.rb_4_pg4.setChecked(bool(values[7])) 
                         self.dlg_flow_rout.le_5_pg4.setText(str(value[8]))           
                         self.dlg_flow_rout.le_6_pg4.setText(str(value[9]))                          
                         break
@@ -4259,7 +4259,6 @@ class HidroPixel:
                         self.dlg_flow_rout.rb_2_pg4.setChecked(False) 
                         self.dlg_flow_rout.rb_3_pg4.setChecked(False) 
                         self.dlg_flow_rout.rb_4_pg4.setChecked(False) 
-                        self.dlg_flow_rout.rb_5_pg4.setChecked(False)
                         self.dlg_flow_rout.ch_1_pg4.setChecked(False)  
                         self.dlg_flow_rout.ch_2_pg4.setChecked(False)  
                         self.dlg_flow_rout.ch_3_pg4.setChecked(False)  
@@ -4923,10 +4922,10 @@ class HidroPixel:
                 self.dlg_flow_rout.te_logg.append(mensagem_log1)
 
                 # Codição para unidade da vazão de pico
-                if self.dlg_flow_rout.rb_4_pg4.isChecked():
+                if self.dlg_flow_rout.rb_3_pg4.isChecked():
                     self.escreve_vazao_pico_pixel(1)
                     self.dlg_flow_rout.progressBar.setValue(self.dlg_flow_rout.progressBar.value() + 10)
-                elif self.dlg_flow_rout.rb_5_pg4.isChecked():
+                elif self.dlg_flow_rout.rb_4_pg4.isChecked():
                     self.escreve_vazao_pico_pixel(0)
                     self.dlg_flow_rout.progressBar.setValue(self.dlg_flow_rout.progressBar.value() + 10)
 
@@ -5110,7 +5109,7 @@ class HidroPixel:
             self.dlg_flow_rout.tbtn_pg2_2.clicked.connect(lambda: self.carrega_arquivos(self.dlg_flow_rout.le_2_pg2))
             self.dlg_flow_rout.tbtn_pg2_3.clicked.connect(lambda: self.carrega_arquivos(self.dlg_flow_rout.le_3_pg2))
             self.dlg_flow_rout.tbtn_pg2_4.clicked.connect(lambda: self.carrega_arquivos(self.dlg_flow_rout.le_4_pg2,file_type='text'))
-            self.dlg_flow_rout.tbtn_pg2_5.clicked.connect(lambda: self.carrega_arquivos(self.dlg_flow_rout.le_5_pg2,file_type='text'))
+            self.dlg_flow_rout.tbtn_pg2_5.clicked.connect(lambda: self.carrega_arquivos(self.dlg_flow_rout.le_5_pg2))
 
             # configura botões de salvar e salvar para um arquivo: flow travel time
             self.dlg_flow_rout.btn_save_file_pg1.clicked.connect(lambda: self.save_to_file(3, 1))
