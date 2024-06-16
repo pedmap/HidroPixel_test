@@ -5109,7 +5109,8 @@ class HidroPixel:
             self.dlg_flow_rout.tbtn_pg2_1.clicked.connect(lambda: self.carrega_arquivos(self.dlg_flow_rout.le_1_pg2))
             self.dlg_flow_rout.tbtn_pg2_2.clicked.connect(lambda: self.carrega_arquivos(self.dlg_flow_rout.le_2_pg2))
             self.dlg_flow_rout.tbtn_pg2_3.clicked.connect(lambda: self.carrega_arquivos(self.dlg_flow_rout.le_3_pg2))
-            self.dlg_flow_rout.tbtn_pg2_4.clicked.connect(lambda: self.carrega_arquivos(self.dlg_flow_rout.le_4_pg2))
+            self.dlg_flow_rout.tbtn_pg2_4.clicked.connect(lambda: self.carrega_arquivos(self.dlg_flow_rout.le_4_pg2,file_type='text'))
+            self.dlg_flow_rout.tbtn_pg2_5.clicked.connect(lambda: self.carrega_arquivos(self.dlg_flow_rout.le_5_pg2,file_type='text'))
 
             # configura botões de salvar e salvar para um arquivo: flow travel time
             self.dlg_flow_rout.btn_save_file_pg1.clicked.connect(lambda: self.save_to_file(3, 1))
