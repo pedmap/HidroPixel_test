@@ -368,13 +368,26 @@ class HidroPixel:
                 else:
                     """Caso o arquivo raster apresente erros durante a abertura, ocorrerá um erro"""
                     resulte = f"Failde to open the raster file: {arquivo}"
-                    # QMessageBox.warning(None, "ERROR!", resulte)
+                    QMessageBox.warning(None, "ERROR!", resulte)
 
                 # Lê informações do arquivo de metadados (.rdc)
-                arquivo_rdc = arquivo.replace('.RST','.rdc')
-                
+                if '.RST' in arquivo:
+                    arquivo_rdc = arquivo.replace('.RST', '.RDC')
+                elif '.rst' in arquivo:
+                    arquivo_rdc = arquivo.replace('.rst', '.RDC')
+
+                if os.path.exists(arquivo_rdc) and os.path.isfile(arquivo_rdc):
+                    arquivo_rdc = arquivo_rdc
+                else:
+                    arquivo_rdc.replace('.RDC','.rdc')
+                    if os.path.exists(arquivo_rdc) and os.path.isfile(arquivo_rdc):
+                        arquivo_rdc = arquivo_rdc
+                    else:
+                        resulte = f"There is no file named {arquivo_rdc} in the same directory as {arquivo}!"
+                        QMessageBox.warning(None, "ERROR!", resulte)                        
+
                 if arquivo_rdc is not None:
-                    with open(arquivo_rdc, 'r', encoding = 'utf-8') as rdc_file:
+                    with open(arquivo_rdc, 'r', encoding='iso-8859-1') as rdc_file:
                         # Separando os dados do arquivo RDC em função das linhas que contém alguma das palavras abaixo
                         k_words = ["columns", "rows", "ref. system", "ref. units", "min. X", "max. X", "min. Y", "max. Y", "resolution"]
                         lines_RDC = [line.strip() for line in rdc_file.readlines() if any(word in line for word in k_words)]
@@ -409,11 +422,11 @@ class HidroPixel:
                 else:
                     # Arquivo não existente: mostra erro para usuário
                     resulte = f"There is no file named {arquivo_rdc} in the same directory as {arquivo}!"
-                    # QMessageBox.warning(None, "ERROR!", resulte)                    
+                    QMessageBox.warning(None, "ERROR!", resulte)                 
 
         else:
             result ="Nenhum arquivo foi selecionado!"
-            # QMessageBox.warning(None, "ERROR!", result)
+            QMessageBox.warning(None, "ERROR!", result)
 
     def leh_valores_table_1(self):
         '''Esta função coleta as informações adicionadas nos itens da tabela da característica dos rios e adiciona em suas variáveis'''
@@ -1743,12 +1756,12 @@ class HidroPixel:
             else:
                 # Caso o arquivo raster apresente erros durante a abertura, ocorrerá um erro
                 resulte = f"Failde to open the raster file: {arquivo}"
-                # QMessageBox.warning(None, "ERROR!", resulte)
+                QMessageBox.warning(None, "ERROR!", resulte)
                 
         else:
             # Exibe uma mensagem de erro
             result ="Nenhum arquivo foi selecionado!"
-            # QMessageBox.warning(None, "ERROR!", result)
+            QMessageBox.warning(None, "ERROR!", result)
         return self.CN 
 
     
@@ -1773,12 +1786,12 @@ class HidroPixel:
             else:
                 # Caso o arquivo raster apresente erros durante a abertura, ocorrerá um erro
                 resulte = f"Failde to open the raster file: {arquivo}"
-                # QMessageBox.warning(None, "ERROR!", resulte)
+                QMessageBox.warning(None, "ERROR!", resulte)
                 
         else:
             # Exibe uma mensagem de erro
             result ="Nenhum arquivo foi selecionado!"
-            # QMessageBox.warning(None, "ERROR!", result)
+            QMessageBox.warning(None, "ERROR!", result)
 
         return Tempo_total        
 
@@ -1884,12 +1897,12 @@ class HidroPixel:
             else:
                 # Caso o arquivo raster apresente erros durante a abertura, ocorrerá um erro
                 resulte = f"Failde to open the raster file: {arquivo}"
-                # QMessageBox.warning(None, "ERROR!", resulte)
+                QMessageBox.warning(None, "ERROR!", resulte)
                 
         else:
             # Exibe uma mensagem de erro
             result ="Nenhum arquivo foi selecionado!"
-            # QMessageBox.warning(None, "ERROR!", result)
+            QMessageBox.warning(None, "ERROR!", result)
 
         return chuva_acumulada 
 
@@ -3165,21 +3178,33 @@ class HidroPixel:
         self.global_vars.metrordc = self.global_vars.metro
         self.escreve_RDC(nomeRST) 
 
-    def save_buttons(self, line_edit):
+    def save_buttons(self, line_edit,file_type = 'raster'):
         '''Esta função configura os botões da salvar (criar arquivo)'''
         # Seleciona o arquivo enviado pelo usuário
         while True:
             # Obtendo o caminho do arquivo a ser salvo usando um diálogo de arquivo
-            file_name, _ = QFileDialog.getSaveFileName(None, "Save the file",'',"Raster Files (*.tif *.rst)")
-            if file_name:
-                line_edit.setText(file_name)
-                break
-            else:
-                # O usuário não solucionou um arquivo (um caminho para salvar o arquivo de saída)
-                result = "Wait! You did not select any file."
-                reply = QMessageBox.warning(None, "No files selected", result, QMessageBox.Ok | QMessageBox.Cancel)
-                if reply == QMessageBox.Cancel:
+            if file_type == 'raster':
+                file_name, _ = QFileDialog.getSaveFileName(None, "Save the file",'',"Raster Files (*.tif *.rst)")
+                if file_name:
+                    line_edit.setText(file_name)
                     break
+                else:
+                    # O usuário não solucionou um arquivo (um caminho para salvar o arquivo de saída)
+                    result = "Wait! You did not select any file."
+                    reply = QMessageBox.warning(None, "No files selected", result, QMessageBox.Ok | QMessageBox.Cancel)
+                    if reply == QMessageBox.Cancel:
+                        break
+            elif file_type == 'text':
+                file_name, _ = QFileDialog.getSaveFileName(None, "Save the file",'',"Text (*.txt)")
+                if file_name:
+                    line_edit.setText(file_name)
+                    break
+                else:
+                    # O usuário não solucionou um arquivo (um caminho para salvar o arquivo de saída)
+                    result = "Wait! You did not select any file."
+                    reply = QMessageBox.warning(None, "No files selected", result, QMessageBox.Ok | QMessageBox.Cancel)
+                    if reply == QMessageBox.Cancel:
+                        break
 
     def save_to_file(self, function, page):
         '''Esta função gera o arquivo com as informações enviadas por meio do usuário por página
@@ -4847,7 +4872,7 @@ class HidroPixel:
         # Ativiva a página de log e limpa as informações passadas no text_edit 
         mensagem_log1 = None
         self.dlg_flow_rout.tabWidget.setCurrentIndex(1)
-        self.dlg_flow_rout.pg_log_ftt.setEnabled(True)
+        self.dlg_flow_rout.pg_log_f_rout.setEnabled(True)
         self.dlg_flow_rout.te_logg.clear()
 
         # Configura a progressbar
@@ -4898,7 +4923,7 @@ class HidroPixel:
                 self.dlg_flow_rout.te_logg.append(mensagem_log1)
 
                 # Lê bacia hidrográfica
-                arquivo_bacia = self.dlg_flow_rout.le_2_pg2
+                arquivo_bacia = self.dlg_flow_rout.le_2_pg2.text()
                 self.leh_bacia(arquivo_bacia, 3)
                 self.numera_pix_bacia()
                 arquivo_precipitacao = self.dlg_flow_rout.le_4_pg2.text()
@@ -5080,7 +5105,7 @@ class HidroPixel:
             self.dlg_exc_rain.tbtn_pg4_3.clicked.connect(lambda: self.save_buttons(self.dlg_exc_rain.le_3_pg4))
             self.dlg_exc_rain.tbtn_pg4_4.clicked.connect(lambda: self.save_buttons(self.dlg_exc_rain.le_4_pg4))
             self.dlg_exc_rain.tbtn_pg4_5.clicked.connect(lambda: self.save_buttons(self.dlg_exc_rain.le_5_pg4))
-            self.dlg_exc_rain.tbtn_pg4_6.clicked.connect(lambda: self.save_buttons(self.dlg_exc_rain.le_6_pg4))
+            self.dlg_exc_rain.tbtn_pg4_6.clicked.connect(lambda: self.save_buttons(self.dlg_exc_rain.le_6_pg4,file_type = 'text'))
             
             # configura botões da página run : excess rainfall
             self.dlg_exc_rain.btn_run_2.clicked.connect(lambda: self.run_exc_rain())
@@ -5090,7 +5115,7 @@ class HidroPixel:
             self.dlg_exc_rain.tbtn_pg_r_1.clicked.connect(lambda: self.carrega_arquivos(self.dlg_exc_rain.le_1_pg_ri))
             self.dlg_exc_rain.tbtn_pg_r_2.clicked.connect(lambda: self.carrega_arquivos(self.dlg_exc_rain.le_2_pg_ri))
             self.dlg_exc_rain.tbtn_pg_r_3.clicked.connect(lambda: self.carrega_arquivos(self.dlg_exc_rain.le_3_pg_ri))
-            self.dlg_exc_rain.tbtn_pg_r_4.clicked.connect(lambda: self.save_buttons(self.dlg_exc_rain.le_4_pg_ri))
+            self.dlg_exc_rain.tbtn_pg_r_4.clicked.connect(lambda: self.save_buttons(self.dlg_exc_rain.le_4_pg_ri,file_type = 'text'))
             self.dlg_exc_rain.tbtn_pg_r_5.clicked.connect(lambda: self.save_buttons(self.dlg_exc_rain.le_5_pg_ri))
             self.dlg_exc_rain.btn_save_1_pg_ri.clicked.connect(lambda: self.run_rainfall_interpolation(0))
             self.dlg_exc_rain.btn_save_2_pg_ri.clicked.connect(lambda: self.run_rainfall_interpolation(1))
@@ -5133,7 +5158,7 @@ class HidroPixel:
             self.dlg_flow_rout.tbtn_pg4_3.clicked.connect(lambda: self.save_buttons(self.dlg_flow_rout.le_3_pg4))
             self.dlg_flow_rout.tbtn_pg4_4.clicked.connect(lambda: self.save_buttons(self.dlg_flow_rout.le_4_pg4))
             self.dlg_flow_rout.tbtn_pg4_5.clicked.connect(lambda: self.save_buttons(self.dlg_flow_rout.le_5_pg4))
-            self.dlg_flow_rout.tbtn_pg4_6.clicked.connect(lambda: self.save_buttons(self.dlg_flow_rout.le_6_pg4))            
+            self.dlg_flow_rout.tbtn_pg4_6.clicked.connect(lambda: self.save_buttons(self.dlg_flow_rout.le_6_pg4, file_type = 'text'))            
             
             # configura botões da página run : flow routing
             self.dlg_flow_rout.btn_run_2.clicked.connect(lambda: self.run_flow_routing())
