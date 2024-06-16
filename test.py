@@ -460,7 +460,6 @@ class Test():
         self.global_vars.uso_mann = uso_manning_val
         self.global_vars.Mann = coef_maning_val
 
-
     def project(self,x1, x2, y1,y2,tipo2,dist2,lado2,diagonal2):
         """Esta função calcula as distâncias sobre a superfície considerando o elipsóide WGS84"""
         # Definindo as constantes
@@ -1400,11 +1399,10 @@ class Test():
         self.numero_total_pix = numero_pixel
         numero_pixel = None
 
-    def leh_CN(self):
+    def leh_CN(self, arquivo):
         '''Esta função lê o arquivo enviado pelo usuário contendo os valores do parametro CURVE-NUMBER (CN) para os diferentes pixels da bacia hidrográfica'''
         # Define variáveis
         self.CN = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
-        arquivo = r"c:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\SmallExample\input_binary\2_CN_MAP_EXbin.RST"
         # Tratamento de erros: verifica se o arquivo foi corretamente enviado
         if arquivo:
             # Realizando a abertura do arquivo raster e coletando as informações referentes as dimensões do mesmo
@@ -1431,10 +1429,9 @@ class Test():
         return self.CN 
 
     
-    def leh_tempo_viagem(self):
+    def leh_tempo_viagem(self, arquivo):
         '''Esta função lê o arquivo contendo o tempo de concentração de cada pixel presente na bacia hidrográfica e o armazena'''
 
-        arquivo = r"c:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\SmallExample\input_binary\4_TRAVELTIME_BIN.RST"
         # Tratamento de erros: verifica se o arquivo foi corretamente enviado
         if arquivo:
             # Realizando a abertura do arquivo raster e coletando as informações referentes as dimensões do mesmo
@@ -1463,8 +1460,7 @@ class Test():
 
     def precipitacao_acumulada(self):
         '''Esta função lê o arquivo contendo o tempo de concentração de cada pixel presente na bacia hidrográfica e o armazena'''
-
-        arquivo = r"c:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\resultados_test_modelo\pe_acumulada_pixel.RST"
+        arquivo = r"C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\Bacia_mulugun\hidropixel_files\Outputs\pe_acumulada_pixel.RST"
         # Tratamento de erros: verifica se o arquivo foi corretamente enviado
         if arquivo:
             # Realizando a abertura do arquivo raster e coletando as informações referentes as dimensões do mesmo
@@ -1491,10 +1487,9 @@ class Test():
 
         return pe_acumulada_pixel       
 
-    def leh_parametros(self):
+    def leh_parametros(self, arquivo):
         '''Esta função lê o arquivo enviado pelo usuário contento os parâmetros do modelo: abstração inicial, time step, tempo critério de parada e o beta'''
         values = []
-        arquivo = r"c:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\SmallExample\3_Hydrograph\input\5_parameters.txt"
         with open(arquivo, 'r') as arquivo_txt:
             # Lê as linhas do arquivo separando por ','
             for line in arquivo_txt:
@@ -1507,11 +1502,10 @@ class Test():
         self.criterio_parada = int(values[2])
         self.beta = float(values[3])
 
-    def leh_precip_distribuida(self):
+    def leh_precip_distribuida(self,arquivo):
         '''Esta função lê o arquivo enviado pelo usuário contento os valores da precipitação destribuidos ao longo dos pixels pertencentes a baica hidrográfica'''
         self.quantidade_blocos_chuva = 0
         # Lê os dados enviados e os armaneza
-        arquivo = r'c:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\SmallExample\3_Hydrograph\input\3_rainfall_file.txt' 
         with open(arquivo, 'r', encoding = 'utf-8') as arquivo_txt:
             # armazena o cabeçalho (primeira linha)
             lines = arquivo_txt.readline().strip()
@@ -1595,7 +1589,7 @@ class Test():
         with open(arquivo, 'w', encoding = 'utf-8') as arquivo_txt:
             # JVD:optimize: Escreve cabeçalho
             arquivo_txt.write('Pixel,')
-            arquivo_txt.write(','.join(map(str, int(self.tempo))) + '\n')
+            arquivo_txt.write(','.join(map(str, self.tempo)) + '\n')
 
             # JVDoptimize: interpolação da precipitação
             for lin in range(self.rdc_vars.nlin):
@@ -1714,7 +1708,7 @@ class Test():
 
         self.hexc_pix = np.zeros((self.numero_total_pix, self.quantidade_blocos_chuva))
         
-        arquivo_precipitacao = r"C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\SmallExample\3_Hydrograph\input\3_rainfall_file.txt"
+        arquivo_precipitacao = r"C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\Bacia_mulugun\hidropixel_files\rainfall_interpolated.txt"
         with open(arquivo_precipitacao, 'r', encoding = 'utf-8') as arquivo_txt:
             # Armazena cabeçalho do arquivo
             cabecalho = arquivo_txt.readline().strip()
@@ -1765,7 +1759,8 @@ class Test():
         # Definição das variáveis
         Tmax = 0
         a = 0
-        self.tempo_total = self.leh_tempo_viagem()
+        tempo_viagem = r"C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\Bacia_mulugun\hidropixel_files\TempoTotal.rst"
+        self.tempo_total = self.leh_tempo_viagem(tempo_viagem)
         self.Spotencial = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
         self.volume_total_pix = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
         self.vazao_pico = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
@@ -1778,7 +1773,7 @@ class Test():
         self.tempo_vazao_pixel = np.zeros(50000)
         self.vazao_amortecida_pixel = np.zeros(50000)
         self.vazao = np.zeros(50000)
-
+        a = 0
         # JVDoptmize: máximo tempo de viagem ao exutório
         tempo_total_bacia = self.tempo_total[self.global_vars.bacia == 1]
         Tmax = np.amax(tempo_total_bacia)
@@ -1797,6 +1792,7 @@ class Test():
         for lin in range(self.rdc_vars.nlin):
             for col in range(self.rdc_vars.ncol):
                 diferenca_minima = 100000000
+                a+=1
                 if self.global_vars.bacia[lin][col] == 1:
                     for g in range(self.num_intervalos):
                         if self.tempo_intervalo[g] >= self.tempo_total[lin][col]:
@@ -1808,6 +1804,7 @@ class Test():
                         if diferenca < diferenca_minima:
                             diferenca_minima = diferenca
                             self.TempoTotal_reclass[lin][col] = float(self.tempo_intervalo[g])
+                print(f'Reclassificando tempo... [{a}/{self.numero_total_pix}] ({a/self.numero_total_pix*100:.2f}%)', end='\r')
 
         print('Reclassificou o tempo!')
         a = 0
@@ -1821,7 +1818,7 @@ class Test():
         area_bacia = 0
 
         # lê hietograma 
-        arquivo_precipitacao = r'c:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\resultados_test_modelo\hietograma_pe.txt'
+        arquivo_precipitacao = r'C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\Bacia_mulugun\hidropixel_files\Outputs\hietograma_pe.txt'
         with open(arquivo_precipitacao, 'r', encoding = 'utf-8') as arquivo_txt:
             # Armazena cabecalho do arquivo com a precipitação efetiva por pixel
             cabecalho = arquivo_txt.readline().strip()
@@ -2879,7 +2876,7 @@ class Test():
     
     def escreve_hidrograma_dlr(self):
         '''Esta função gera contento o hidrograma total da bacia hidrográfica estudada'''
-        file_name = r'C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\resultados_test_modelo\hidrograma.txt'
+        file_name = r'C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\Bacia_mulugun\hidropixel_files\Outputs\hidrograma.txt'
         with open(file_name, 'w', encoding = 'utf-8') as arquivo_txt:
             arquivo_txt.write('tempo(min), vazão calculada(m³/s)\n')
             for k in range(self.blocos_vazao):
@@ -2889,7 +2886,7 @@ class Test():
         '''Esta função gera o arquivo contento o valor da precipitação efetiva por pixel durante os blocos de chuva'''
 
         # Recebe diretório e nome do arquivo do usurário      
-        arquivo = r'C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\resultados_test_modelo\hietograma_pe.txt'
+        arquivo = r'C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\Bacia_mulugun\hidropixel_files\Outputs\hietograma_pe.txt'
         with open(arquivo, 'w', encoding = 'utf-8') as arquivo_txt:
             # JVD:optimize: Escreve cabeçalho
             arquivo_txt.write('Pixel,')
@@ -2915,7 +2912,7 @@ class Test():
 
         # Abrindo o arquivo(fn : file name) para escrita dos resultados
         # fn_numb_pix = self.dlg_exc_rain.le_1_pg4.text()
-        file_path = r'C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\resultados_test_modelo'
+        file_path = r'C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\Bacia_mulugun\hidropixel_files\Outputs'
         fn_numb_pix = file_path + r'\numb_pixel_bacia.RST'
 
         
@@ -2964,7 +2961,7 @@ class Test():
         perda_ini_max = np.amax(self.perdas_iniciais)
 
         # Abrindo o arquivo(fn : file name) para escrita dos resultados
-        file_path = r'C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\resultados_test_modelo'
+        file_path = r'C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\Bacia_mulugun\hidropixel_files\Outputs'
         fn_perda_ini = file_path + r'\perdas_iniciais.RST'
         
         # Define os dados a serem escritos
@@ -3012,7 +3009,7 @@ class Test():
         max_retencao = np.amax(self.Spotencial)
 
         # Abrindo o arquivo(fn : file name) para escrita dos resultados
-        file_path = r'C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\resultados_test_modelo'
+        file_path = r'C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\Bacia_mulugun\hidropixel_files\Outputs'
         fn_Spotencial = file_path + r'\Spotencial.RST'
         
         # Define os dados a serem escritos
@@ -3060,7 +3057,7 @@ class Test():
         pe_maxima = np.amax(self.pe_acumulada_pixel)
 
         # Abrindo o arquivo(fn : file name) para escrita dos resultados
-        file_path = r'C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\resultados_test_modelo'
+        file_path = r'C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\Bacia_mulugun\hidropixel_files\Outputs'
         fn_pe_acum = file_path + r'\pe_acumulada_pixel.RST'
         
         # Define os dados a serem escritos
@@ -3108,7 +3105,7 @@ class Test():
         p_acum_max = np.amax(self.chuva_total_pixel)
 
         # Abrindo o arquivo(fn : file name) para escrita dos resultados
-        file_path = r'C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\resultados_test_modelo'
+        file_path = r'C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\Bacia_mulugun\hidropixel_files\Outputs'
         fn_p_acum = file_path + r'\chuva_total_pixel.RST'
         
         # Define os dados a serem escritos
@@ -3156,7 +3153,7 @@ class Test():
         vol_max = np.amax(self.volume_total_pix)
 
         # Abrindo o arquivo(fn : file name) para escrita dos resultados
-        file_path = r'C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\resultados_test_modelo'
+        file_path = r'C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\Bacia_mulugun\hidropixel_files\Outputs'
         fn_vol = file_path + r'\volume_total_pix.RST'
         
         # Define os dados a serem escritos
@@ -3207,7 +3204,7 @@ class Test():
         vazao_pixo_max = np.amax(self.vazao_pico)
 
         # Abrindo o arquivo(fn : file name) para escrita dos resultados
-        file_path = r'C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\resultados_test_modelo'
+        file_path = r'C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\Bacia_mulugun\hidropixel_files\Outputs'
         fn_vazao_pico = file_path + r'\vazao_pico_pixel.RST'
 
         # Define os dados a serem escritos
@@ -3255,7 +3252,7 @@ class Test():
     def escreve_pe_calculada(self):
         '''Esta função é responsável por gerar o arquivo contento a precipitação efetiva para a bacia hidrográfica em questão'''
         # Abrindo o arquivo(fn : file name) para escrita dos resultados
-        file_path = r'C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\resultados_test_modelo'
+        file_path = r'C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\Bacia_mulugun\hidropixel_files\Outputs'
         fn_p_calc = file_path + r'\pe_calculada.txt'
         with open(fn_p_calc, 'w', encoding='utf-8') as arquivo_txt:
             arquivo_txt.write(f'Calculated excess rainfall (mm) = {self.chuva_excedente_calc}')
@@ -3392,12 +3389,15 @@ class Test():
 
         # Reading input files
         print('Reading input files')
-        arquivo_bacia = r"c:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\SmallExample\input_binary\1_WATERSHED_EXbin.RST"
+        arquivo_bacia = r"C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\Bacia_mulugun\hidropixel_files\bacia.rst"
         self.leh_bacia(arquivo_bacia, 2)
-        self.leh_CN()
+        curve_number = r"C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\Bacia_mulugun\hidropixel_files\curve_number.rst"
+        self.leh_CN(curve_number)
         self.numera_pix_bacia()
-        self.leh_parametros()
-        self.leh_precip_distribuida()
+        parametros = r"C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\Bacia_mulugun\hidropixel_files\parameters_hytograph.txt"
+        self.leh_parametros(parametros)
+        precipitacao_distribuida = r"C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\Bacia_mulugun\hidropixel_files\rainfall_interpolated.txt"
+        self.leh_precip_distribuida(precipitacao_distribuida)
         
         # Processing and wrinting output files
         self.rainfall_excess()    
@@ -3424,11 +3424,13 @@ class Test():
             
         # Reading input files
         print('Reading input files')
-        arquivo_bacia = r"c:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\SmallExample\1_TravelTime\Input_binary\bacia.rst"
+        arquivo_bacia = r"C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\Bacia_mulugun\hidropixel_files\bacia.rst"
         self.leh_bacia(arquivo_bacia, 3)
         self.numera_pix_bacia()
-        self.leh_precip_distribuida()
-        self.leh_parametros()
+        precipitacao_distribuida = r"C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\Bacia_mulugun\hidropixel_files\rainfall_interpolated.txt"
+        self.leh_precip_distribuida(precipitacao_distribuida)
+        parametros = r"C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\Bacia_mulugun\hidropixel_files\parameters_hytograph.txt"
+        self.leh_parametros(parametros)
         # Processing and wrinting output files
         print('Processing and Writing outputs...')
         self.hidrograma_dlr()
@@ -3439,33 +3441,9 @@ class Test():
         end = perf_counter()
         print(f'The processing time was: {(end-start)/60} min')
 
-    def run_msr():
-        start = perf_counter()
-        # Initial configuration
-        if self.rdc_vars.unidaderef =='deg':
-            # Sistema está em graus, assumindo lat e long: será feita a projeção para metros
-            self.global_vars.metro = 0
-        else:
-            # Sistema está em metros, não é preciso fazer a projeção para metros
-            self.global_vars.metro = 1
-            
-        # Reading input files
-        print('Reading input files')
-        arquivo_bacia = r"c:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\SmallExample\input_binary\1_WATERSHED_EXbin.RST"
-        self.leh_bacia(arquivo_bacia, 3)
-        self.leh_CN()
-        self.numera_pix_bacia()
-        self.leh_parametros()
-        
-        # Processing and wrinting output files
-        print('Processing and Writing outputs...')
-        self.hidrograma_dlr1()
-        self.escreve_hidrograma_dlr()
-        end = perf_counter()
-        print(f'The processing time was: {(end-start)/60} min')
 
 cla_test = Test()
 # cla_test.run_flow_tt()
-cla_test.run_rainfall_interpolation(2)
+# cla_test.run_rainfall_interpolation(2)
 # cla_test.run_exc_rain()
-# cla_test.run_flow_routing()
+cla_test.run_flow_routing()

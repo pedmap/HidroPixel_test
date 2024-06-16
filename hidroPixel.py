@@ -1787,8 +1787,8 @@ class HidroPixel:
         # Armazena as informações enviadas
         self.alfa = float(alfa)
         self.delta_t = float(d_t)
-        self.criterio_parada = 2250
-        self.beta = 0.37
+        self.criterio_parada = 48
+        self.beta = float(self.dlg_flow_rout.le_4_pg1.text())
 
     def leh_precip_distribuida(self, file_):
         '''Esta função lê o arquivo enviado pelo usuário contento os valores da precipitação destribuidos ao longo dos pixels pertencentes a baica hidrográfica'''
@@ -1811,18 +1811,20 @@ class HidroPixel:
         latitude = []
         longitude = []
         numero_posto = []
-        arquivo_posto = self.dlg_exc_rain.le_2_pg_ri.text()
+        dict_numero_posto = {}
         w = 0
+        arquivo_posto = self.dlg_exc_rain.le_2_pg_ri.text()
         with open(arquivo_posto, 'r', encoding = 'utf-8') as arquivo_txt:
             # Armazena cabeçalho
             cabecalho = arquivo_txt.readline().strip()
             # Lê as linhas do arquivo enviado
             for line in arquivo_txt:
-                w+=1
                 split_lines = line.split(',')
                 id_postos.append(int(split_lines[0]))
                 latitude.append(float(split_lines[1]))
                 longitude.append(float(split_lines[2]))
+                dict_numero_posto[w] = id_postos[w]
+                w+=1
                 numero_posto.append(w)
 
         # Redimensiona as variáveis globais
@@ -1830,7 +1832,7 @@ class HidroPixel:
         self.id_postos = np.array(id_postos)
         self.latitude = np.array(latitude)
         self.longitude = np.array(longitude)
-        self.numero_posto = np.array(numero_posto)
+        self.numero_posto = dict_numero_posto
 
     def leh_arquivo_precipitacao(self):
         '''Esta função lê e armazena os valores de precipitação de cada posto ao longo do tempo'''
@@ -1864,7 +1866,7 @@ class HidroPixel:
     def precipitacao_acumulada(self):
         '''Esta função lê o arquivo contendo o tempo de concentração de cada pixel presente na bacia hidrográfica e o armazena'''
 
-        arquivo = r"c:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\resultados_test_modelo\chuva_acumulada_pixel.RST"
+        arquivo = self.dlg_flow_rout.le_5_pg2.text()
         # Tratamento de erros: verifica se o arquivo foi corretamente enviado
         if arquivo:
             # Realizando a abertura do arquivo raster e coletando as informações referentes as dimensões do mesmo
@@ -1901,8 +1903,6 @@ class HidroPixel:
         distancia_y = 0
         distancia_x = 0
         rainfall = 0
-        numero_total_pix = np.sum(self.global_vars.bacia[self.global_vars.bacia==1])
-        print(numero_total_pix)
 
         # Gera o arquivo com precipitação interpolada por pixel
         arquivo = self.dlg_exc_rain.le_4_pg_ri.text()
@@ -2045,7 +2045,6 @@ class HidroPixel:
                         # Armazena as linha do arquivo de precipitação
                         line = arquivo_txt.readline().strip()
                         split_line = line.split(',')
-                        a+=1
                         for w in range(1, self.quantidade_blocos_chuva):
                             chuva_distribuida = float(split_line[w])
                             self.time[w] = self.time[w-1] + self.delta_t
@@ -2066,7 +2065,6 @@ class HidroPixel:
 
                         # Chuva total no pixel
                         self.chuva_total_pixel[lin][col] = Pacum
-                        print(f'[{a}/{self.numero_total_pix}] ({a/self.numero_total_pix*100:.2f}%)', end='\r')
                 
     @optimize       
     def hidrograma_dlr(self):
