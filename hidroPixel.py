@@ -4960,7 +4960,7 @@ class HidroPixel:
                     self.escreve_volume_gerado_pixel()
                 if self.dlg_flow_rout.ch_6_pg4.isChecked():
                     self.escreve_hidrograma_dlr()
-                self.dlg_flow_rout.progressBar.setValue(self.dlg_flow_rout.progressBar.value() + 10)
+                self.dlg_flow_rout.progressBar.setValue(self.dlg_flow_rout.progressBar.value() + 20)
 
                 # Configura lógica para adição dos arquivos selecionados
                 if self.dlg_flow_rout.ch_10_pg4.isChecked() and self.fn_vazao_pico != '':
@@ -4974,13 +4974,8 @@ class HidroPixel:
                     self.adiciona_layer(self.fn_vol)
                     mensagem_log1 = 'Added...\n'
                     self.dlg_flow_rout.te_logg.append(mensagem_log1)
-
-                if self.dlg_flow_rout.ch_12_pg4.isChecked() and self.fn_hidrograma != '':
-                    # Adiciona o arquivo selecionado: total excess rainfall
-                    self.adiciona_layer(self.fn_hidrograma)
-                    mensagem_log1 = 'Added...\n'
-                    self.dlg_flow_rout.te_logg.append(mensagem_log1)      
-
+                self.dlg_flow_rout.progressBar.setValue(self.dlg_flow_rout.progressBar.value() + 20)
+                
                 # Finaliza operação do programa
                 QMessageBox.information(None, "Information", "Operation completed successfully!", )
                 break
