@@ -4633,7 +4633,7 @@ class HidroPixel:
         # Ativiva a página de log e limpa as informações passadas no text_edit 
         mensagem_log1 = None
         self.dlg_exc_rain.tabWidget.setCurrentIndex(1)
-        self.dlg_exc_rain.pg_log_ftt.setEnabled(True)
+        self.dlg_exc_rain.pg_log_exc_rain.setEnabled(True)
         self.dlg_exc_rain.te_logg.clear()
 
         # Configura a progressbar
