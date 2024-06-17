@@ -4772,7 +4772,7 @@ class HidroPixel:
                 # Atualiza a progressbar
                 self.dlg_exc_rain.progressBar.setValue(self.dlg_exc_rain.progressBar.value() + 20)
                 if self.dlg_exc_rain.progressBar.value() != 100:
-                    self.dlg_exc_rain.progressBar.setValue(100git )
+                    self.dlg_exc_rain.progressBar.setValue(100)
                 # Finaliza operação do programa
                 QMessageBox.information(None, "Information", "Operation completed successfully!", )
                 break
