@@ -2817,8 +2817,8 @@ class HidroPixel:
 
     def escreve_hidrograma_dlr(self):
         '''Esta função gera contento o hidrograma total da bacia hidrográfica estudada'''
-        file_name = self.dlg_flow_rout.le_6_pg4.text()
-        with open(file_name, 'w', encoding = 'utf-8') as arquivo_txt:
+        self.fn_hidrograma = self.dlg_flow_rout.le_6_pg4.text()
+        with open(self.fn_hidrograma, 'w', encoding = 'utf-8') as arquivo_txt:
             arquivo_txt.write('tempo(min), vazão calculada(m³/s)\n')
             for k in range(self.blocos_vazao):
                 arquivo_txt.write(f'{self.tempo_vazao_pixel[k]}, {self.vazao[k]}\n')
@@ -3084,7 +3084,7 @@ class HidroPixel:
         vol_max = np.amax(self.volume_total_pix)
 
         # Abrindo o arquivo(fn : file name) para escrita dos resultados
-        fn_vol = self.dlg.flow_rout.le_5_pg4.text()
+        self.fn_vol = self.dlg_flow_rout.le_5_pg4.text()
         
         # Define os dados a serem escritos
         dados_vol = np.array([[float(self.volume_total_pix[lin][col]) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)])
@@ -3094,7 +3094,7 @@ class HidroPixel:
         driver = gdal.GetDriverByName('RST')
 
         # Cria arquivo final
-        dataset = driver.Create(fn_vol, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
+        dataset = driver.Create(self.fn_vol, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
         dataset.SetGeoTransform(self.rdc_vars.geotransform)
         dataset.SetProjection(self.rdc_vars.projection)
 
@@ -3121,7 +3121,7 @@ class HidroPixel:
         self.rdc_vars.Ymax3 = self.Y_maximo
         self.rdc_vars.Varmax = vol_max
         self.rdc_vars.Varmin = 0
-        nomeRST = fn_vol
+        nomeRST = self.fn_vol
         self.global_vars.metrordc = self.global_vars.metro
         self.escreve_RDC(nomeRST)  
 
@@ -3134,7 +3134,7 @@ class HidroPixel:
         vazao_pixo_max = np.amax(self.vazao_pico)
 
         # Abrindo o arquivo(fn : file name) para escrita dos resultados
-        fn_vazao_pico = self.dlg_flow_rout.le_4_pg4.text()
+        self.fn_vazao_pico = self.dlg_flow_rout.le_4_pg4.text()
 
         # Define os dados a serem escritos
         if unit == 1:
@@ -3147,7 +3147,7 @@ class HidroPixel:
         driver = gdal.GetDriverByName('RST')
 
         # Cria arquivo final
-        dataset = driver.Create(fn_vazao_pico, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
+        dataset = driver.Create(self.fn_vazao_pico, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
         dataset.SetGeoTransform(self.rdc_vars.geotransform)
         dataset.SetProjection(self.rdc_vars.projection)
 
@@ -3174,7 +3174,7 @@ class HidroPixel:
         self.rdc_vars.Ymax3 = self.Y_maximo
         self.rdc_vars.Varmax = vazao_pixo_max
         self.rdc_vars.Varmin = 0
-        nomeRST = fn_vazao_pico
+        nomeRST = self.fn_vazao_pico
         self.global_vars.metrordc = self.global_vars.metro
         self.escreve_RDC(nomeRST) 
 
@@ -4933,7 +4933,7 @@ class HidroPixel:
                 self.leh_parametros(alfa, time_step)
                 
                 # Atualiza progressbar
-                self.dlg_flow_rout.progressBar.setValue(20)
+                self.dlg_flow_rout.progressBar.setValue(10)
 
                 # Processing and wrinting output files
                 mensagem_log1 ='PROCESSING...'
@@ -4947,16 +4947,39 @@ class HidroPixel:
                 self.dlg_flow_rout.te_logg.append(mensagem_log1)
 
                 # Codição para unidade da vazão de pico
-                if self.dlg_flow_rout.rb_3_pg4.isChecked():
-                    self.escreve_vazao_pico_pixel(1)
-                    self.dlg_flow_rout.progressBar.setValue(self.dlg_flow_rout.progressBar.value() + 10)
-                elif self.dlg_flow_rout.rb_4_pg4.isChecked():
-                    self.escreve_vazao_pico_pixel(0)
-                    self.dlg_flow_rout.progressBar.setValue(self.dlg_flow_rout.progressBar.value() + 10)
+                if self.dlg_flow_rout.ch_4_pg4.isChecked():
+                    if self.dlg_flow_rout.rb_3_pg4.isChecked():
+                        self.escreve_vazao_pico_pixel(1)
+                        self.dlg_flow_rout.progressBar.setValue(self.dlg_flow_rout.progressBar.value() + 10)
+                    elif self.dlg_flow_rout.rb_4_pg4.isChecked():
+                        self.escreve_vazao_pico_pixel(0)
+                        self.dlg_flow_rout.progressBar.setValue(self.dlg_flow_rout.progressBar.value() + 10)
 
-                self.escreve_volume_gerado_pixel()
-                self.escreve_hidrograma_dlr()
-                self.dlg_flow_rout.progressBar.setValue(self.dlg_flow_rout.progressBar.value() + 30)
+                # Escolha dos arquivos de saída volume por píxel
+                if self.dlg_flow_rout.ch_4_pg4.isChecked():
+                    self.escreve_volume_gerado_pixel()
+                if self.dlg_flow_rout.ch_6_pg4.isChecked():
+                    self.escreve_hidrograma_dlr()
+                self.dlg_flow_rout.progressBar.setValue(self.dlg_flow_rout.progressBar.value() + 10)
+
+                # Configura lógica para adição dos arquivos selecionados
+                if self.dlg_flow_rout.ch_10_pg4.isChecked() and self.fn_vazao_pico != '':
+                    # Adiciona o arquivo selecionado: total excess rainfall
+                    self.adiciona_layer(self.fn_vazao_pico)
+                    mensagem_log1 = 'Added...\n'
+                    self.dlg_flow_rout.te_logg.append(mensagem_log1)
+
+                if self.dlg_flow_rout.ch_11_pg4.isChecked() and self.fn_vol != '':
+                    # Adiciona o arquivo selecionado: total excess rainfall
+                    self.adiciona_layer(self.fn_vol)
+                    mensagem_log1 = 'Added...\n'
+                    self.dlg_flow_rout.te_logg.append(mensagem_log1)
+
+                if self.dlg_flow_rout.ch_12_pg4.isChecked() and self.fn_hidrograma != '':
+                    # Adiciona o arquivo selecionado: total excess rainfall
+                    self.adiciona_layer(self.fn_hidrograma)
+                    mensagem_log1 = 'Added...\n'
+                    self.dlg_flow_rout.te_logg.append(mensagem_log1)      
 
                 # Finaliza operação do programa
                 QMessageBox.information(None, "Information", "Operation completed successfully!", )
