@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>620</width>
-    <height>615</height>
+    <height>587</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -161,7 +161,7 @@
                  <x>0</x>
                  <y>0</y>
                  <width>558</width>
-                 <height>446</height>
+                 <height>418</height>
                 </rect>
                </property>
                <layout class="QGridLayout" name="gridLayout_13">
@@ -176,7 +176,66 @@
                      <enum>QFrame::Raised</enum>
                     </property>
                     <layout class="QGridLayout" name="gridLayout_5">
-                     <item row="2" column="0">
+                     <item row="0" column="0">
+                      <layout class="QGridLayout" name="gridLayout_6">
+                       <item row="0" column="0">
+                        <layout class="QGridLayout" name="gridLayout_9">
+                         <item row="0" column="1">
+                          <widget class="QLineEdit" name="le_1_pg1">
+                           <property name="maximumSize">
+                            <size>
+                             <width>80</width>
+                             <height>24</height>
+                            </size>
+                           </property>
+                           <property name="text">
+                            <string/>
+                           </property>
+                          </widget>
+                         </item>
+                         <item row="0" column="0">
+                          <widget class="QLabel" name="label_2">
+                           <property name="text">
+                            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;justify&quot;&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Initial abstraction parameter (λ)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                           </property>
+                          </widget>
+                         </item>
+                        </layout>
+                       </item>
+                       <item row="0" column="1">
+                        <widget class="QLabel" name="label_11">
+                         <property name="sizePolicy">
+                          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                           <horstretch>0</horstretch>
+                           <verstretch>0</verstretch>
+                          </sizepolicy>
+                         </property>
+                         <property name="minimumSize">
+                          <size>
+                           <width>16</width>
+                           <height>16</height>
+                          </size>
+                         </property>
+                         <property name="maximumSize">
+                          <size>
+                           <width>16</width>
+                           <height>16</height>
+                          </size>
+                         </property>
+                         <property name="toolTip">
+                          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;justify&quot;&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                         </property>
+                         <property name="text">
+                          <string/>
+                         </property>
+                         <property name="pixmap">
+                          <pixmap>tip_icon.png</pixmap>
+                         </property>
+                        </widget>
+                       </item>
+                      </layout>
+                     </item>
+                     <item row="5" column="0">
                       <spacer name="verticalSpacer_14">
                        <property name="orientation">
                         <enum>Qt::Vertical</enum>
@@ -193,6 +252,22 @@
                       </spacer>
                      </item>
                      <item row="3" column="0">
+                      <spacer name="verticalSpacer_18">
+                       <property name="orientation">
+                        <enum>Qt::Vertical</enum>
+                       </property>
+                       <property name="sizeType">
+                        <enum>QSizePolicy::Fixed</enum>
+                       </property>
+                       <property name="sizeHint" stdset="0">
+                        <size>
+                         <width>20</width>
+                         <height>8</height>
+                        </size>
+                       </property>
+                      </spacer>
+                     </item>
+                     <item row="6" column="0">
                       <layout class="QGridLayout" name="gridLayout_8">
                        <item row="1" column="0">
                         <layout class="QVBoxLayout" name="verticalLayout_3">
@@ -373,34 +448,10 @@
                        </item>
                       </layout>
                      </item>
-                     <item row="0" column="0">
-                      <layout class="QGridLayout" name="gridLayout_6">
-                       <item row="0" column="0">
-                        <layout class="QGridLayout" name="gridLayout_9">
-                         <item row="0" column="1">
-                          <widget class="QLineEdit" name="le_1_pg1">
-                           <property name="maximumSize">
-                            <size>
-                             <width>80</width>
-                             <height>24</height>
-                            </size>
-                           </property>
-                           <property name="text">
-                            <string/>
-                           </property>
-                          </widget>
-                         </item>
-                         <item row="0" column="0">
-                          <widget class="QLabel" name="label_2">
-                           <property name="text">
-                            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;justify&quot;&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Initial abstraction parameter (λ)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                           </property>
-                          </widget>
-                         </item>
-                        </layout>
-                       </item>
+                     <item row="4" column="0">
+                      <layout class="QGridLayout" name="gridLayout_12">
                        <item row="0" column="1">
-                        <widget class="QLabel" name="label_11">
+                        <widget class="QLabel" name="label_13">
                          <property name="sizePolicy">
                           <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
                            <horstretch>0</horstretch>
@@ -420,7 +471,10 @@
                           </size>
                          </property>
                          <property name="toolTip">
-                          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;justify&quot;&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                         </property>
+                         <property name="whatsThis">
+                          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Add the description or function of the object&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                          </property>
                          <property name="text">
                           <string/>
@@ -430,25 +484,36 @@
                          </property>
                         </widget>
                        </item>
-                       <item row="1" column="0">
-                        <spacer name="verticalSpacer_13">
-                         <property name="orientation">
-                          <enum>Qt::Vertical</enum>
-                         </property>
-                         <property name="sizeType">
-                          <enum>QSizePolicy::Fixed</enum>
-                         </property>
-                         <property name="sizeHint" stdset="0">
-                          <size>
-                           <width>20</width>
-                           <height>8</height>
-                          </size>
-                         </property>
-                        </spacer>
+                       <item row="0" column="0">
+                        <layout class="QGridLayout" name="gridLayout_18">
+                         <item row="0" column="0">
+                          <widget class="QLabel" name="label_5">
+                           <property name="text">
+                            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;justify&quot;&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Finish time (min):&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                           </property>
+                          </widget>
+                         </item>
+                         <item row="0" column="1">
+                          <widget class="QLineEdit" name="le_4_pg1">
+                           <property name="minimumSize">
+                            <size>
+                             <width>80</width>
+                             <height>24</height>
+                            </size>
+                           </property>
+                           <property name="maximumSize">
+                            <size>
+                             <width>80</width>
+                             <height>24</height>
+                            </size>
+                           </property>
+                          </widget>
+                         </item>
+                        </layout>
                        </item>
                       </layout>
                      </item>
-                     <item row="1" column="0">
+                     <item row="2" column="0">
                       <layout class="QGridLayout" name="gridLayout_7">
                        <item row="0" column="1">
                         <widget class="QLabel" name="label_12">
@@ -489,7 +554,7 @@
                          <item row="0" column="0">
                           <widget class="QLabel" name="label_3">
                            <property name="text">
-                            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;justify&quot;&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Time step (mim):&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;justify&quot;&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Time step (min):&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                            </property>
                           </widget>
                          </item>
@@ -512,6 +577,22 @@
                         </layout>
                        </item>
                       </layout>
+                     </item>
+                     <item row="1" column="0">
+                      <spacer name="verticalSpacer_13">
+                       <property name="orientation">
+                        <enum>Qt::Vertical</enum>
+                       </property>
+                       <property name="sizeType">
+                        <enum>QSizePolicy::Fixed</enum>
+                       </property>
+                       <property name="sizeHint" stdset="0">
+                        <size>
+                         <width>20</width>
+                         <height>8</height>
+                        </size>
+                       </property>
+                      </spacer>
                      </item>
                     </layout>
                    </widget>
@@ -592,7 +673,7 @@
                  <x>0</x>
                  <y>0</y>
                  <width>558</width>
-                 <height>476</height>
+                 <height>448</height>
                 </rect>
                </property>
                <layout class="QGridLayout" name="gridLayout_36">
@@ -1161,7 +1242,7 @@
                  <x>0</x>
                  <y>0</y>
                  <width>558</width>
-                 <height>476</height>
+                 <height>448</height>
                 </rect>
                </property>
                <layout class="QGridLayout" name="gridLayout_14">
@@ -1644,8 +1725,8 @@
                 <rect>
                  <x>0</x>
                  <y>0</y>
-                 <width>558</width>
-                 <height>476</height>
+                 <width>507</width>
+                 <height>404</height>
                 </rect>
                </property>
                <layout class="QGridLayout" name="gridLayout_17">

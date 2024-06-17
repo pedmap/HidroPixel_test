@@ -1795,13 +1795,15 @@ class HidroPixel:
 
         return Tempo_total        
 
-    def leh_parametros(self, alfa, d_t):
+    def leh_parametros(self, alfa, d_t, criterio_parada,function):
         '''Esta função lê os valores enviados pelo usuário contento os parâmetros do modelo: abstração inicial, time step, tempo critério de parada e o beta'''
         # Armazena as informações enviadas
         self.alfa = float(alfa)
         self.delta_t = float(d_t)
-        self.criterio_parada = 48
-        self.beta = float(self.dlg_flow_rout.le_4_pg1.text())
+        self.criterio_parada = float(criterio_parada)
+
+        if function ==2:
+            self.beta = float(self.dlg_flow_rout.le_5_pg1.text())
 
     def leh_precip_distribuida(self, file_):
         '''Esta função lê o arquivo enviado pelo usuário contento os valores da precipitação destribuidos ao longo dos pixels pertencentes a baica hidrográfica'''
@@ -4689,7 +4691,7 @@ class HidroPixel:
                 
                 # Lê arquico contendo o valor do Curve Number para cada pixel da bacia hidrográfica 
                 self.leh_CN()
-                self.leh_parametros(self.dlg_exc_rain.le_1_pg1.text(),self.dlg_exc_rain.le_2_pg1.text())
+                self.leh_parametros(self.dlg_exc_rain.le_1_pg1.text(),self.dlg_exc_rain.le_2_pg1.text(),self.dlg_exc_rain.le_4_pg1.text() ,1)
                 self.leh_precip_distribuida(self.dlg_exc_rain.le_4_pg2.text())
 
                 # Atualiza a progressbar
@@ -4769,7 +4771,8 @@ class HidroPixel:
 
                 # Atualiza a progressbar
                 self.dlg_exc_rain.progressBar.setValue(self.dlg_exc_rain.progressBar.value() + 20)
-
+                if self.dlg_exc_rain.progressBar.value() != 100:
+                    self.dlg_exc_rain.progressBar.setValue(100git )
                 # Finaliza operação do programa
                 QMessageBox.information(None, "Information", "Operation completed successfully!", )
                 break
@@ -4930,7 +4933,8 @@ class HidroPixel:
                 self.leh_precip_distribuida(arquivo_precipitacao)
                 alfa = self.dlg_flow_rout.le_1_pg1.text()
                 time_step = self.dlg_flow_rout.le_2_pg1.text()
-                self.leh_parametros(alfa, time_step)
+                criterio_parada = self.dlg_flow_rout.le_4_pg1.text()
+                self.leh_parametros(alfa, time_step,criterio_parada,2)
                 
                 # Atualiza progressbar
                 self.dlg_flow_rout.progressBar.setValue(10)
@@ -4976,6 +4980,8 @@ class HidroPixel:
                     self.dlg_flow_rout.te_logg.append(mensagem_log1)
                 self.dlg_flow_rout.progressBar.setValue(self.dlg_flow_rout.progressBar.value() + 20)
 
+                if self.dlg_flow_rout.progressBar.value() != 100:
+                    self.dlg_flow_rout.progressBar.setValue(100)
                 # Finaliza operação do programa
                 QMessageBox.information(None, "Information", "Operation completed successfully!", )
                 break

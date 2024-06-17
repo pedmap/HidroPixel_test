@@ -3445,5 +3445,5 @@ class Test():
 cla_test = Test()
 # cla_test.run_flow_tt()
 # cla_test.run_rainfall_interpolation(2)
-# cla_test.run_exc_rain()
-cla_test.run_flow_routing()
+cla_test.run_exc_rain()
+# cla_test.run_flow_routing()
