@@ -120,36 +120,62 @@
                 </rect>
                </property>
                <layout class="QGridLayout" name="gridLayout_6">
-                <item row="5" column="0">
-                 <layout class="QHBoxLayout" name="horizontalLayout_11">
-                  <property name="spacing">
-                   <number>6</number>
-                  </property>
-                  <item>
-                   <widget class="QPushButton" name="btn_read_pg1">
-                    <property name="text">
-                     <string>Read from file</string>
+                <item row="4" column="0">
+                 <layout class="QGridLayout" name="gridLayout_36">
+                  <item row="0" column="1">
+                   <widget class="QLineEdit" name="le_5_pg1">
+                    <property name="minimumSize">
+                     <size>
+                      <width>80</width>
+                      <height>24</height>
+                     </size>
+                    </property>
+                    <property name="maximumSize">
+                     <size>
+                      <width>80</width>
+                      <height>24</height>
+                     </size>
                     </property>
                    </widget>
                   </item>
-                  <item>
-                   <widget class="QPushButton" name="btn_save_file_pg1">
+                  <item row="0" column="2">
+                   <widget class="QLabel" name="label_13">
+                    <property name="sizePolicy">
+                     <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                      <horstretch>0</horstretch>
+                      <verstretch>0</verstretch>
+                     </sizepolicy>
+                    </property>
+                    <property name="minimumSize">
+                     <size>
+                      <width>16</width>
+                      <height>16</height>
+                     </size>
+                    </property>
+                    <property name="maximumSize">
+                     <size>
+                      <width>16</width>
+                      <height>16</height>
+                     </size>
+                    </property>
+                    <property name="toolTip">
+                     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                    </property>
+                    <property name="whatsThis">
+                     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Add the description or function of the object&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                    </property>
                     <property name="text">
-                     <string>Save to file</string>
+                     <string/>
+                    </property>
+                    <property name="pixmap">
+                     <pixmap>tip_icon.png</pixmap>
                     </property>
                    </widget>
                   </item>
-                  <item>
-                   <widget class="QPushButton" name="btn_save_pg1">
+                  <item row="0" column="0">
+                   <widget class="QLabel" name="label_7">
                     <property name="text">
-                     <string>Save</string>
-                    </property>
-                   </widget>
-                  </item>
-                  <item>
-                   <widget class="QPushButton" name="btn_help_pg1">
-                    <property name="text">
-                     <string>Help</string>
+                     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;justify&quot;&gt;&lt;span style=&quot; font-size:10pt; color:#000000;&quot;&gt;Parameter β:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                     </property>
                    </widget>
                   </item>
@@ -191,13 +217,6 @@
                     </property>
                    </widget>
                   </item>
-                  <item row="0" column="0">
-                   <widget class="QLabel" name="label_3">
-                    <property name="text">
-                     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;justify&quot;&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Time step (mim):&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                    </property>
-                   </widget>
-                  </item>
                   <item row="0" column="1">
                    <widget class="QLineEdit" name="le_2_pg1">
                     <property name="minimumSize">
@@ -211,6 +230,48 @@
                       <width>80</width>
                       <height>24</height>
                      </size>
+                    </property>
+                   </widget>
+                  </item>
+                  <item row="0" column="0">
+                   <widget class="QLabel" name="label_3">
+                    <property name="text">
+                     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;justify&quot;&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Time step (min):&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                    </property>
+                   </widget>
+                  </item>
+                 </layout>
+                </item>
+                <item row="6" column="0">
+                 <layout class="QHBoxLayout" name="horizontalLayout_11">
+                  <property name="spacing">
+                   <number>6</number>
+                  </property>
+                  <item>
+                   <widget class="QPushButton" name="btn_read_pg1">
+                    <property name="text">
+                     <string>Read from file</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QPushButton" name="btn_save_file_pg1">
+                    <property name="text">
+                     <string>Save to file</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QPushButton" name="btn_save_pg1">
+                    <property name="text">
+                     <string>Save</string>
+                    </property>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QPushButton" name="btn_help_pg1">
+                    <property name="text">
+                     <string>Help</string>
                     </property>
                    </widget>
                   </item>
@@ -270,6 +331,19 @@
                    </widget>
                   </item>
                  </layout>
+                </item>
+                <item row="5" column="0">
+                 <spacer name="verticalSpacer_2">
+                  <property name="orientation">
+                   <enum>Qt::Vertical</enum>
+                  </property>
+                  <property name="sizeHint" stdset="0">
+                   <size>
+                    <width>20</width>
+                    <height>40</height>
+                   </size>
+                  </property>
+                 </spacer>
                 </item>
                 <item row="0" column="0">
                  <widget class="QFrame" name="frame">
@@ -516,25 +590,9 @@
                  </widget>
                 </item>
                 <item row="3" column="0">
-                 <layout class="QGridLayout" name="gridLayout_36">
-                  <item row="0" column="1">
-                   <widget class="QLineEdit" name="le_4_pg1">
-                    <property name="minimumSize">
-                     <size>
-                      <width>80</width>
-                      <height>24</height>
-                     </size>
-                    </property>
-                    <property name="maximumSize">
-                     <size>
-                      <width>80</width>
-                      <height>24</height>
-                     </size>
-                    </property>
-                   </widget>
-                  </item>
+                 <layout class="QGridLayout" name="gridLayout_39">
                   <item row="0" column="2">
-                   <widget class="QLabel" name="label_13">
+                   <widget class="QLabel" name="label_18">
                     <property name="sizePolicy">
                      <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
                       <horstretch>0</horstretch>
@@ -567,27 +625,30 @@
                     </property>
                    </widget>
                   </item>
+                  <item row="0" column="1">
+                   <widget class="QLineEdit" name="le_4_pg1">
+                    <property name="minimumSize">
+                     <size>
+                      <width>80</width>
+                      <height>24</height>
+                     </size>
+                    </property>
+                    <property name="maximumSize">
+                     <size>
+                      <width>80</width>
+                      <height>24</height>
+                     </size>
+                    </property>
+                   </widget>
+                  </item>
                   <item row="0" column="0">
-                   <widget class="QLabel" name="label_7">
+                   <widget class="QLabel" name="label_9">
                     <property name="text">
-                     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;justify&quot;&gt;&lt;span style=&quot; font-size:10pt; color:#000000;&quot;&gt;Parameter β:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;justify&quot;&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Finish time (min):&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                     </property>
                    </widget>
                   </item>
                  </layout>
-                </item>
-                <item row="4" column="0">
-                 <spacer name="verticalSpacer_2">
-                  <property name="orientation">
-                   <enum>Qt::Vertical</enum>
-                  </property>
-                  <property name="sizeHint" stdset="0">
-                   <size>
-                    <width>20</width>
-                    <height>40</height>
-                   </size>
-                  </property>
-                 </spacer>
                 </item>
                </layout>
               </widget>

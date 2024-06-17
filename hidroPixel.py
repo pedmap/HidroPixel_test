@@ -1738,7 +1738,7 @@ class HidroPixel:
         '''Esta função lê o arquivo enviado pelo usuário contendo os valores do parametro CURVE-NUMBER (CN) para os diferentes pixels da bacia hidrográfica'''
         # Define variáveis
         self.CN = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
-        arquivo = self.dlg_exc_rain.le_2_pg2() 
+        arquivo = self.dlg_exc_rain.le_2_pg2.text() 
         # Tratamento de erros: verifica se o arquivo foi corretamente enviado
         if arquivo:
             # Realizando a abertura do arquivo raster e coletando as informações referentes as dimensões do mesmo
