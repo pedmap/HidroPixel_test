@@ -4975,7 +4975,7 @@ class HidroPixel:
                     mensagem_log1 = 'Added...\n'
                     self.dlg_flow_rout.te_logg.append(mensagem_log1)
                 self.dlg_flow_rout.progressBar.setValue(self.dlg_flow_rout.progressBar.value() + 20)
-                
+
                 # Finaliza operação do programa
                 QMessageBox.information(None, "Information", "Operation completed successfully!", )
                 break
@@ -5100,7 +5100,7 @@ class HidroPixel:
             self.dlg_exc_rain.tbtn_pg2_1.clicked.connect(lambda: self.carrega_arquivos(self.dlg_exc_rain.le_1_pg2))
             self.dlg_exc_rain.tbtn_pg2_2.clicked.connect(lambda: self.carrega_arquivos(self.dlg_exc_rain.le_2_pg2))
             self.dlg_exc_rain.tbtn_pg2_3.clicked.connect(lambda: self.carrega_arquivos(self.dlg_exc_rain.le_3_pg2))
-            self.dlg_exc_rain.tbtn_pg2_4.clicked.connect(lambda: self.carrega_arquivos(self.dlg_exc_rain.le_4_pg2))
+            self.dlg_exc_rain.tbtn_pg2_4.clicked.connect(lambda: self.carrega_arquivos(self.dlg_exc_rain.le_4_pg2,file_type = 'text'))
             
             # configura botões de salvar e salvar para um arquivo: excess rainfall
             self.dlg_exc_rain.btn_save_file_pg1.clicked.connect(lambda: self.save_to_file(2, 1))
