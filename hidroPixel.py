@@ -281,7 +281,7 @@ class HidroPixel:
 
         while True:  # Loop até que o usuário selecione um arquivo ou cancele
             if qtd == 2:
-                file_, _ = QFileDialog.getOpenFileNames(None, caption="Select the files!", directory=directory, filter="Raster or RDC file (*.tif *.rst *.rdc)", options=options)
+                file_, _ = QFileDialog.getOpenFileNames(None, caption="Select the files!", directory=directory, filter="Raster or RDC file (*.rst *.tif *.rdc)", options=options)
                 if file_:
                     lineEdit.setPlainText("\n".join(file_))
                     self.rdc_vars.nomeRDC = file_[0] if file_ else None
@@ -295,7 +295,7 @@ class HidroPixel:
             else:
                 # Janela de diálogo com o Usuário
                 if file_type == "raster".lower():
-                    file_, _ = QFileDialog.getOpenFileName(None, caption="Select a file!", directory=directory, filter="Raster Files (*.tif *.rst)", options=options)
+                    file_, _ = QFileDialog.getOpenFileName(None, caption="Select a file!", directory=directory, filter="Raster Files (*.rst *.tif)", options=options)
                 elif file_type == "text".lower():
                     file_, _ = QFileDialog.getOpenFileName(None, caption="Select a file!", directory=directory, filter="Text Files (*.txt)", options=options)
 
@@ -3186,7 +3186,7 @@ class HidroPixel:
         while True:
             # Obtendo o caminho do arquivo a ser salvo usando um diálogo de arquivo
             if file_type == 'raster':
-                file_name, _ = QFileDialog.getSaveFileName(None, "Save the file",'',"Raster Files (*.tif *.rst)")
+                file_name, _ = QFileDialog.getSaveFileName(None, "Save the file",'',"Raster Files (*.rst)")
                 if file_name:
                     line_edit.setText(file_name)
                     break
