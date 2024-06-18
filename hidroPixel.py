@@ -3329,8 +3329,10 @@ class HidroPixel:
                             arquivo_txt.write('\n')
                             arquivo_txt.write('Initial abstraction parameter (λ):\n')
                             arquivo_txt.write(f'=> {self.dlg_exc_rain.le_1_pg1.text()}\n')
-                            arquivo_txt.write('Time step(mim):\n')
+                            arquivo_txt.write('Time step (min):\n')
                             arquivo_txt.write(f'=> {self.dlg_exc_rain.le_2_pg1.text()}\n')
+                            arquivo_txt.write('Finish (min):\n')
+                            arquivo_txt.write(f'=> {self.dlg_exc_rain.le_4_pg1.text()}\n')
                             arquivo_txt.write('Rainfall defination:\n')
                             arquivo_txt.write('    Areal averaged:\n')
                             arquivo_txt.write(f'   =>{self.dlg_exc_rain.rb_1_pg1.isChecked()}\n')
@@ -3347,6 +3349,35 @@ class HidroPixel:
                     break
 
                 elif page == 2:
+                    # Armazena as informações acerca da função rainfall intepolation
+                    file_name, _ = QFileDialog.getSaveFileName(None, "Save the file", "exc_rain_rainfall_inter_page", "Text Files (*.txt)")
+                    if file_name:
+                        with open(file_name, 'w', encoding = 'utf-8') as arquivo_txt:
+                            arquivo_txt.write('Excess Rainfall - Rainfall interpolation: \n')
+                            arquivo_txt.write('\n')
+                            arquivo_txt.write('Watershed delineation:\n')
+                            arquivo_txt.write(f'=> {self.dlg_exc_rain.le_1_pg_ri.text()}\n')
+                            arquivo_txt.write('Rain gauges metadata:\n')
+                            arquivo_txt.write(f'=> {self.dlg_exc_rain.le_2_pg_ri.text()}\n')
+                            arquivo_txt.write('Rainfall data:\n')
+                            arquivo_txt.write(f'=> {self.dlg_exc_rain.le_3_pg_ri.text()}\n')
+                            arquivo_txt.write('\n')
+                            arquivo_txt.write('Rainfall file:\n')
+                            arquivo_txt.write(f'=> {self.dlg_exc_rain.le_4_pg_ri.text()}\n')
+                            arquivo_txt.write('Rainfall maps:\n')
+                            arquivo_txt.write(f'=> {self.dlg_exc_rain.le_5_pg_ri.text()}\n')
+
+                    else:
+                        # Caso o usuário não selecione um arquivo
+                        result = "Wait! You did not select any file."
+                        reply = QMessageBox.warning(None, "No files selected", result, QMessageBox.Ok | QMessageBox.Cancel)
+                        if reply == QMessageBox.Cancel:
+                            break
+                        
+                    # Encerra a chamada da tela de seleção de arquivo 
+                    break
+
+                elif page == 3:
                     # Salva as informações fornecidas na página de input data: excess rainfall
                     file_name, _ = QFileDialog.getSaveFileName(None, "Save the file", "exc_rain_input_data_page", "Text Files (*.txt)")
                     if file_name:
@@ -3418,10 +3449,14 @@ class HidroPixel:
                             arquivo_txt.write(f'   => {self.dlg_flow_rout.rb_2_pg1.isChecked()}\n')
                             arquivo_txt.write('    Hidropixel - DLR:\n')
                             arquivo_txt.write(f'   => {self.dlg_flow_rout.rb_3_pg1.isChecked()}\n')
-                            arquivo_txt.write('Initial abstraction parameter (ρ)\n')
+                            arquivo_txt.write('Initial abstraction parameter (λ):\n')
                             arquivo_txt.write(f'=> {self.dlg_flow_rout.le_1_pg1.text()}\n')
-                            arquivo_txt.write('Time step (mim):\n')
+                            arquivo_txt.write('Time step (min):\n')
                             arquivo_txt.write(f'=> {self.dlg_flow_rout.le_2_pg1.text()}\n')                            
+                            arquivo_txt.write('Finish time (min):\n')
+                            arquivo_txt.write(f'=> {self.dlg_flow_rout.le_4_pg1.text()}\n')                            
+                            arquivo_txt.write('Parameter β:\n')
+                            arquivo_txt.write(f'=> {self.dlg_flow_rout.le_5_pg1.text()}\n')                            
 
                     else:
                         # Caso o usuário não selecione um arquivo
@@ -3447,6 +3482,8 @@ class HidroPixel:
                             arquivo_txt.write(f'=> {self.dlg_flow_rout.le_3_pg2.text()}\n')
                             arquivo_txt.write('Excess hyetographs per pixel:\n')
                             arquivo_txt.write(f'=> {self.dlg_flow_rout.le_4_pg2.text()}\n')
+                            arquivo_txt.write('Total excess rainfall per pixel (mm):\n')
+                            arquivo_txt.write(f'=> {self.dlg_flow_rout.le_5_pg2.text()}\n')
 
                     else:
                         # Caso o usuário não selecione um arquivo
@@ -3471,9 +3508,9 @@ class HidroPixel:
                             arquivo_txt.write(f'            (L/s) => {self.dlg_flow_rout.rb_1_pg4.isChecked()}\n')
                             arquivo_txt.write('Select unit:\n')
                             arquivo_txt.write(f'            (m³/s) => {self.dlg_flow_rout.rb_2_pg4.isChecked()}\n')
-                            arquivo_txt.write('TUH peak time per pixel (mim):\n')
+                            arquivo_txt.write('TUH peak time per pixel (min):\n')
                             arquivo_txt.write(f'=> {self.dlg_flow_rout.le_2_pg4.text()}\n')
-                            arquivo_txt.write('TUH base time per pixel (mim):\n')
+                            arquivo_txt.write('TUH base time per pixel (min):\n')
                             arquivo_txt.write(f'=> {self.dlg_flow_rout.le_3_pg4.text()}\n')                                                          
                             arquivo_txt.write('Resulting peak discharge per pixel:\n')
                             arquivo_txt.write(f'=> {self.dlg_flow_rout.le_4_pg4.text()}\n')
@@ -3611,11 +3648,12 @@ class HidroPixel:
                                     values.append(value)      
                         self.dlg_exc_rain.le_1_pg1.setText(str(values[0]))                      
                         self.dlg_exc_rain.le_2_pg1.setText(str(values[1]))
+                        self.dlg_exc_rain.le_4_pg1.setText(str(values[2]))
                         self.dlg_exc_rain.rb_1_pg1.setChecked(str(values[2])=='True')                 
                         self.dlg_exc_rain.rb_2_pg1.setChecked(str(values[3])=='True')             
                         break
-
-                    # Lê os arquivos da segunda página
+                    
+                    # Lê informações página rainfall interpolation
                     elif page == 2:
                         with open(file_, 'r', encoding = 'utf-8') as arquivo_txt:
                             # Armazenará os valores das linhas
@@ -3626,16 +3664,15 @@ class HidroPixel:
                                     value = line.replace('=>', '').strip()
                                     values.append(value) 
 
-                        self.dlg_exc_rain.le_1_pg2.setText(str(values[0]))           
-                        self.dlg_exc_rain.le_2_pg2.setText(str(values[1]))           
-                        self.dlg_exc_rain.le_3_pg2.setText(str(values[2]))           
-                        self.dlg_exc_rain.le_4_pg2.setText(str(values[3]))
-                        break
+                        self.dlg_exc_rain.le_1_pg_ri.setText(str(values[0]))           
+                        self.dlg_exc_rain.le_2_pg_ri.setText(str(values[1]))           
+                        self.dlg_exc_rain.le_3_pg_ri.setText(str(values[2]))           
+                        self.dlg_exc_rain.le_4_pg_ri.setText(str(values[3]))
+                        self.dlg_exc_rain.le_5_pg_ri.setText(str(values[4]))
+                        break         
 
-                    # elif page == 3 and file_ != '':
-
-                    # Lê os arquivos da quarta página                    
-                    elif page == 4:
+                    # Lê os arquivos da segunda página
+                    elif page == 3:
                         with open(file_, 'r', encoding = 'utf-8') as arquivo_txt:
                             # Armazenará os valores das linhas
                             values = []
@@ -3644,10 +3681,31 @@ class HidroPixel:
                                     # Substitui o identificador => por uma string fazia e retira os espaços da linha
                                     value = line.replace('=>', '').strip()
                                     values.append(value) 
+
                         self.dlg_exc_rain.le_1_pg2.setText(str(values[0]))           
                         self.dlg_exc_rain.le_2_pg2.setText(str(values[1]))           
                         self.dlg_exc_rain.le_3_pg2.setText(str(values[2]))           
                         self.dlg_exc_rain.le_4_pg2.setText(str(values[3]))
+                        break
+
+                    # elif page == 4 and file_ != '':
+
+                    # Lê os arquivos da quarta página                    
+                    elif page == 5:
+                        with open(file_, 'r', encoding = 'utf-8') as arquivo_txt:
+                            # Armazenará os valores das linhas
+                            values = []
+                            for line in arquivo_txt:
+                                if '=>' in line:
+                                    # Substitui o identificador => por uma string fazia e retira os espaços da linha
+                                    value = line.replace('=>', '').strip()
+                                    values.append(value) 
+                        self.dlg_exc_rain.le_1_pg4.setText(str(values[0]))           
+                        self.dlg_exc_rain.le_2_pg4.setText(str(values[1]))           
+                        self.dlg_exc_rain.le_3_pg4.setText(str(values[2]))           
+                        self.dlg_exc_rain.le_4_pg4.setText(str(values[3]))
+                        self.dlg_exc_rain.le_5_pg4.setText(str(values[4]))
+                        self.dlg_exc_rain.le_6_pg4.setText(str(values[5]))
                         break
                 
                 elif function == 3:
@@ -3666,6 +3724,8 @@ class HidroPixel:
                         self.dlg_flow_rout.rb_3_pg1.setChecked(str(values[2])=='True')
                         self.dlg_flow_rout.le_1_pg1.setText(str(values[3]))
                         self.dlg_flow_rout.le_2_pg1.setText(str(values[4]))
+                        self.dlg_flow_rout.le_4_pg1.setText(str(values[5]))
+                        self.dlg_flow_rout.le_5_pg1.setText(str(values[6]))
                         break
                     # Lê os arquivos da segunda página
                     elif page == 2:
@@ -3679,9 +3739,10 @@ class HidroPixel:
                                     values.append(value)
 
                         self.dlg_flow_rout.le_1_pg2.setText(str(values[0]))
-                        self.dlg_flow_rout.le_2_pg2.setText(str(values[0]))
-                        self.dlg_flow_rout.le_3_pg2.setText(str(values[0]))
-                        self.dlg_flow_rout.le_4_pg2.setText(str(values[0]))
+                        self.dlg_flow_rout.le_2_pg2.setText(str(values[1]))
+                        self.dlg_flow_rout.le_3_pg2.setText(str(values[2]))
+                        self.dlg_flow_rout.le_4_pg2.setText(str(values[3]))
+                        self.dlg_flow_rout.le_5_pg2.setText(str(values[4]))
                         break           
                     # Lê os arquivos da quarta página
                     elif page == 4:
@@ -4189,6 +4250,7 @@ class HidroPixel:
                         self.dlg_exc_rain.le_1_pg1.clear()
                         self.dlg_exc_rain.le_2_pg1.clear()
                         self.dlg_exc_rain.le_3_pg1.clear()
+                        self.dlg_exc_rain.le_4_pg1.clear()
                         self.dlg_exc_rain.le_1_pg_ri.clear()
                         self.dlg_exc_rain.le_2_pg_ri.clear()
                         self.dlg_exc_rain.le_3_pg_ri.clear()
@@ -4228,6 +4290,8 @@ class HidroPixel:
                 self.dlg_flow_rout.le_1_pg1.text(),
                 self.dlg_flow_rout.le_2_pg1.text(),
                 self.dlg_flow_rout.le_3_pg1.text(),
+                self.dlg_flow_rout.le_4_pg1.text(),
+                self.dlg_flow_rout.le_5_pg1.text(),
                 self.dlg_flow_rout.le_1_pg2.text(),
                 self.dlg_flow_rout.le_2_pg2.text(),
                 self.dlg_flow_rout.le_3_pg2.text(),
@@ -4255,6 +4319,8 @@ class HidroPixel:
                         self.dlg_flow_rout.le_1_pg1.clear()
                         self.dlg_flow_rout.le_2_pg1.clear()
                         self.dlg_flow_rout.le_3_pg1.clear()
+                        self.dlg_flow_rout.le_4_pg1.clear()
+                        self.dlg_flow_rout.le_5_pg1.clear()
                         self.dlg_flow_rout.le_1_pg2.clear()
                         self.dlg_flow_rout.le_2_pg2.clear()
                         self.dlg_flow_rout.le_3_pg2.clear()
@@ -5097,12 +5163,14 @@ class HidroPixel:
             
             # configura botões de salvar e salvar para um arquivo: excess rainfall
             self.dlg_exc_rain.btn_save_file_pg1.clicked.connect(lambda: self.save_to_file(2, 1))
+            self.dlg_exc_rain.btn_save_file_pg_ri.clicked.connect(lambda: self.save_to_file(2, 2))
             self.dlg_exc_rain.btn_save_file_pg2.clicked.connect(lambda: self.save_to_file(2, 2))
             self.dlg_exc_rain.btn_save_file_pg4.clicked.connect(lambda: self.save_to_file(2, 4))
 
             # Configura botão para ler informações de uma arquivo enviado : excess rainfall
             self.dlg_exc_rain.btn_read_pg1.clicked.connect(lambda: self.read_from_file(2,1,self.dlg_exc_rain.le_3_pg1.text()))
-            self.dlg_exc_rain.btn_read_pg2.clicked.connect(lambda: self.read_from_file(2,2,self.dlg_exc_rain.le_3_pg1.text()))
+            self.dlg_exc_rain.btn_read_pg_ri.clicked.connect(lambda: self.read_from_file(2,2,self.dlg_exc_rain.le_3_pg1.text()))
+            self.dlg_exc_rain.btn_read_pg2.clicked.connect(lambda: self.read_from_file(2,3,self.dlg_exc_rain.le_3_pg1.text()))
             self.dlg_exc_rain.btn_read_pg4.clicked.connect(lambda: self.read_from_file(2,4,self.dlg_exc_rain.le_3_pg1.text()))
 
             # Configura botões de salvar das diferentes páginas : excess rainfall

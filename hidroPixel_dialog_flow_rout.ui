@@ -46,7 +46,7 @@
         <item row="1" column="0">
          <widget class="QStackedWidget" name="pages_flow_rout">
           <property name="currentIndex">
-           <number>0</number>
+           <number>3</number>
           </property>
           <widget class="QWidget" name="pg1_config">
            <layout class="QGridLayout" name="gridLayout_4">
@@ -1236,8 +1236,8 @@
                <property name="geometry">
                 <rect>
                  <x>0</x>
-                 <y>0</y>
-                 <width>507</width>
+                 <y>-84</y>
+                 <width>593</width>
                  <height>511</height>
                 </rect>
                </property>
@@ -1921,7 +1921,7 @@
                        <item row="0" column="4">
                         <widget class="QCheckBox" name="ch_11_pg4">
                          <property name="enabled">
-                          <bool>false</bool>
+                          <bool>true</bool>
                          </property>
                          <property name="sizePolicy">
                           <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
@@ -2046,7 +2046,7 @@
                        <item row="0" column="4">
                         <widget class="QCheckBox" name="ch_12_pg4">
                          <property name="enabled">
-                          <bool>true</bool>
+                          <bool>false</bool>
                          </property>
                          <property name="sizePolicy">
                           <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
