@@ -2028,19 +2028,19 @@ class HidroPixel:
             self.global_vars.metrordc = self.global_vars.metro
             self.escreve_RDC(nomeRST)          
 
-    def rainfall_excess(self):
+    def excess_rainfall(self):
         '''Esta função determina gera os arquivos associados a precipitação excedente de cada pixel presente na baica hidrográfica, fumentando-se no método do SCS-CN'''
-        a = 0
+
         # JVD: estrutura dos arrays
         self.time = np.zeros(50000)
         self.hacum = np.zeros(50000)
-        self.hexc_pix = np.zeros((self.numero_total_pix, self.quantidade_blocos_chuva))
-        self.hietograma = np.zeros((self.numero_total_pix, self.quantidade_blocos_chuva))
         self.perdas_iniciais = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
-        self.chuva_acumulada_pixel = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
+        self.pe_acumulada_pixel = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
         self.chuva_total_pixel = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
         self.Spotencial = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
 
+        self.hexc_pix = np.zeros((self.numero_total_pix, self.quantidade_blocos_chuva))
+        
         arquivo_precipitacao = self.dlg_exc_rain.le_4_pg2.text()
         with open(arquivo_precipitacao, 'r', encoding = 'utf-8') as arquivo_txt:
             # Armazena cabeçalho do arquivo
@@ -2060,7 +2060,8 @@ class HidroPixel:
                         # Armazena as linha do arquivo de precipitação
                         line = arquivo_txt.readline().strip()
                         split_line = line.split(',')
-                        for w in range(1, self.quantidade_blocos_chuva):
+
+                        for w in range(1, self.quantidade_blocos_chuva+1):
                             chuva_distribuida = float(split_line[w])
                             self.time[w] = self.time[w-1] + self.delta_t
 
@@ -2072,21 +2073,20 @@ class HidroPixel:
                             else:
                                 self.hacum[w] = ((Pacum - self.perdas_iniciais[lin][col])**2) / (Pacum - self.perdas_iniciais[lin][col] + self.Spotencial[lin][col])
 
-                                # precipitação efetiva desacumulada por pixel ao longo do evento
-                                self.hexc_pix[lin][w] = self.hacum[w] - self.hacum[w-1]
-                                
+                            # precipitação efetiva desacumulada por pixel
+                            self.hexc_pix[pixel_atual][w-1] = self.hacum[w] - self.hacum[w-1]
+
                         # Chuva excedente acumulada do pixel
-                        self.chuva_acumulada_pixel[lin][col] = self.hacum[self.quantidade_blocos_chuva-1]
+                        self.pe_acumulada_pixel[lin][col] = self.hacum[self.quantidade_blocos_chuva]
 
                         # Chuva total no pixel
                         self.chuva_total_pixel[lin][col] = Pacum
-                
+
     @optimize       
     def hidrograma_dlr(self):
         '''Esta função gera o hidrograma-DLR da bacia hidrográfica conforme os dados de precipitação enviados'''
         # Definição das variáveis
         Tmax = 0
-        a = 0
         self.tempo_total = self.leh_tempo_viagem()
         self.Spotencial = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
         self.volume_total_pix = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
@@ -2095,7 +2095,11 @@ class HidroPixel:
         self.TempoTotal_reclass = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
         self.vazao_pixel = np.zeros(50000)
         self.tempo_intervalo = np.zeros(50000)
-        chuva_acumulada = self.precipitacao_acumulada()
+        time = np.zeros(50000)
+        pe_acumulada_pixel = self.precipitacao_acumulada()
+        self.tempo_vazao_pixel = np.zeros(50000)
+        self.vazao_amortecida_pixel = np.zeros(50000)
+        self.vazao = np.zeros(50000)
 
         # JVDoptmize: máximo tempo de viagem ao exutório
         tempo_total_bacia = self.tempo_total[self.global_vars.bacia == 1]
@@ -2112,25 +2116,23 @@ class HidroPixel:
         # self.num_intervalos = w - 1
         self.num_intervalos = w
         diferenca = 0
-        diferenca_minima = 100000000
         for lin in range(self.rdc_vars.nlin):
             for col in range(self.rdc_vars.ncol):
+                diferenca_minima = 100000000
                 if self.global_vars.bacia[lin][col] == 1:
-                    a +=1
-                    for g in range(0,self.num_intervalos):
+                    for g in range(self.num_intervalos):
                         if self.tempo_intervalo[g] >= self.tempo_total[lin][col]:
                             diferenca = -(self.tempo_total[lin][col] - self.tempo_intervalo[g])
-                        if self.tempo_intervalo[g] < self.tempo_total[lin][col]:
+
+                        else:
                             diferenca = (self.tempo_total[lin][col] - self.tempo_intervalo[g])
+
                         if diferenca < diferenca_minima:
                             diferenca_minima = diferenca
                             self.TempoTotal_reclass[lin][col] = float(self.tempo_intervalo[g])
 
-        a = 0
         # Determinação do hidrograma
-        # Dadas do arquivo de precipitação enviado
-        numero_pixel = 0 
-        Pacum = 0
+        # Dados do arquivo de precipitação enviado
         tempo_exutorio = 0
         k = 0
         storage_coefficient = 0
@@ -2147,79 +2149,64 @@ class HidroPixel:
             for lin in range(self.rdc_vars.nlin):
                 for col in range(self.rdc_vars.ncol):
                     if self.global_vars.bacia[lin][col] == 1:
-                        a+=1
+                        time[0] = 0
+                        
                         # Armazena as linha do arquivo de precipitação efetiva
                         line = arquivo_txt.readline().strip()
                         split_line = line.split(',')
-                        pe_acumulada_pix = np.sum(np.array(list(map(float, split_line))))
+
                         for h in range(1, self.quantidade_blocos_chuva + 1):
                             self.Pexc = float(split_line[h])
-                            self.tempo_intervalo[h] = self.tempo_intervalo[h-1] + self.delta_t
+                            time[h] = time[h-1] + self.delta_t
 
                             if self.Pexc > 0:
-                                self.Pexc /= 1000 #em metros
-
                                 # Vazão correspondente no exutório
-                                self.Pexc = ((self.Pexc * (self.global_vars.dx**2))/self.delta_t)*(1/60) # Vazão em m³/s
+                                self.Pexc = (((self.Pexc/1000) * (self.global_vars.dx ** 2)) / self.delta_t) * (1 / 60)  # Vazão em m³/s
 
                                 # Representação da vazão no exutório (translação)
-                                tempo_exutorio = self.tempo_intervalo[h-1] + self.TempoTotal_reclass[lin][col]
-                                k = int(tempo_exutorio / self.delta_t)
+                                tempo_exutorio = time[h-1] + self.TempoTotal_reclass[lin][col]
 
+                                k = int(tempo_exutorio / self.delta_t)
                                 self.vazao_pixel[k] = self.Pexc
 
-                        # Volume de água gerado por pixel pixel
-                        self.volume_total_pix[lin][col] = (chuva_acumulada[lin][col]/(10**3)) *(self.global_vars.dx**2) #em m³
+                        # Volume de água gerado por pixel
+                        self.volume_total_pix[lin][col] = (pe_acumulada_pixel[lin][col] / (10 ** 3)) * (self.global_vars.dx ** 2)  # em m³
+
                         # Volume total de água gerada em todo evento
                         self.volume_total += self.volume_total_pix[lin][col]
-                        # Parâmetro para estimativa do armazenamento
-                        storage_coefficient = self.tempo_total[lin][col] / ((1/self.beta) - 1) # em minutos
 
-                        c_1 = self.delta_t / ((2*storage_coefficient) + self.delta_t)
-                        c_2 = 1 - (2*c_1)
+                        # Parâmetro para estimativa do armazenamento
+                        storage_coefficient = self.tempo_total[lin][col] / ((1 / self.beta) - 1)  # em minutos
+
+                        c_1 = self.delta_t / ((2 * storage_coefficient) + self.delta_t)
+                        c_2 = 1 - (2 * c_1)
 
                         # Amortecimento do hidrograma do pixel
                         k = 0
-                        self.tempo_vazao_pixel = np.zeros(50000)
-                        self.vazao_amortecida_pixel = np.zeros(50000)
-                        self.vazao = np.zeros(50000)
-
+                        blocos_vazao = 0
                         self.tempo_vazao_pixel[k] = 0
                         self.vazao_amortecida_pixel[k] = c_1 * self.vazao_pixel[k]
-                        self.vazao[k] += self.vazao_amortecida_pixel[k]
+                        self.vazao[k] = self.vazao[k] + self.vazao_amortecida_pixel[k]
                         while self.tempo_vazao_pixel[k] <= self.criterio_parada:
-                            self.vazao_amortecida_pixel[k+1] = (c_1 * self.vazao_pixel[k+1]) + (c_1 * self.vazao_pixel[k]) + (c_2*self.vazao_amortecida_pixel[k])
+                            self.vazao_amortecida_pixel[k+1] = (c_1 * self.vazao_pixel[k+1]) + (c_1 * self.vazao_pixel[k]) + (c_2 * self.vazao_amortecida_pixel[k])
                             self.tempo_vazao_pixel[k+1] = self.tempo_vazao_pixel[k] + self.delta_t
                             k += 1
-                            self.vazao[k] += self.vazao_amortecida_pixel[k]
+                            blocos_vazao += 1
+                            self.vazao[k] = self.vazao[k] + self.vazao_amortecida_pixel[k]
 
                         # Determinação da vazão e do tempo de pico do hidrograma-DLR por pixel
-                        self.vazao_pico[lin][col] = np.amax(self.vazao_amortecida_pixel)
+                        self.vazao_pico[lin][col] = np.amax(self.vazao)
+                        self.blocos_vazao = blocos_vazao
 
                         # Zera vazão no pixel
-                        k = 0
-                        self.tempo_vazao_pixel[k] = 0
-                        self.vazao_amortecida_pixel[k] = 0
-                        while self.tempo_vazao_pixel[k] <= self.criterio_parada:
-                            self.vazao_pixel[k+1] = 0
-                            self.vazao_amortecida_pixel[k + 1] = 0                       
-                            self.tempo_vazao_pixel[k+1] = self.tempo_vazao_pixel[k] + self.delta_t
-                            k += 1
+                        self.vazao_pixel.fill(0)
+                        self.vazao_amortecida_pixel.fill(0)
 
             # Cálculo da área da bacia
             area_bacia = self.numero_total_pix * (self.global_vars.dx **2) # em m²
 
             # Chuva excedente calculada
             self.chuva_excedente_calc = (self.volume_total / area_bacia) * (10**3) #em mm
-
-            # Determinação do tempo de duração da vazão
-            k = 0
-            self.tempo_vazao_pixel[k] = 0
-            while self.tempo_vazao_pixel[k] <= self.criterio_parada:
-                self.tempo_vazao_pixel[k+1] = self.tempo_vazao_pixel[k] + self.delta_t
-                k += 1
-
-            self.blocos_vazao = k-1
 
     def min_max(self):
         """
@@ -4701,7 +4688,7 @@ class HidroPixel:
                 mensagem_log1 = 'PROCESSING...\n'
                 self.dlg_exc_rain.te_logg.append(mensagem_log1)                
                 self.numera_pix_bacia()
-                self.rainfall_excess()
+                self.excess_rainfall()
 
                 # Atualiza a progressbar
                 self.dlg_exc_rain.progressBar.setValue(self.dlg_exc_rain.progressBar.value() + 50)  
@@ -5137,8 +5124,8 @@ class HidroPixel:
             
             # Configura botões da página rainfall interpolation
             self.dlg_exc_rain.tbtn_pg_r_1.clicked.connect(lambda: self.carrega_arquivos(self.dlg_exc_rain.le_1_pg_ri))
-            self.dlg_exc_rain.tbtn_pg_r_2.clicked.connect(lambda: self.carrega_arquivos(self.dlg_exc_rain.le_2_pg_ri))
-            self.dlg_exc_rain.tbtn_pg_r_3.clicked.connect(lambda: self.carrega_arquivos(self.dlg_exc_rain.le_3_pg_ri))
+            self.dlg_exc_rain.tbtn_pg_r_2.clicked.connect(lambda: self.carrega_arquivos(self.dlg_exc_rain.le_2_pg_ri,file_type = 'text'))
+            self.dlg_exc_rain.tbtn_pg_r_3.clicked.connect(lambda: self.carrega_arquivos(self.dlg_exc_rain.le_3_pg_ri,file_type = 'text'))
             self.dlg_exc_rain.tbtn_pg_r_4.clicked.connect(lambda: self.save_buttons(self.dlg_exc_rain.le_4_pg_ri,file_type = 'text'))
             self.dlg_exc_rain.tbtn_pg_r_5.clicked.connect(lambda: self.save_buttons(self.dlg_exc_rain.le_5_pg_ri))
             self.dlg_exc_rain.btn_save_1_pg_ri.clicked.connect(lambda: self.run_rainfall_interpolation(0))

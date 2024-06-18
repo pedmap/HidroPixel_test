@@ -1498,7 +1498,7 @@ class Test():
 
         # Armazena as informações coletadas
         self.alfa = float(values[0])
-        self.delta_t = float(values[1])
+        self.delta_t = int(values[1])
         self.criterio_parada = int(values[2])
         self.beta = float(values[3])
 
@@ -1694,7 +1694,7 @@ class Test():
             self.escreve_RDC(nomeRST)    
 
     @optimize
-    def rainfall_excess(self):
+    def excess_rainfall(self):
         '''Esta função determina gera os arquivos associados a precipitação excedente de cada pixel presente na baica hidrográfica, fumentando-se no método do SCS-CN'''
         # Definição de variáveis
         pixel_atual = 0
@@ -1792,8 +1792,8 @@ class Test():
         for lin in range(self.rdc_vars.nlin):
             for col in range(self.rdc_vars.ncol):
                 diferenca_minima = 100000000
-                a+=1
                 if self.global_vars.bacia[lin][col] == 1:
+                    a+=1
                     for g in range(self.num_intervalos):
                         if self.tempo_intervalo[g] >= self.tempo_total[lin][col]:
                             diferenca = -(self.tempo_total[lin][col] - self.tempo_intervalo[g])
@@ -1804,7 +1804,7 @@ class Test():
                         if diferenca < diferenca_minima:
                             diferenca_minima = diferenca
                             self.TempoTotal_reclass[lin][col] = float(self.tempo_intervalo[g])
-                print(f'Reclassificando tempo... [{a}/{self.numero_total_pix}] ({a/self.numero_total_pix*100:.2f}%)', end='\r')
+                    print(f'Reclassificando tempo... [{a}/{self.numero_total_pix}] ({a/self.numero_total_pix*100:.2f}%)', end='\r')
 
         print('Reclassificou o tempo!')
         a = 0
@@ -3400,7 +3400,7 @@ class Test():
         self.leh_precip_distribuida(precipitacao_distribuida)
         
         # Processing and wrinting output files
-        self.rainfall_excess()    
+        self.excess_rainfall()    
         print('Writing outputs...')
         self.escreve_numb_pix_bacia()
         self.escreve_S_potencial()
@@ -3445,5 +3445,5 @@ class Test():
 cla_test = Test()
 # cla_test.run_flow_tt()
 # cla_test.run_rainfall_interpolation(2)
-cla_test.run_exc_rain()
-# cla_test.run_flow_routing()
+# cla_test.run_exc_rain()
+cla_test.run_flow_routing()
