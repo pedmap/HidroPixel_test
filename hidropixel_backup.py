@@ -126,6 +126,15 @@ class HidroPixel:
         self.chuva_excedente_calc = 0
         self.blocos_vazao = 0
         self.Pexc = 0
+        self.coef_c = 0
+        self.coef_d = 0
+        self.coef_g = 0
+        self.coef_h = 0
+        self.n_canal = 0
+        self.comp_treco = 0
+        self.sheet_flow = 0
+        self.minus_slope = 0
+        self.profundidade_resers = 0
         
     # noinspection PyMethodMayBeStatic
     def tr(self, message):
@@ -468,7 +477,7 @@ class HidroPixel:
                         hydraul_rad_class.append(item_tb)
         # Atualiza a variável 
         # Atualiza as variáveis globais com os valores enviados
-        self.global_vars.id_trechos = np.array(id_class)
+        self.global_vars.j = np.array(id_class)
         self.global_vars.Sclasse = np.array(slope_class)
         self.global_vars.Mannclasse = np.array(mann_coef_class)
         self.global_vars.Rhclasse = np.array(hydraul_rad_class)
@@ -506,7 +515,40 @@ class HidroPixel:
     def leh_direcoes_de_fluxo(self):
         """Esta função é utilizada para ler as informações acerca da direção de escoamento dos rios (arquivo raster - .rst)"""
 
-        # Recebendo os arquivos necessários
+        # Definindo a numeração das direções &
+        # Definindo a posição relativa dos pixels vizinhos
+        # lin viz = lin centro + dlin(i)
+        # col viz = col centro + dcol(i)
+        
+        self.global_vars.dlin = {
+                            1: -1,
+                            2: 0,
+                            4: 1,
+                            8: 1,
+                            16: 1,
+                            32: 0,
+                            64: -1,
+                            128: -1
+                            }
+        self.global_vars.dcol = {
+                            1: 1,
+                            2: 1,
+                            4: 1,
+                            8: 0,
+                            16: -1,
+                            32: -1,
+                            64: -1,
+                            128: 0
+                            }
+
+       
+        # ATENÇÃO PARA O VALOR NUMÉRICO DAS DIRECÕES
+        # ---------------------------------------------------------
+        # - G  H  A      ArcView:  32 64 128    MGB-IPH:  64  128  1 -
+        # - F  *  B                16  *  1               32   *   2 -
+        # - E  D  C                 8  4  2               16   8   4 -
+
+        # Recebendo os arquivos necessários: função run
         linhas_text_edit = self.dlg_flow_tt.te_1_pg2.toPlainText()
         linhas = linhas_text_edit.split('\n')
         self.rdc_vars.nomeRDC = linhas[0]
@@ -585,7 +627,7 @@ class HidroPixel:
             self.global_vars.maxdir = np.amax(self.global_vars.direcoes)
 
             # Iniciando a iterações com base nas linhas e colunas
-            if self.global_vars.maxdir < 360:
+            if self.global_vars.maxdir > 128:
                 # Mapeamento das direções de fluxo do tipo idrisi
                 A = self.dlg_flow_tt.le_5_pg1.text()
                 B = self.dlg_flow_tt.le_6_pg1.text()
@@ -595,15 +637,15 @@ class HidroPixel:
                 F = self.dlg_flow_tt.le_10_pg1.text()
                 G = self.dlg_flow_tt.le_11_pg1.text()
                 H = self.dlg_flow_tt.le_12_pg1.text()
-                chaves = [A, B, C, D, E, F, G, H]
-                valores = [45, 90, 135, 180, 225, 270, 315, 360]
+                valores = [A, B, C, D, E, F, G, H]
+                chaves = [45, 90, 135, 180, 225, 270, 315, 360]
                 value_error = [valor for valor in valores if type(valor) != int]
 
                 # Dicionário com as combinações das direções de fluxo
                 idrisi_map = {}
                 for chave, valor in zip(chaves, valores):
                     try:
-                        idrisi_map[chave] = int(valor) # devem ser diferentes entre si, i+1 != i e i-1
+                        idrisi_map[chave] = int(valor) #devem ser diferentes entre si, i+1 != i e i-1
                     except ValueError:
                         result = f'The value(s) "{value_error}" is(are) not (a) valid integer number(s)!'
                         QMessageBox.warning(None, "ERROR!", result)
@@ -611,47 +653,16 @@ class HidroPixel:
                 for lin in range(self.rdc_vars.nlin):
                     for col in range(self.rdc_vars.ncol):
                         # Verifica se o valor atual da variável maxdir está presente no mapeamento
-                        if self.global_vars.direcoes[lin][col] in idrisi_map:
+                        if self.global_vars.direcoes[lin, col] in idrisi_map:
                             # Atualiza o valor do elemento atual da matriz dir de acordo com os novos valores
-                            self.global_vars.direcoes[lin][col] = idrisi_map[self.global_vars.direcoes[lin][col]]
+                            self.global_vars.direcoes[lin, col] = idrisi_map[self.global_vars.direcoes[lin, col]]
 
-            # Definindo a numeração das direções &
-            # Definindo a posição relativa dos pixels vizinhos
-            # lin viz = lin centro + dlin(i)
-            # col viz = col centro + dcol(i)
-            
-            self.global_vars.dlin = {
-                                45: -1,
-                                90: 0,
-                                135: 1,
-                                180: 1,
-                                225: 1,
-                                270: 0,
-                                315: -1,
-                                360: -1
-                                }
-            self.global_vars.dcol = {
-                                45: 1,
-                                90: 1,
-                                135: 1,
-                                180: 0,
-                                225: -1,
-                                270: -1,
-                                315: -1,
-                                360: 0
-                                }
-
-            # ATENÇÃO PARA O VALOR NUMÉRICO DAS DIRECÕES
-            # ---------------------------------------------------------
-            # - G  H  A      ArcView:  32 64 128    MGB-IPH:  64  128  1 -
-            # - F  *  B                16  *  1               32   *   2 -
-            # - E  D  C                 8  4  2               16   8   4 -
 
             # Tratamento das direções na borda
-            self.global_vars.direcoes[0, :] = 360
-            self.global_vars.direcoes[-1, :] = 180
-            self.global_vars.direcoes[:, 0] = 270
-            self.global_vars.direcoes[:, -1] = 90
+            self.global_vars.direcoes[0, :] = int(H)
+            self.global_vars.direcoes[-1, :] = int(D)
+            self.global_vars.direcoes[:, 0] = 32 int(F)
+            self.global_vars.direcoes[:, -1] = 2 int(B)
 
     def leh_drenagem(self):
         """Esta função é utilizada para ler as informações acerca da drenagem dos rios (arquivo raster - .rst)"""
@@ -675,6 +686,7 @@ class HidroPixel:
             """Caso o arquivo raster apresente erros durante a abertura, ocorrerá um erro"""
             resulte = f"Failde to open the raster file: {arquivo}"
             QMessageBox.warning(None, "ERROR!", resulte)
+
 
     def leh_modelo_numerico_dTerreno(self):
         """Esta função é utilizada para ler as informações acerca do modelo numérico do terreno (arquivo raster - .rst)"""
@@ -809,7 +821,7 @@ class HidroPixel:
                         # Armazena o valor do coef. de Manning em sua variável
                         coef_maning_val.append(item_tb)
 
-                    if col == 3:
+                    if col == 3
                         # coleta o item da celula atual e tenta converter para float
                         item_tb = float(self.dlg_flow_tt.tbw_2_pg2.item(lin,col).text())
 
@@ -1126,7 +1138,7 @@ class HidroPixel:
                                         if self.global_vars.Streaux < self.global_vars.Smin:
                                             self.global_vars.Streaux = self.global_vars.Smin
                                         
-                                        self.global_vars.Smax = 0 #em m/km
+                                        self.global_vars.Smax = float(self.dlg_flow_tt.le_2_pg1.text()) #em m/km
                                         if self.global_vars.Streaux > self.global_vars.Smax:
                                             self.global_vars.Streaux = self.global_vars.Smax
 
@@ -1766,645 +1778,7 @@ class HidroPixel:
 
                     if self.global_vars.tipo_decliv == 4:
                         self.global_vars.TempoTot[lin][col] = self.global_vars.TSpixacum[lin][col] + self.global_vars.auxTempoCanal
-
 # Funções para as rotinas Excess rainfall e flow routing
-    def tempo_concentracao(self):
-        '''Está função calcula o tempo de concentração para a bacia hidrográfica fornecida'''
-        # Determinação do Manning do pixel e determinação do parâmetro K para o cálculo do Shallow concentrated flow
-        for col in range(self.rdc_vars.ncol):
-            for lin in range(self.rdc_vars.nlin):
-                if self.global_vars.bacia[lin,col] == 1:
-                    for k in range(self.global_vars.n_tipo_uso):
-                        if self.global_vars.usosolo[lin,col] == self.global_vars.usaux[k]:
-                            self.global_vars.nSolo[lin,col] = self.global_vars.Mann[k]
-                            self.global_vars.coef_k_pixel[lin,col] = self.global_vars.coef_K[k]
-        
-        # Determinação do comprimento L ao longo do escoamento dentro do pixel
-        for col in range(1, self.rdc_vars.ncol - 1):
-            for lin in range(1, self.rdc_vars.nlin - 1):
-                if self.global_vars.direcoes[lin,col] == 45:
-                    self.global_vars.comp_pixel[lin,col] = self.global_vars.dx * float(self.dlg_flow_tt.le_4_pg1.text())
-
-                if self.global_vars.direcoes[lin,col] == 90:
-                    self.global_vars.comp_pixel[lin,col] = self.global_vars.dx * float(self.dlg_flow_tt.le_3_pg1.text())
-
-                if self.global_vars.direcoes[lin,col] == 135:
-                    self.global_vars.comp_pixel[lin,col] = self.global_vars.dx * float(self.dlg_flow_tt.le_4_pg1.text())
-
-                if self.global_vars.direcoes[lin,col] == 180:
-                    self.global_vars.comp_pixel[lin,col] = self.global_vars.dx * float(self.dlg_flow_tt.le_3_pg1.text())
-
-                if self.global_vars.direcoes[lin,col] == 225:
-                    self.global_vars.comp_pixel[lin,col] = self.global_vars.dx * float(self.dlg_flow_tt.le_4_pg1.text())
-
-                if self.global_vars.direcoes[lin,col] == 270:
-                    self.global_vars.comp_pixel[lin,col] = self.global_vars.dx * float(self.dlg_flow_tt.le_3_pg1.text())
-      
-                if self.global_vars.direcoes[lin,col] == 315:
-                    self.global_vars.comp_pixel[lin,col] = self.global_vars.dx * float(self.dlg_flow_tt.le_4_pg1.text())
-
-                if self.global_vars.direcoes[lin,col] == 360:
-                    self.global_vars.comp_pixel[lin,col] = self.global_vars.dx * float(self.dlg_flow_tt.le_3_pg1.text())
-
-        # Determinção da declividade S dos pixels do escoamento em superfície (caso o pixel a jusante tenha uma cota maior que o oixel que se quer estimar a declividade,
-        # a rotina sai procurando o pixel com cota menor que esteja a jusante e a declividade é caluclada como sendo a diferença de cotas dividida pela distância percorrida pelo escoamento até o pixel com cota menor)
-
-        for lin in range(self.rdc_vars.nlin):
-            for col in range(self.rdc_vars.ncol):
-                if self.global_vars.bacia[lin,col]:
-                    if self.global_vars.direcoes[lin,col] == 45:
-                        i_test = lin - 1
-                        j_test = col + 1
-
-                    elif self.global_vars.direcoes[lin,col] == 90:
-                        i_test = lin
-                        j_test = col + 1
-
-                    elif self.global_vars.direcoes[lin,col] == 135:
-                        i_test = lin + 1
-                        j_test = col + 1
-
-                    elif self.global_vars.direcoes[lin,col] == 180:
-                        i_test = lin + 1
-                        j_test = col
-
-                    elif self.global_vars.direcoes[lin,col] == 225:
-                        i_test = lin + 1
-                        j_test = col - 1
-
-                    elif self.global_vars.direcoes[lin,col] == 270:
-                        i_test = lin
-                        j_test = col - 1
-
-                    elif self.global_vars.direcoes[lin,col] == 315:
-                        i_test = lin - 1
-                        j_test = col - 1
-        
-                    elif self.global_vars.direcoes[lin,col] == 360:
-                        i_test = lin - 1
-                        j_test = col
-                    
-                    # Determinação da declividade do pixel em questão
-                    self.global_vars.decliv_pixel[lin,col] = self.global_vars.MDE[lin,col] - self.global_vars.MDE[i_test,j_test]/self.global_vars.comp_pixel[lin,col]
-
-                    if self.global_vars.decliv_pixel[lin,col] <= self.global_vars.Smin:
-                        self.global_vars.decliv_pixel[lin,col] = self.global_vars.Smin
-
-        # Identificação dos pixels da rede de drenagem que INICIAM os trechos com características homogêneas. Nesses pixel a variável Divisao_Trecho = 1
-        # Existem trechos pré definidos onde já existe informação sobre as seções transversais, esses trechos e a informação sobre eles são carregados pelo usuário e permanecem valendo
-        # No entanto, há outras partes da rede de drenagem sem informação sobre a seção transversal. Essas outras partes do rio foram subdividas em trechos homogêneos. O início e o fim desses trechos foram determinados assim:
-        # 1) Um trecho pode possuir no máximo um comprimento igual a "Comprimento_Trecho" 
-        # 2) Se há o encontro com outro rio o trecho termina e a partir do ponto de encontro começa outro trecho
-        # 3) Se há o encontro com uma parte do rio que já possua informação sobre a seção transversal carregada pelo usuário, o trecho termina.
-        
-        # Identificação dos pixels que iniciam a rede de drenagem
-        for lin in range(self.rdc_vars.nlin):
-            for col in range(self.rdc_vars.ncol):
-                if self.global_vars.dren[lin,col] == 1:
-                    k = 0
-                    if self.global_vars.direcoes[lin-1,col-1] == 135 and self.global_vars.dren[lin-1,col-1] == 1:
-                        k+=1
-                    elif self.global_vars.direcoes[lin-1,col] == 180 and self.global_vars.dren[lin-1,col] == 1:
-                        k+=1
-                    elif self.global_vars.direcoes[lin-1,col+1] == 225 and self.global_vars.dren[lin-1,col+1] == 1:
-                        k+=1
-                    elif self.global_vars.direcoes[lin,col+1] == 270 and self.global_vars.dren[lin,col+1] == 1:
-                        k+=1
-                    elif self.global_vars.direcoes[lin+1,col+1] == 315 and self.global_vars.dren[lin+1,col+1] == 1:
-                        k+=1
-                    elif self.global_vars.direcoes[lin+1,col] == 360 and self.global_vars.dren[lin+1,col] == 1:
-                        k+=1
-                    elif self.global_vars.direcoes[lin+1,col-1] == 45 and self.global_vars.dren[lin+1,col-1] == 1:
-                        k+=1
-                    elif self.global_vars.direcoes[lin,col-1] == 90 and self.global_vars.dren[lin,col-1] == 1:
-                        k+=1                  
-
-                    # Se k > 0 significa que aquele pixel da rede drenagem não inicia a rede de drenagem
-                    # Se k = 0 significa que aquele pixel da rede de drenagem inicia a rede de drenagem, ou seja, nenhum outro pixel da rede de drenagem escoa para ele 
-
-                    if k == 0:
-                        # Se um pixel da rede de drenagem inicia a rede de drenagem significa que ele inicia um trecho da rede de drenagem e portanto a variável Divisao_Trecho = 1
-                        self.global_vars.divisao_trecho[lin,col] = 1
-                
-                    # Agora a rotina vai procurar os pixels a jusante desse pixel de início da rede de drenagem que iniciam um outro trecho homogêneo
-                    i_atual = lin
-                    j_atual = col
-                    
-                    self.global_vars.comp_total[i_atual, j_atual] = self.global_vars.comp_pixel[lin,col]
-
-                    while self.global_vars.bacia[i_atual,j_atual] == 1:
-                            if self.global_vars.direcoes[i_atual, j_atual] == 45:
-                                i_test = lin - 1
-                                j_test = col + 1
-
-                            elif self.global_vars.direcoes[i_atual, j_atual] == 90:
-                                i_test = lin
-                                j_test = col + 1
-
-                            elif self.global_vars.direcoes[i_atual, j_atual] == 135:
-                                i_test = lin + 1
-                                j_test = col + 1
-
-                            elif self.global_vars.direcoes[i_atual, j_atual] == 180:
-                                i_test = lin + 1
-                                j_test = col
-
-                            elif self.global_vars.direcoes[i_atual, j_atual] == 225:
-                                i_test = lin + 1
-                                j_test = col - 1
-
-                            elif self.global_vars.direcoes[i_atual, j_atual] == 270:
-                                i_test = lin
-                                j_test = col - 1
-
-                            elif self.global_vars.direcoes[i_atual, j_atual] == 315:
-                                i_test = lin - 1
-                                j_test = col - 1
-                
-                            elif self.global_vars.direcoes[i_atual, j_atual] == 360:
-                                i_test = lin - 1
-                                j_test = col     
-
-                            # Quando se chega ao exutório da bacia, a rotina para e é o final do trecho, com Divisao_Trecho = 1
-                            if self.global_vars.bacia[i_test, j_test] == 0:
-                                self.global_vars.divisao_trecho[i_atual, j_atual] = 1
-                            
-                            self.global_vars.comp_total[i_test, j_test] = self.global_vars.comp_total[i_atual, j_atual] + self.global_vars.comp_pixel[i_test, j_test]
-
-                            # Se inicia um novo trecho caso o trecho em questão já tenha alcançado seu comprimento máximo definido pelo usuário
-                            if self.global_vars.comp_total[i_test, j_test] > self.global_vars.max_comp_trecho:
-                                self.global_vars.divisao_trecho[i_test, j_test] = 1
-                                self.global_vars.comp_total[i_test, j_test] = 0
-                            # Se inicia outro trecho caso haja o encontro com outro curso d'água 
-                            k = 0       
-                            if self.global_vars.direcoes[i_test-1,j_test-1] == 135 and self.global_vars.dren[i_test-1,j_test-1] == 1:
-                                k +=1
-                            elif self.global_vars.direcoes[i_test-1,j_test] == 180 and self.global_vars.dren[i_test-1,j_test] == 1:
-                                k+=1
-                            elif self.global_vars.direcoes[i_test-1,j_test+1] == 225 and self.global_vars.dren[i_test-1,j_test+1] == 1:
-                                k+=1
-                            elif self.global_vars.direcoes[i_test,j_test+1] == 270 and self.global_vars.dren[i_test,j_test+1] == 1:
-                                k+=1
-                            elif self.global_vars.direcoes[i_test+1,j_test+1] == 315 and self.global_vars.dren[i_test+1,j_test+1] == 1:
-                                k+=1
-                            elif self.global_vars.direcoes[i_test+1,j_test] == 360 and self.global_vars.dren[i_test+1,j_test] == 1:
-                                k+=1
-                            elif self.global_vars.direcoes[i_test+1,j_test-1] == 45 and self.global_vars.dren[i_test+1,j_test-1] == 1:
-                                k+=1
-                            elif self.global_vars.direcoes[i_test,j_test-1] == 90 and self.global_vars.dren[i_test,j_test-1] == 1:
-                                k+=1   
-
-                            if k>1:
-                                self.global_vars.divisao_trecho[i_test,j_test] = 1
-                                self.global_vars.comp_total[i_test,j_test] = 0
-
-                            # O trecho termina caso haja o encontro com um trecho pré-definido pelo usuário
-                            if self.global_vars.classerio[i_test,j_test] > 0:
-                                self.global_vars.divisao_trecho[i_test,j_test] = 1
-                                i_atual = i_test
-                                j_atual = j_test
-
-                                while self.global_vars.bacia[i_atual,j_atual] == 1 and self.global_vars.classerio[i_atual,j_atual] > 0:
-                                    if self.global_vars.direcoes[i_atual, j_atual] == 45:
-                                        i_test = lin - 1
-                                        j_test = col + 1
-
-                                    elif self.global_vars.direcoes[i_atual, j_atual] == 90:
-                                        i_test = lin
-                                        j_test = col + 1
-
-                                    elif self.global_vars.direcoes[i_atual, j_atual] == 135:
-                                        i_test = lin + 1
-                                        j_test = col + 1
-
-                                    elif self.global_vars.direcoes[i_atual, j_atual] == 180:
-                                        i_test = lin + 1
-                                        j_test = col
-
-                                    elif self.global_vars.direcoes[i_atual, j_atual] == 225:
-                                        i_test = lin + 1
-                                        j_test = col - 1
-
-                                    elif self.global_vars.direcoes[i_atual, j_atual] == 270:
-                                        i_test = lin
-                                        j_test = col - 1
-
-                                    elif self.global_vars.direcoes[i_atual, j_atual] == 315:
-                                        i_test = lin - 1
-                                        j_test = col - 1
-                        
-                                    elif self.global_vars.direcoes[i_atual, j_atual] == 360:
-                                        i_test = lin - 1
-                                        j_test = col    
-
-                                    # Permanece a divisão entre trechos homogêneos definida pela usuário
-                                    condicao_atual = self.global_vars.classerio[i_test,j_test] != self.global_vars.classerio[i_atual,j_atual] and self.global_vars.bacia[i_test,j_test] == 0\
-                                        and self.global_vars.classerio[i_test,j_test] == 0
-
-                                    if condicao_atual:
-                                        self.global_vars.divisao_trecho[i_test,j_test] = 1
-                                    
-                                    i_atual = i_test
-                                    j_atual = j_test
-
-                                    self.global_vars.comp_total[i_test,j_test] = 0
-
-                                # fim while
-                                i_atual = i_test
-                                j_atual = j_test   
-
-        # Cálculo da declividade equivalente e raio hidráulico para os trechos da rede de dreangem que não foram carregados pelo usuário
-        k = self.global_vars.nclasses
-        for lin in range(self.rdc_vars.nlin):
-            for col in range(self.rdc_vars.ncol):
-                if self.global_vars.bacia[lin,col] == 1:
-
-                    # Identifica o pixel que inicia um trecho sem informação sebre a seção transversal
-                    if self.global_vars.divisao_trecho[lin,col] == 1:
-                        if self.global_vars.classerio[lin,col] == 0:
-                            k +=1
-                            self.global_vars.comp_total[lin,col] = self.global_vars.comp_pixel[lin,col]
-                            if self.global_vars.direcoes[lin,col] == 45:
-                                i_atual = lin - 1
-                                j_atual = col + 1
-
-                            elif self.global_vars.direcoes[lin,col] == 90:
-                                i_atual = lin
-                                j_atual = col + 1
-
-                            elif self.global_vars.direcoes[lin,col] == 135:
-                                i_atual = lin + 1
-                                j_atual = col + 1
-
-                            elif self.global_vars.direcoes[lin,col] == 180:
-                                i_atual = lin + 1
-                                j_atual = col
-
-                            elif self.global_vars.direcoes[lin,col] == 225:
-                                i_atual = lin + 1
-                                j_atual = col - 1
-
-                            elif self.global_vars.direcoes[lin,col] == 270:
-                                i_atual = lin
-                                j_atual = col - 1
-
-                            elif self.global_vars.direcoes[lin,col] == 315:
-                                i_atual = lin - 1
-                                j_atual = col - 1
-                
-                            elif self.global_vars.direcoes[lin,col] == 360:
-                                i_atual = lin - 1
-                                j_atual = col
-                                                                      
-                            if self.global_vars.divisao_trecho[i_atual,j_atual] == 1 or self.global_vars.bacia[i_atual,j_atual] == 0:
-                                # Definição das características da seção transversal do pixel canal
-                                self.global_vars.Seq[lin,col] = self.global_vars.decliv_pixel[lin,col]
-                                self.global_vars.area_molhada[lin,col] = self.global_vars.coef_c * (self.global_vars.dren_area[lin,col]**self.global_vars.coef_d)
-                                self.global_vars.bankfull_width[lin,col] = self.global_vars.coef_g * (self.global_vars.dren_area[lin,col]**self.global_vars.coef_h)
-                                perimetro_molhado = ((((2 * (10 ** (1 / 2))) - 2) / 3) * ((self.global_vars.bankfull_width[lin,col] - (((self.global_vars.bankfull_width[lin,col] ** 2) - ((4 / 3) * self.global_vars.area_molhada[lin,col](i, j))) ** (1 / 2))) / (2 / 3))) + self.global_vars.bankfull_width[lin,col]
-                                raio_hidraulico = self.global_vars.area_molhada[lin,col]/perimetro_molhado
-                                self.global_vars.rh_medio[lin,col] = raio_hidraulico
-                                self.global_vars.classerio[lin,col] = k
-
-                            if self.global_vars.divisao_trecho[i_atual,j_atual] != 1 and self.global_vars.bacia[i_atual,j_atual] == 1:
-                                self.global_vars.comp_total[i_atual,j_atual] = self.global_vars.comp_total[i_atual,j_atual] + self.global_vars.comp_pixel[i_atual,j_atual]
-                                somatorio = (self.global_vars.comp_pixel[lin, col] / (self.global_vars.decliv_pixel[lin, col] ** (1 / 2))) + (self.global_vars.comp_pixel[i_atual,j_atual] / (self.global_vars.decliv_pixel[i_atual,j_atual] ** (1 / 2)))
-                                
-                                # Definição das características da seção transversal do pixel canal
-                                self.global_vars.area_molhada[lin,col] = self.global_vars.coef_c * (self.global_vars.dren_area[lin,col]**self.global_vars.coef_d)
-                                self.global_vars.bankfull_width[lin,col] = self.global_vars.coef_g * (self.global_vars.dren_area[lin,col]**self.global_vars.coef_h)
-                                perimetro_molhado = ((((2 * (10 ** (1 / 2))) - 2) / 3) * ((self.global_vars.bankfull_width[lin,col] - (((self.global_vars.bankfull_width[lin,col] ** 2) - ((4 / 3) * self.global_vars.area_molhada[lin,col](i, j))) ** (1 / 2))) / (2 / 3))) + self.global_vars.bankfull_width[lin,col]
-                                raio_hidraulico = self.global_vars.area_molhada[lin,col]/perimetro_molhado
-                                self.global_vars.rh_medio[lin,col] = raio_hidraulico       
-
-                                self.global_vars.area_molhada[i_atual,j_atual] = self.global_vars.coef_c * (self.global_vars.dren_area[i_atual,j_atual]**self.global_vars.coef_d)
-                                self.global_vars.bankfull_width[i_atual,j_atual] = self.global_vars.coef_g * (self.global_vars.dren_area[i_atual,j_atual]**self.global_vars.coef_h)
-                                perimetro_molhado = ((((2 * (10 ** (1 / 2))) - 2) / 3) * ((self.global_vars.bankfull_width[i_atual,j_atual] - (((self.global_vars.bankfull_width[i_atual,j_atual] ** 2) - ((4 / 3) * self.global_vars.area_molhada[i_atual,j_atual](i, j))) ** (1 / 2))) / (2 / 3))) + self.global_vars.bankfull_width[i_atual,j_atual]
-                                raio_hidraulico = self.global_vars.area_molhada[i_atual,j_atual]/perimetro_molhado
-                                self.global_vars.rh_medio[i_atual,j_atual] += raio_hidraulico                                  
-                                n = 2
-
-                                # Percorre o caminho de fluxo até encontrar o final do trecho
-                                while self.global_vars.divisao_trecho[i_atual,j_atual] != 1 and self.global_vars.bacia[i_atual,j_atual] == 1:
-                                    if self.global_vars.direcoes[i_atual, j_atual] == 45:
-                                            i_test = lin - 1
-                                            j_test = col + 1
-
-                                    elif self.global_vars.direcoes[i_atual, j_atual] == 90:
-                                        i_test = lin
-                                        j_test = col + 1
-
-                                    elif self.global_vars.direcoes[i_atual, j_atual] == 135:
-                                        i_test = lin + 1
-                                        j_test = col + 1
-
-                                    elif self.global_vars.direcoes[i_atual, j_atual] == 180:
-                                        i_test = lin + 1
-                                        j_test = col
-
-                                    elif self.global_vars.direcoes[i_atual, j_atual] == 225:
-                                        i_test = lin + 1
-                                        j_test = col - 1
-
-                                    elif self.global_vars.direcoes[i_atual, j_atual] == 270:
-                                        i_test = lin
-                                        j_test = col - 1
-
-                                    elif self.global_vars.direcoes[i_atual, j_atual] == 315:
-                                        i_test = lin - 1
-                                        j_test = col - 1
-                        
-                                    elif self.global_vars.direcoes[i_atual, j_atual] == 360:
-                                        i_test = lin - 1
-                                        j_test = col    
-                                    
-                                    if self.global_vars.divisao_trecho[i_test,j_test] == 0:
-                                        self.global_vars.area_molhada[lin,col] = self.global_vars.coef_c * (self.global_vars.dren_area[lin,col]**self.global_vars.coef_d)
-                                        self.global_vars.bankfull_width[lin,col] = self.global_vars.coef_g * (self.global_vars.dren_area[lin,col]**self.global_vars.coef_h)
-                                        perimetro_molhado = ((((2 * (10 ** (1 / 2))) - 2) / 3) * ((self.global_vars.bankfull_width[lin,col] - (((self.global_vars.bankfull_width[lin,col] ** 2) - ((4 / 3) * self.global_vars.area_molhada[lin,col](i, j))) ** (1 / 2))) / (2 / 3))) + self.global_vars.bankfull_width[lin,col]
-                                        raio_hidraulico = self.global_vars.area_molhada[lin,col]/perimetro_molhado
-                                        self.global_vars.rh_medio[lin,col] += raio_hidraulico
-                                        n+=1
-
-                                        self.global_vars.divisao_trecho[i_test,j_test] = self.global_vars.comp_total[i_atual,j_atual] + self.global_vars.comp_pixel[i_test,j_test]
-                                        somatorio += (self.global_vars.comp_pixel[i_test,j_test]/self.global_vars.decliv_pixel[i_test,j_test]**(1/2))
-                                    
-                                    if self.global_vars.divisao_trecho[i_test,j_test] == 1:
-                                        self.global_vars.comp_total[i_test,j_test] = self.global_vars.comp_total[i_atual,j_atual] 
-                                    i_atual = i_test
-                                    j_atual = j_test
-
-                                    # A declividade equivalente de cada um desses trechos foi estimada como sendo a média harmônica das declividades obtidas via MDE de cada pixel do trecho 
-                                    self.global_vars.Seq[lin,col] = (self.global_vars.comp_total[i_test,j_test]/somatorio)**2
-                                    self.global_vars.classerio[lin,col] = k
-                                    # O raio hidráulico do trecho é a média do Rh dos pixels que pertencem ao trecho em questão
-
-                                    self.global_vars.rh_medio[lin,col] /=n
-
-                                    if self.global_vars.direcoes[lin,col] == 45:
-                                        i_atual = lin - 1
-                                        j_atual = col + 1
-
-                                    elif self.global_vars.direcoes[lin,col] == 90:
-                                        i_atual = lin
-                                        j_atual = col + 1
-
-                                    elif self.global_vars.direcoes[lin,col] == 135:
-                                        i_atual = lin + 1
-                                        j_atual = col + 1
-
-                                    elif self.global_vars.direcoes[lin,col] == 180:
-                                        i_atual = lin + 1
-                                        j_atual = col
-
-                                    elif self.global_vars.direcoes[lin,col] == 225:
-                                        i_atual = lin + 1
-                                        j_atual = col - 1
-
-                                    elif self.global_vars.direcoes[lin,col] == 270:
-                                        i_atual = lin
-                                        j_atual = col - 1
-
-                                    elif self.global_vars.direcoes[lin,col] == 315:
-                                        i_atual = lin - 1
-                                        j_atual = col - 1
-                        
-                                    elif self.global_vars.direcoes[lin,col] == 360:
-                                        i_atual = lin - 1
-                                        j_atual = col      
-
-                                    if self.global_vars.divisao_trecho[i_atual,j_atual] != 1 and self.global_vars.bacia[i_atual,j_atual] == 1:
-                                        self.global_vars.Seq[i_atual,j_atual] = self.global_vars.Seq[lin,col]
-                                        self.global_vars.classerio[i_atual,j_atual] = k
-                                        self.global_vars.rh_medio[i_atual,j_atual] = self.global_vars.rh_medio[lin,col]
-
-                                        while self.global_vars.divisao_trecho[i_atual,j_atual] != 1 and self.global_vars.bacia[i_atual,j_atual] == 1:
-                                            if self.global_vars.direcoes[i_atual, j_atual] == 45:
-                                                    i_test = lin - 1
-                                                    j_test = col + 1
-
-                                            elif self.global_vars.direcoes[i_atual, j_atual] == 90:
-                                                i_test = lin
-                                                j_test = col + 1
-
-                                            elif self.global_vars.direcoes[i_atual, j_atual] == 135:
-                                                i_test = lin + 1
-                                                j_test = col + 1
-
-                                            elif self.global_vars.direcoes[i_atual, j_atual] == 180:
-                                                i_test = lin + 1
-                                                j_test = col
-
-                                            elif self.global_vars.direcoes[i_atual, j_atual] == 225:
-                                                i_test = lin + 1
-                                                j_test = col - 1
-
-                                            elif self.global_vars.direcoes[i_atual, j_atual] == 270:
-                                                i_test = lin
-                                                j_test = col - 1
-
-                                            elif self.global_vars.direcoes[i_atual, j_atual] == 315:
-                                                i_test = lin - 1
-                                                j_test = col - 1
-                                
-                                            elif self.global_vars.direcoes[i_atual, j_atual] == 360:
-                                                i_test = lin - 1
-                                                j_test = col    
-
-                                            if self.global_vars.divisao_trecho[i_test,j_test] != 1 and self.global_vars.bacia[i_test,j_test] == 1:
-                                                self.global_vars.Seq[i_test,j_test] = self.global_vars.Seq[lin,col]
-                                                self.global_vars.classerio[i_test,j_test] = k
-                                                self.global_vars.rh_medio[i_test,j_test] = self.global_vars.rh_medio[lin,col]
-                                            
-                                            i_atual = i_test
-                                            j_atual = j_test
-        n_total_trechos = k 
-
-        # Definição sobre o tipo de escoamento
-        # Se a variável TipoEscoamento é igual a 2, significa que o escoamento no pixel é do tipo sheet flow, isto é, a partir do pixel inicial onde se iniciou o escoamento a água percorreu no máximo um valor igual a "sheetflow"
-        for lin in range(self.rdc_vars.nlin):
-            for col in range(self.rdc_vars.ncol):
-                if self.global_vars.bacia[lin,col]:
-                    i_atual = lin
-                    j_atual = col
-
-                    self.global_vars.comp_total[i_atual,j_atual] = self.global_vars.comp_pixel[i_atual,j_atual]
-                    while self.global_vars.comp_total[i_atual,j_atual] <= self.global_vars.sheet_flow:
-                        if self.global_vars.direcoes[i_atual, j_atual] == 45:
-                            i_test = lin - 1
-                            j_test = col + 1
-                            self.global_vars.comp_total[i_test,j_test] = self.global_vars.comp_total[i_atual,j_atual] + self.global_vars.comp_pixel[i_test,j_test]
-
-                        elif self.global_vars.direcoes[i_atual, j_atual] == 90:
-                            i_test = lin
-                            j_test = col + 1
-                            self.global_vars.comp_total[i_test,j_test] = self.global_vars.comp_total[i_atual,j_atual] + self.global_vars.comp_pixel[i_test,j_test]
-
-                        elif self.global_vars.direcoes[i_atual, j_atual] == 135:
-                            i_test = lin + 1
-                            j_test = col + 1
-                            self.global_vars.comp_total[i_test,j_test] = self.global_vars.comp_total[i_atual,j_atual] + self.global_vars.comp_pixel[i_test,j_test]
-
-                        elif self.global_vars.direcoes[i_atual, j_atual] == 180:
-                            i_test = lin + 1
-                            j_test = col
-                            self.global_vars.comp_total[i_test,j_test] = self.global_vars.comp_total[i_atual,j_atual] + self.global_vars.comp_pixel[i_test,j_test]
-
-                        elif self.global_vars.direcoes[i_atual, j_atual] == 225:
-                            i_test = lin + 1
-                            j_test = col - 1
-                            self.global_vars.comp_total[i_test,j_test] = self.global_vars.comp_total[i_atual,j_atual] + self.global_vars.comp_pixel[i_test,j_test]
-
-                        elif self.global_vars.direcoes[i_atual, j_atual] == 270:
-                            i_test = lin
-                            j_test = col - 1
-                            self.global_vars.comp_total[i_test,j_test] = self.global_vars.comp_total[i_atual,j_atual] + self.global_vars.comp_pixel[i_test,j_test]
-
-                        elif self.global_vars.direcoes[i_atual, j_atual] == 315:
-                            i_test = lin - 1
-                            j_test = col - 1
-                            self.global_vars.comp_total[i_test,j_test] = self.global_vars.comp_total[i_atual,j_atual] + self.global_vars.comp_pixel[i_test,j_test]
-            
-                        elif self.global_vars.direcoes[i_atual, j_atual] == 360:
-                            i_test = lin - 1
-                            j_test = col    
-                            self.global_vars.comp_total[i_test,j_test] = self.global_vars.comp_total[i_atual,j_atual] + self.global_vars.comp_pixel[i_test,j_test]
-
-                        i_atual = i_test
-                        j_atual = j_test
-                    
-                    # Definindo variável do tipo de escoamento
-                    self.global_vars.tipo_escoamento[i_atual,j_atual] = 1
-        
-        # Definindo variável do tipo de escoamento
-        self.global_vars.tipo_escoamento[self.global_vars.tipo_escoamento != 1] = 2
-
-        # Cálculo do tempo de viagem
-        self.global_vars.P24=self.global_vars.P24*0.0393701 #mudança de unidade
-        area_molhada_max = 0
-        bank_full_width_max = 0
-        r = 0
-        
-        for lin in range(self.rdc_vars.nlin):
-            for col in range(self.rdc_vars.ncol):
-                if self.global_vars.bacia[lin,col] == 1:
-
-                    # Tempo de viagem em superfície
-                    if self.global_vars.dren[lin,col] == 0:
-                        # Sheet flow
-                        if self.global_vars.tipo_escoamento[lin,col] == 2:
-                            self.global_vars.tempo_viagem[lin,col] = ((self.global_vars.nSolo[lin,col] * (self.global_vars.comp_pixel[lin,col] * 3.28084)) ^ 0.8) / ((self.global_vars.P24 ^ 0.5) * (self.global_vars.decliv_pixel[lin,col] ^ 0.4)) * 60
-                        
-                        # Shallow flow
-                        if self.global_vars.tipo_escoamento[lin,col] == 1:
-                            self.global_vars.tempo_viagem[lin,col] = (self.global_vars.comp_pixel[lin,col] / ((self.global_vars.coef_k_pixel[lin,col] * (self.global_vars.decliv_pixel[lin,col] ^ 0.5)) * 0.3048)) * (1 / 60)
-
-                    # Tempo de viagem em canal
-                    if self.global_vars.dren[lin,col] == 1:
-
-                        # Trechos enviados pelo usuário
-                        if self.global_vars.classerio[lin,col] <= n_total_trechos:
-                            for k in range(n_total_trechos):
-                                if self.global_vars.classerio[lin,col] == self.global_vars.id_trechos[k]:
-                                    vel_dren = ((self.global_vars.Rhclasse[k] ** (2/3)) * (self.global_vars.Sclasse[k]**(1/2))) / self.global_vars.Mannclasse[k]
-                                    self.global_vars.Seq[lin,col] = self.global_vars.Sclasse[k]
-                                    self.global_vars.tempo_viagem[lin,col] = (self.global_vars.comp_pixel[lin,col] / vel_dren) / 60
-
-                        # Trechos determinados pela rotina 
-                        if self.global_vars.classerio[lin,col] > n_total_trechos:
-                            self.global_vars.area_molhada[lin,col] = self.global_vars.coef_c * (self.global_vars.dren_area[lin,col]**self.global_vars.coef_d)
-                            self.global_vars.bankfull_width[lin,col] = self.global_vars.coef_g * (self.global_vars.dren_area[lin,col]**self.global_vars.coef_h)
-                            perimetro_molhado = ((((2 * (10 ** (1 / 2))) - 2) / 3) * ((self.global_vars.bankfull_width[lin,col] - (((self.global_vars.bankfull_width[lin,col] ** 2) - ((4 / 3) * self.global_vars.area_molhada[lin,col](i, j))) ** (1 / 2))) / (2 / 3))) + self.global_vars.bankfull_width[lin,col]
-                            raio_hidraulico = self.global_vars.area_molhada[lin,col] / perimetro_molhado
-                            vel_dren = ((raio_hidraulico ** (2/3)) * (self.global_vars.Seq[lin,col] ** (1/2))) / self.global_vars.n_canal
-                            self.global_vars.tempo_viagem[lin,col] = (self.global_vars.comp_pixel[lin,col] / vel_dren) / 60
-                            if self.global_vars.divisao_trecho[lin,col] == 1:
-                                k = self.global_vars.classerio[lin,col]
-                                self.global_vars.Rhclasse[k] = self.global_vars.rh_medio[lin,col]
-                                self.global_vars.Sclasse[k] = self.global_vars.Seq[lin,col]
-
-                            if self.global_vars.area_molhada[lin,col] > area_molhada_max:
-                                area_molhada_max = self.global_vars.area_molhada[lin,col]
-                            if self.global_vars.bankfull_width[lin,col] > bank_full_width_max:
-                                bank_full_width_max = self.global_vars.bankfull_width[lin,col]
-
-                    # Tempo de viagem no reservatório
-                    if self.global_vars.reservoir[lin,col] == 1:
-                        vel_reservatorio = (9.81 * self.global_vars.profundidade_resers)**(1/2)
-                        self.global_vars.tempo_viagem[lin,col] = (self.global_vars.comp_pixel[lin,col] / vel_reservatorio) / 60
-
-                    self.global_vars.tempo_viagem_pixel[r] = self.global_vars.tempo_viagem[lin,col]
-                    r+=1
-
-        # Determinação da declividade máxima
-        decliv_max_rio = np.amax(self.global_vars.Seq[self.global_vars.dren==1])
-        decliv_max_sup = np.amax(self.global_vars.decliv_pixel[self.global_vars.dren==0])
-        if decliv_max_rio > decliv_max_sup:
-            decliv_max = decliv_max_rio
-        else:
-            decliv_max = decliv_max_sup
-        
-        # Determiação do tempo máximo em que a água leva apra escoar em um pixel
-        num_r = r
-        Tdmax = np.amax(self.global_vars.tempo_viagem_pixel)
-
-        # Determinação do tempo em que a água leva apra ir do pixel até o exutório
-        q = 1
-        for lin in range(self.rdc_vars.nlin):
-            for col in range(self.rdc_vars.ncol):
-                if self.global_vars.bacia[lin,col] == 1:
-                    i_atual = lin
-                    j_atual = col
-                    self.global_vars.ttotal[i_atual,j_atual] = self.global_vars.tempo_viagem_pixel[i_atual,j_atual]
-                    while self.global_vars.bacia[i_atual, j_atual]  == 1:
-                        if self.global_vars.direcoes[i_atual, j_atual] == 45:
-                            i_test = lin - 1
-                            j_test = col + 1
-                            self.global_vars.ttotal[i_test,j_test] = self.global_vars.ttotal[i_atual,j_atual] + self.global_vars.tempo_viagem_pixel[i_test,j_test]
-
-                        elif self.global_vars.direcoes[i_atual, j_atual] == 90:
-                            i_test = lin
-                            j_test = col + 1
-                            self.global_vars.ttotal[i_test,j_test] = self.global_vars.ttotal[i_atual,j_atual] + self.global_vars.tempo_viagem_pixel[i_test,j_test]
-
-                        elif self.global_vars.direcoes[i_atual, j_atual] == 135:
-                            i_test = lin + 1
-                            j_test = col + 1
-                            self.global_vars.ttotal[i_test,j_test] = self.global_vars.ttotal[i_atual,j_atual] + self.global_vars.tempo_viagem_pixel[i_test,j_test]
-
-                        elif self.global_vars.direcoes[i_atual, j_atual] == 180:
-                            i_test = lin + 1
-                            j_test = col
-                            self.global_vars.ttotal[i_test,j_test] = self.global_vars.ttotal[i_atual,j_atual] + self.global_vars.tempo_viagem_pixel[i_test,j_test]
-
-                        elif self.global_vars.direcoes[i_atual, j_atual] == 225:
-                            i_test = lin + 1
-                            j_test = col - 1
-                            self.global_vars.ttotal[i_test,j_test] = self.global_vars.ttotal[i_atual,j_atual] + self.global_vars.tempo_viagem_pixel[i_test,j_test]
-
-                        elif self.global_vars.direcoes[i_atual, j_atual] == 270:
-                            i_test = lin
-                            j_test = col - 1
-                            self.global_vars.ttotal[i_test,j_test] = self.global_vars.ttotal[i_atual,j_atual] + self.global_vars.tempo_viagem_pixel[i_test,j_test]
-
-                        elif self.global_vars.direcoes[i_atual, j_atual] == 315:
-                            i_test = lin - 1
-                            j_test = col - 1
-                            self.global_vars.ttotal[i_test,j_test] = self.global_vars.ttotal[i_atual,j_atual] + self.global_vars.tempo_viagem_pixel[i_test,j_test]
-            
-                        elif self.global_vars.direcoes[i_atual, j_atual] == 360:
-                            i_test = lin - 1
-                            j_test = col    
-                            self.global_vars.ttotal[i_test,j_test] = self.global_vars.ttotal[i_atual,j_atual] + self.global_vars.tempo_viagem_pixel[i_test,j_test]
-                            
-                        i_atual = i_test
-                        j_atual = j_test
-
-                        self.global_vars.tempo_viagem_tot[lin,col] = self.global_vars.ttotal[i_atual,j_atual]
-
-        # Determinação do tempo de concentração máximo 
-        tc_max = np.amax(self.global_vars.tempo_viagem_tot) 
-
     def numera_pix_bacia(self):
         '''Esta função enumera e quantifica os píxels presentes na bacia hidrográfica, além de atualizar variáveis inerente ao programa'''
         # Dimensionamento das variáveis
@@ -2480,7 +1854,7 @@ class HidroPixel:
             result ="Nenhum arquivo foi selecionado!"
             QMessageBox.warning(None, "ERROR!", result)
 
-        return Tempo_total       
+        return Tempo_total        
 
     def leh_parametros(self, alfa, d_t, criterio_parada,function):
         '''Esta função lê os valores enviados pelo usuário contento os parâmetros do modelo: abstração inicial, time step, tempo critério de parada e o beta'''
@@ -3176,7 +2550,7 @@ class HidroPixel:
             rdc_file.write(f'legend cats : {0:1d}\n')
 
             # Escreve a linha sobre a criação da imagem
-            rdc_file.write('lineage     : This file was created automatically by Hidropixel')
+            rdc_file.write('lineage     : This file was created automatically by an ARP and JVD PYTHON program')
         
     def escreve_num_pix_drenagem(self):
         '''Esta função gera o mapa de numeração dos píxels da rede de drenagem'''
@@ -3906,70 +3280,25 @@ class HidroPixel:
                         with open(file_name, 'w', encoding ='utf-8') as arquivo_txt:
                             arquivo_txt.write('Flow Travel Time - Configuration\n')
                             arquivo_txt.write('\n')
-                            arquivo_txt.write('GENERAL INFORMATIONS')
                             arquivo_txt.write('Minimum slope surface travel time determination (m/km):\n')
-                            arquivo_txt.write(f'={self.dlg_flow_tt.le_1_pg1.text()}\n')
+                            arquivo_txt.write(f'=> {self.dlg_flow_tt.le_1_pg1.text()}\n')
+                            arquivo_txt.write('Maximum slope for surface travel time determination (m/km):\n')
+                            arquivo_txt.write(f'=> {self.dlg_flow_tt.le_2_pg1.text()}\n')
                             arquivo_txt.write('Orthogonal step for distance computation (dx):\n')
-                            arquivo_txt.write(f'={self.dlg_flow_tt.le_3_pg1.text()}\n')
+                            arquivo_txt.write(f'=> {self.dlg_flow_tt.le_3_pg1.text()}\n')
                             arquivo_txt.write('Diagonal step for distance computation (dx):\n')
-                            arquivo_txt.write(f'={self.dlg_flow_tt.le_4_pg1.text()}\n')
-                            
-                            arquivo_txt.write('CHANEL INFORMATIONS')
+                            arquivo_txt.write(f'=> {self.dlg_flow_tt.le_4_pg1.text()}\n')
                             arquivo_txt.write('\n')
-                            if self.dlg_flow_tt.cb_1_pg1.isChecked():
-                                arquivo_txt.write('Sheet flow lenght (m):\n')
-                                arquivo_txt.write(f'={self.dlg_flow_tt.cb_1_pg1.isChecked()}\n')
-                                arquivo_txt.write(f'={self.dlg_flow_tt.le_13_pg1.text()}\n')
-                                arquivo_txt.write('Manning coefficient for river segments without cross-section information:\n')
-                                arquivo_txt.write(f'={self.dlg_flow_tt.le_14_pg1.text()}\n')
-                                arquivo_txt.write('Maximum river segment lenght for river segments without cross-section information (m)\n')
-                                arquivo_txt.write(f'={self.dlg_flow_tt.le_15_pg1.text()}\n')
-                                arquivo_txt.write(f'Coefficient c = {self.dlg_flow_tt.le_16_pg1.text()}\n')
-                                arquivo_txt.write(f'Coefficient d = {self.dlg_flow_tt.le_17_pg1.text()}\n')
-                                arquivo_txt.write(f'Coefficient g = {self.dlg_flow_tt.le_18_pg1.text()}\n')
-                                arquivo_txt.write(f'Coefficient h = {self.dlg_flow_tt.le_19_pg1.text()}\n')
-                                
-                                arquivo_txt.write('RESERVOIRS INFORMATIONS')
-                                arquivo_txt.write('\n')
-                                arquivo_txt.write('Mean depth of lake or reservoir (m):\n')
-                                arquivo_txt.write(f'={self.dlg_flow_tt.le_20_pg1.text()}\n')
-
-                                arquivo_txt.write('Flow direction code: \n')
-                                arquivo_txt.write(f'A = {self.dlg_flow_tt.le_5_pg1.text()}\n')
-                                arquivo_txt.write(f'B = {self.dlg_flow_tt.le_6_pg1.text()}\n')
-                                arquivo_txt.write(f'C = {self.dlg_flow_tt.le_7_pg1.text()}\n')
-                                arquivo_txt.write(f'D = {self.dlg_flow_tt.le_8_pg1.text()}\n')
-                                arquivo_txt.write(f'E = {self.dlg_flow_tt.le_9_pg1.text()}\n')
-                                arquivo_txt.write(f'F = {self.dlg_flow_tt.le_10_pg1.text()}\n')
-                                arquivo_txt.write(f'G = {self.dlg_flow_tt.le_11_pg1.text()}\n')
-                                arquivo_txt.write(f'H = {self.dlg_flow_tt.le_12_pg1.text()}\n')
-                                arquivo_txt.write('lineage: This file was created automatically by Hidropixel')
-
-                            else:
-                                arquivo_txt.write('Manning coefficient for river segments without cross-section information:\n')
-                                arquivo_txt.write(f'={self.dlg_flow_tt.le_14_pg1.text()}\n')
-                                arquivo_txt.write('Maximum river segment lenght for river segments without cross-section information (m)\n')
-                                arquivo_txt.write(f'={self.dlg_flow_tt.le_15_pg1.text()}\n')
-                                arquivo_txt.write(f'Coefficient c = {self.dlg_flow_tt.le_16_pg1.text()}\n')
-                                arquivo_txt.write(f'Coefficient d = {self.dlg_flow_tt.le_17_pg1.text()}\n')
-                                arquivo_txt.write(f'Coefficient g = {self.dlg_flow_tt.le_18_pg1.text()}\n')
-                                arquivo_txt.write(f'Coefficient h = {self.dlg_flow_tt.le_19_pg1.text()}\n')
-                                
-                                arquivo_txt.write('RESERVOIRS INFORMATIONS')
-                                arquivo_txt.write('\n')
-                                arquivo_txt.write('Mean depth of lake or reservoir (m):\n')
-                                arquivo_txt.write(f'={self.dlg_flow_tt.le_20_pg1.text()}\n')
-
-                                arquivo_txt.write('Flow direction code: \n')
-                                arquivo_txt.write(f'A = {self.dlg_flow_tt.le_5_pg1.text()}\n')
-                                arquivo_txt.write(f'B = {self.dlg_flow_tt.le_6_pg1.text()}\n')
-                                arquivo_txt.write(f'C = {self.dlg_flow_tt.le_7_pg1.text()}\n')
-                                arquivo_txt.write(f'D = {self.dlg_flow_tt.le_8_pg1.text()}\n')
-                                arquivo_txt.write(f'E = {self.dlg_flow_tt.le_9_pg1.text()}\n')
-                                arquivo_txt.write(f'F = {self.dlg_flow_tt.le_10_pg1.text()}\n')
-                                arquivo_txt.write(f'G = {self.dlg_flow_tt.le_11_pg1.text()}\n')
-                                arquivo_txt.write(f'H = {self.dlg_flow_tt.le_12_pg1.text()}\n')
-                                arquivo_txt.write('lineage: This file was created automatically by Hidropixel')                                
+                            arquivo_txt.write('Flow direction code: \n')
+                            arquivo_txt.write(f'A = {self.dlg_flow_tt.le_5_pg1.text()}\n')
+                            arquivo_txt.write(f'B = {self.dlg_flow_tt.le_6_pg1.text()}\n')
+                            arquivo_txt.write(f'C = {self.dlg_flow_tt.le_7_pg1.text()}\n')
+                            arquivo_txt.write(f'D = {self.dlg_flow_tt.le_8_pg1.text()}\n')
+                            arquivo_txt.write(f'E = {self.dlg_flow_tt.le_9_pg1.text()}\n')
+                            arquivo_txt.write(f'F = {self.dlg_flow_tt.le_10_pg1.text()}\n')
+                            arquivo_txt.write(f'G = {self.dlg_flow_tt.le_11_pg1.text()}\n')
+                            arquivo_txt.write(f'H = {self.dlg_flow_tt.le_12_pg1.text()}\n')
+                            arquivo_txt.write('lineage: This file was created automatically by an ARP and JVD QGIS plugin')
                     else:
                         # O usuário não solucionou um arquivo (um caminho para salvar o arquivo de saída)
                         result = "Wait! You did not select any file."
@@ -3988,29 +3317,25 @@ class HidroPixel:
                                 arquivo_txt.write('Flow Travel Time - Input Data: \n')
                                 arquivo_txt.write('\n')
                                 arquivo_txt.write('Watershed delineation:\n')
-                                arquivo_txt.write(f'={self.dlg_flow_tt.le_1_pg2.text()}\n')
+                                arquivo_txt.write(f'=> {self.dlg_flow_tt.le_1_pg2.text()}\n')
                                 arquivo_txt.write('\nDigital elevation model:\n')
-                                arquivo_txt.write(f'={self.dlg_flow_tt.le_2_pg2.text()}\n')
+                                arquivo_txt.write(f'=> {self.dlg_flow_tt.le_2_pg2.text()}\n')
                                 arquivo_txt.write('\nFlow direction (RDC and RST):\n')
                                 linhas_text_edit = self.dlg_flow_tt.te_1_pg2.toPlainText()
                                 linhas = linhas_text_edit.split('\n')
-                                arquivo_txt.write(f'={linhas[0]}\n={linhas[1]}\n')
+                                arquivo_txt.write(f'=> {linhas[0]}\n=> {linhas[1]}\n')
                                 arquivo_txt.write('\nRiver drainage newtwork (RDN):\n')
-                                arquivo_txt.write(f'={self.dlg_flow_tt.le_3_pg2.text()}\n')
+                                arquivo_txt.write(f'=> {self.dlg_flow_tt.le_3_pg2.text()}\n')
                                 arquivo_txt.write('\nRDN segmentation into classes:\n')
-                                arquivo_txt.write(f'={self.dlg_flow_tt.le_4_pg2.text()}\n')
-                                arquivo_txt.write('\nDrainage area (km²):\n')
-                                arquivo_txt.write(f'={self.dlg_flow_tt.le_9_pg2.text()}\n')
-                                arquivo_txt.write('\nReservoir:\n')
-                                arquivo_txt.write(f'={self.dlg_flow_tt.le_10_pg2.text()}\n')
+                                arquivo_txt.write(f'=> {self.dlg_flow_tt.le_4_pg2.text()}\n')
                                 arquivo_txt.write('\nCharacteristics of RDN classes:\n')
-                                arquivo_txt.write(f'={self.dlg_flow_tt.le_7_pg2.text()}\n')
+                                arquivo_txt.write(f'=> {self.dlg_flow_tt.le_7_pg2.text()}\n')
                                 arquivo_txt.write('\nLand use or land corver (LULC) map:\n')
-                                arquivo_txt.write(f'={self.dlg_flow_tt.le_5_pg2.text()}\n')
+                                arquivo_txt.write(f'=> {self.dlg_flow_tt.le_5_pg2.text()}\n')
                                 arquivo_txt.write('\nManning roughness coeficient for each LULC:\n')
-                                arquivo_txt.write(f'={self.dlg_flow_tt.le_8_pg2.text()}\n')
+                                arquivo_txt.write(f'=> {self.dlg_flow_tt.le_8_pg2.text()}\n')
                                 arquivo_txt.write('\nRainfall depth for 24-h duration (mm):\n')
-                                arquivo_txt.write(f'={self.dlg_flow_tt.le_6_pg2.text()}\n')
+                                arquivo_txt.write(f'=> {self.dlg_flow_tt.le_6_pg2.text()}\n')
                     else:
                         # Caso o usuário não selecione um arquivo
                         result = "Wait! You did not select any file."
@@ -4032,25 +3357,19 @@ class HidroPixel:
                                 arquivo_txt.write('Flow Travel Time - Run page: \n')
                                 arquivo_txt.write('\n')
                                 arquivo_txt.write('Numering pixels part of the river drainage network:\n')
-                                arquivo_txt.write(f'={self.dlg_flow_tt.le_1_pg4.text()}\n')
+                                arquivo_txt.write(f'=> {self.dlg_flow_tt.le_1_pg4.text()}\n')
                                 arquivo_txt.write('Areas draining directly to each pixel of the RDN:\n')
-                                arquivo_txt.write(f'={self.dlg_flow_tt.le_2_pg4.text()}\n')
+                                arquivo_txt.write(f'=> {self.dlg_flow_tt.le_2_pg4.text()}\n')
                                 arquivo_txt.write('Upstream flowpath length:\n')
-                                arquivo_txt.write(f'={self.dlg_flow_tt.le_3_pg4.text()}')
-                                arquivo_txt.write('Downstream flow path slope (m/m):\n')
-                                arquivo_txt.write(f'={self.dlg_flow_tt.le_4_pg4.text()}\n')
-                                arquivo_txt.write('Downstream flow path length:\n')
-                                arquivo_txt.write(f'={self.dlg_flow_tt.le_5_pg4.text()}\n')
+                                arquivo_txt.write(f'=> {self.dlg_flow_tt.le_3_pg4.text()}')
+                                arquivo_txt.write('Downstream flowpath slope (m/m):\n')
+                                arquivo_txt.write(f'=> {self.dlg_flow_tt.le_4_pg4.text()}\n')
+                                arquivo_txt.write('Downstream flowpath length:\n')
+                                arquivo_txt.write(f'=> {self.dlg_flow_tt.le_5_pg4.text()}\n')
                                 arquivo_txt.write('Slope relative to downstream pixel:\n')
-                                arquivo_txt.write(f'={self.dlg_flow_tt.le_6_pg4.text()}\n')
-                                arquivo_txt.write('All river segments with similar hydrologic conditions:\n')
-                                arquivo_txt.write(f'={self.dlg_flow_tt.le_8_pg4.text()}\n')    
-                                arquivo_txt.write('Hydraulic radius, roughness and slope for all river segments::\n')
-                                arquivo_txt.write(f'={self.dlg_flow_tt.le_9_pg4.text()}\n')
-                                arquivo_txt.write('River cross-sectional area calculated by regional curves (m²):\n')
-                                arquivo_txt.write(f'={self.dlg_flow_tt.le_10_pg4.text()}\n')                                                                                            
+                                arquivo_txt.write(f'=> {self.dlg_flow_tt.le_6_pg4.text()}\n')
                                 arquivo_txt.write('Flow travel time (min):\n')
-                                arquivo_txt.write(f'={self.dlg_flow_tt.le_7_pg4.text()}\n')
+                                arquivo_txt.write(f'=> {self.dlg_flow_tt.le_7_pg4.text()}\n')
 
                     else:
                         # Caso o usuário não selecione um arquivo
@@ -4070,16 +3389,16 @@ class HidroPixel:
                             arquivo_txt.write('Excess Rainfall - Configuration page\n')
                             arquivo_txt.write('\n')
                             arquivo_txt.write('Initial abstraction parameter (λ):\n')
-                            arquivo_txt.write(f'={self.dlg_exc_rain.le_1_pg1.text()}\n')
+                            arquivo_txt.write(f'=> {self.dlg_exc_rain.le_1_pg1.text()}\n')
                             arquivo_txt.write('Time step (min):\n')
-                            arquivo_txt.write(f'={self.dlg_exc_rain.le_2_pg1.text()}\n')
+                            arquivo_txt.write(f'=> {self.dlg_exc_rain.le_2_pg1.text()}\n')
                             arquivo_txt.write('Finish (min):\n')
-                            arquivo_txt.write(f'={self.dlg_exc_rain.le_4_pg1.text()}\n')
+                            arquivo_txt.write(f'=> {self.dlg_exc_rain.le_4_pg1.text()}\n')
                             arquivo_txt.write('Rainfall defination:\n')
                             arquivo_txt.write('    Areal averaged:\n')
-                            arquivo_txt.write(f'   ={self.dlg_exc_rain.rb_1_pg1.isChecked()}\n')
+                            arquivo_txt.write(f'   =>{self.dlg_exc_rain.rb_1_pg1.isChecked()}\n')
                             arquivo_txt.write('    Spatially distributed:\n')
-                            arquivo_txt.write(f'   ={self.dlg_exc_rain.rb_2_pg1.isChecked()}\n')
+                            arquivo_txt.write(f'   =>{self.dlg_exc_rain.rb_2_pg1.isChecked()}\n')
 
                     else:
                         # Caso o usuário não selecione um arquivo
@@ -4098,16 +3417,16 @@ class HidroPixel:
                             arquivo_txt.write('Excess Rainfall - Rainfall interpolation: \n')
                             arquivo_txt.write('\n')
                             arquivo_txt.write('Watershed delineation:\n')
-                            arquivo_txt.write(f'={self.dlg_exc_rain.le_1_pg_ri.text()}\n')
+                            arquivo_txt.write(f'=> {self.dlg_exc_rain.le_1_pg_ri.text()}\n')
                             arquivo_txt.write('Rain gauges metadata:\n')
-                            arquivo_txt.write(f'={self.dlg_exc_rain.le_2_pg_ri.text()}\n')
+                            arquivo_txt.write(f'=> {self.dlg_exc_rain.le_2_pg_ri.text()}\n')
                             arquivo_txt.write('Rainfall data:\n')
-                            arquivo_txt.write(f'={self.dlg_exc_rain.le_3_pg_ri.text()}\n')
+                            arquivo_txt.write(f'=> {self.dlg_exc_rain.le_3_pg_ri.text()}\n')
                             arquivo_txt.write('\n')
                             arquivo_txt.write('Rainfall file:\n')
-                            arquivo_txt.write(f'={self.dlg_exc_rain.le_4_pg_ri.text()}\n')
+                            arquivo_txt.write(f'=> {self.dlg_exc_rain.le_4_pg_ri.text()}\n')
                             arquivo_txt.write('Rainfall maps:\n')
-                            arquivo_txt.write(f'={self.dlg_exc_rain.le_5_pg_ri.text()}\n')
+                            arquivo_txt.write(f'=> {self.dlg_exc_rain.le_5_pg_ri.text()}\n')
 
                     else:
                         # Caso o usuário não selecione um arquivo
@@ -4127,15 +3446,15 @@ class HidroPixel:
                             arquivo_txt.write('Excess Rainfall - Input data page: \n')
                             arquivo_txt.write('\n')
                             arquivo_txt.write('Watershed delineation:\n')
-                            arquivo_txt.write(f'={self.dlg_exc_rain.le_1_pg2.text()}\n')
+                            arquivo_txt.write(f'=> {self.dlg_exc_rain.le_1_pg2.text()}\n')
                             arquivo_txt.write('Map of curve-number:\n')
-                            arquivo_txt.write(f'={self.dlg_exc_rain.le_2_pg2.text()}\n')
+                            arquivo_txt.write(f'=> {self.dlg_exc_rain.le_2_pg2.text()}\n')
                             if self.dlg_exc_rain.rb_1_pg1.isChecked():
                                 arquivo_txt.write('Areal averaged rainfall:\n')
-                                arquivo_txt.write(f'={self.dlg_exc_rain.le_3_pg2.text()}\n')
+                                arquivo_txt.write(f'=> {self.dlg_exc_rain.le_3_pg2.text()}\n')
                             else:
                                 arquivo_txt.write('List of files with the spatially distributed rainfall:\n')
-                                arquivo_txt.write(f'={self.dlg_exc_rain.le_4_pg2.text()}\n')
+                                arquivo_txt.write(f'=> {self.dlg_exc_rain.le_4_pg2.text()}\n')
 
                     else:
                         # Caso o usuário não selecione um arquivo
@@ -4156,17 +3475,17 @@ class HidroPixel:
                             arquivo_txt.write('Excess Rainfall - Run page: \n')
                             arquivo_txt.write('\n')
                             arquivo_txt.write('Numbering of watershed pixels:\n')
-                            arquivo_txt.write(f'={self.dlg_exc_rain.le_1_pg4.text()}\n')
+                            arquivo_txt.write(f'=> {self.dlg_exc_rain.le_1_pg4.text()}\n')
                             arquivo_txt.write('Maximum potential retention (mm):\n')
-                            arquivo_txt.write(f'={self.dlg_exc_rain.le_2_pg4.text()}\n')
+                            arquivo_txt.write(f'=> {self.dlg_exc_rain.le_2_pg4.text()}\n')
                             arquivo_txt.write('Initial abstraction (mm):\n')
-                            arquivo_txt.write(f'={self.dlg_exc_rain.le_3_pg4.text()}\n')
+                            arquivo_txt.write(f'=> {self.dlg_exc_rain.le_3_pg4.text()}\n')
                             arquivo_txt.write('Total rainfall (mm):\n')
-                            arquivo_txt.write(f'={self.dlg_exc_rain.le_4_pg4.text()}\n')
+                            arquivo_txt.write(f'=> {self.dlg_exc_rain.le_4_pg4.text()}\n')
                             arquivo_txt.write('Total excess rainfall (mm):\n')
-                            arquivo_txt.write(f'={self.dlg_exc_rain.le_5_pg4.text()}\n')
+                            arquivo_txt.write(f'=> {self.dlg_exc_rain.le_5_pg4.text()}\n')
                             arquivo_txt.write('Excess hyetographs per pixel (mm):\n')
-                            arquivo_txt.write(f'={self.dlg_exc_rain.le_6_pg4.text()}\n')     
+                            arquivo_txt.write(f'=> {self.dlg_exc_rain.le_6_pg4.text()}\n')     
                     else:
                         # Caso o usuário não selecione um arquivo
                         result = "Wait! You did not select any file."
@@ -4186,19 +3505,19 @@ class HidroPixel:
                             arquivo_txt.write('\n')
                             arquivo_txt.write('Model type:\n')
                             arquivo_txt.write('    Hidropixel - TUH:\n')
-                            arquivo_txt.write(f'   ={self.dlg_flow_rout.rb_1_pg1.isChecked()}\n')
+                            arquivo_txt.write(f'   => {self.dlg_flow_rout.rb_1_pg1.isChecked()}\n')
                             arquivo_txt.write('    Hidropixel - TUH+:\n')
-                            arquivo_txt.write(f'   ={self.dlg_flow_rout.rb_2_pg1.isChecked()}\n')
+                            arquivo_txt.write(f'   => {self.dlg_flow_rout.rb_2_pg1.isChecked()}\n')
                             arquivo_txt.write('    Hidropixel - DLR:\n')
-                            arquivo_txt.write(f'   ={self.dlg_flow_rout.rb_3_pg1.isChecked()}\n')
+                            arquivo_txt.write(f'   => {self.dlg_flow_rout.rb_3_pg1.isChecked()}\n')
                             arquivo_txt.write('Initial abstraction parameter (λ):\n')
-                            arquivo_txt.write(f'={self.dlg_flow_rout.le_1_pg1.text()}\n')
+                            arquivo_txt.write(f'=> {self.dlg_flow_rout.le_1_pg1.text()}\n')
                             arquivo_txt.write('Time step (min):\n')
-                            arquivo_txt.write(f'={self.dlg_flow_rout.le_2_pg1.text()}\n')                            
+                            arquivo_txt.write(f'=> {self.dlg_flow_rout.le_2_pg1.text()}\n')                            
                             arquivo_txt.write('Finish time (min):\n')
-                            arquivo_txt.write(f'={self.dlg_flow_rout.le_4_pg1.text()}\n')                            
+                            arquivo_txt.write(f'=> {self.dlg_flow_rout.le_4_pg1.text()}\n')                            
                             arquivo_txt.write('Parameter β:\n')
-                            arquivo_txt.write(f'={self.dlg_flow_rout.le_5_pg1.text()}\n')                            
+                            arquivo_txt.write(f'=> {self.dlg_flow_rout.le_5_pg1.text()}\n')                            
 
                     else:
                         # Caso o usuário não selecione um arquivo
@@ -4217,15 +3536,15 @@ class HidroPixel:
                             arquivo_txt.write('Flow Routing - Input data page: \n')
                             arquivo_txt.write('\n')
                             arquivo_txt.write('Numbering of watershed pixels:\n')
-                            arquivo_txt.write(f'={self.dlg_flow_rout.le_1_pg2.text()}\n')
+                            arquivo_txt.write(f'=> {self.dlg_flow_rout.le_1_pg2.text()}\n')
                             arquivo_txt.write('Watershed delineation:\n')
-                            arquivo_txt.write(f'={self.dlg_flow_rout.le_2_pg2.text()}\n')
+                            arquivo_txt.write(f'=> {self.dlg_flow_rout.le_2_pg2.text()}\n')
                             arquivo_txt.write('Flow travel time:\n')
-                            arquivo_txt.write(f'={self.dlg_flow_rout.le_3_pg2.text()}\n')
+                            arquivo_txt.write(f'=> {self.dlg_flow_rout.le_3_pg2.text()}\n')
                             arquivo_txt.write('Excess hyetographs per pixel:\n')
-                            arquivo_txt.write(f'={self.dlg_flow_rout.le_4_pg2.text()}\n')
+                            arquivo_txt.write(f'=> {self.dlg_flow_rout.le_4_pg2.text()}\n')
                             arquivo_txt.write('Total excess rainfall per pixel (mm):\n')
-                            arquivo_txt.write(f'={self.dlg_flow_rout.le_5_pg2.text()}\n')
+                            arquivo_txt.write(f'=> {self.dlg_flow_rout.le_5_pg2.text()}\n')
 
                     else:
                         # Caso o usuário não selecione um arquivo
@@ -4246,23 +3565,23 @@ class HidroPixel:
                             arquivo_txt.write('Flow Routing - Run page: \n')
                             arquivo_txt.write('\n')
                             arquivo_txt.write('TUH peak discharge per pixel:\n')
-                            arquivo_txt.write(f'={self.dlg_flow_rout.le_1_pg4.text()}\n')
-                            arquivo_txt.write(f'            (L/s) ={self.dlg_flow_rout.rb_1_pg4.isChecked()}\n')
+                            arquivo_txt.write(f'=> {self.dlg_flow_rout.le_1_pg4.text()}\n')
+                            arquivo_txt.write(f'            (L/s) => {self.dlg_flow_rout.rb_1_pg4.isChecked()}\n')
                             arquivo_txt.write('Select unit:\n')
-                            arquivo_txt.write(f'            (m³/s) ={self.dlg_flow_rout.rb_2_pg4.isChecked()}\n')
+                            arquivo_txt.write(f'            (m³/s) => {self.dlg_flow_rout.rb_2_pg4.isChecked()}\n')
                             arquivo_txt.write('TUH peak time per pixel (min):\n')
-                            arquivo_txt.write(f'={self.dlg_flow_rout.le_2_pg4.text()}\n')
+                            arquivo_txt.write(f'=> {self.dlg_flow_rout.le_2_pg4.text()}\n')
                             arquivo_txt.write('TUH base time per pixel (min):\n')
-                            arquivo_txt.write(f'={self.dlg_flow_rout.le_3_pg4.text()}\n')                                                          
+                            arquivo_txt.write(f'=> {self.dlg_flow_rout.le_3_pg4.text()}\n')                                                          
                             arquivo_txt.write('Resulting peak discharge per pixel:\n')
-                            arquivo_txt.write(f'={self.dlg_flow_rout.le_4_pg4.text()}\n')
-                            arquivo_txt.write(f'            (L/s) ={self.dlg_flow_rout.rb_3_pg4.isChecked()}\n')
+                            arquivo_txt.write(f'=> {self.dlg_flow_rout.le_4_pg4.text()}\n')
+                            arquivo_txt.write(f'            (L/s) => {self.dlg_flow_rout.rb_3_pg4.isChecked()}\n')
                             arquivo_txt.write('Select unit:\n')
-                            arquivo_txt.write(f'            (m³/s) ={self.dlg_flow_rout.rb_4_pg4.isChecked()}\n')                            
+                            arquivo_txt.write(f'            (m³/s) => {self.dlg_flow_rout.rb_4_pg4.isChecked()}\n')                            
                             arquivo_txt.write('Resulting runoff velume per pixel (m³):\n')
-                            arquivo_txt.write(f'={self.dlg_flow_rout.le_5_pg4.text()}\n')
+                            arquivo_txt.write(f'=> {self.dlg_flow_rout.le_5_pg4.text()}\n')
                             arquivo_txt.write('Resulting watershed hydrograph (m³/s):\n')
-                            arquivo_txt.write(f'={self.dlg_flow_rout.le_6_pg4.text()}\n')  
+                            arquivo_txt.write(f'=> {self.dlg_flow_rout.le_6_pg4.text()}\n')  
 
                     else:
                         # Caso o usuário não selecione um arquivo
@@ -4291,76 +3610,38 @@ class HidroPixel:
             file_, _ = QFileDialog.getOpenFileName(None, caption="Select a file!", directory = directory, filter="Text Files (*.txt)", options = options)
             if file_:
                 if function == 1:
-
+                    cont = 0
                     if page == 1:
                         # Ler as informações da página 1: configuration
                         with open(file_, 'r', encoding='utf-8') as arquivo_txt:
                             # Armazena as informações do arquivo enviado em uma lista
                             values = []
                             for line in arquivo_txt:
-                                if '=' in line:
-                                    value_ = line.split("=")[1].strip()
-                                    values.append(value_)
-
-                        # Adiciona as informações lidas nas suas respectivas 
-                        
-                        # General informations
+                                # Buscará as flag adicionada "=>" ou "="
+                                if "=>" in line or '=' in line:
+                                    # Os primeiros 5 objetos são baseados na primeira flag
+                                    if cont < 4:
+                                        value = line.replace('=>', '').strip()
+                                        values.append(value)
+                                    # As direções de fluxo são baseadas na segunda flag
+                                    elif cont >= 4:
+                                        value_ = line.split("=")[1].strip()
+                                        values.append(value_)
+                                    cont += 1
+                        # Adiciona as informações lidas nas suas respectivas lineEdits
                         self.dlg_flow_tt.le_1_pg1.setText(str(values[0]))
-                        self.dlg_flow_tt.le_3_pg1.setText(str(values[1]))
-                        self.dlg_flow_tt.le_4_pg1.setText(str(values[2]))
-
-                        if bool(values[3]) == True:
-                            # Flow path
-                            self.dlg_flow_tt.cb_1_pg1.setChecked(bool(values[3]))
-                            self.dlg_flow_tt.le_13_pg1.setText(str(values[4]))
-
-                            # Channel's information
-                            self.dlg_flow_tt.le_14_pg1.setText(str(values[5]))
-                            self.dlg_flow_tt.le_15_pg1.setText(str(values[6]))
-
-                            # Regional curve
-                            self.dlg_flow_tt.le_16_pg1.setText(str(values[7]))
-                            self.dlg_flow_tt.le_17_pg1.setText(str(values[8]))
-                            self.dlg_flow_tt.le_18_pg1.setText(str(values[9]))
-                            self.dlg_flow_tt.le_19_pg1.setText(str(values[10]))
-
-                            # Reservoirs
-                            self.dlg_flow_tt.le_20_pg1.setText(str(values[11]))
+                        self.dlg_flow_tt.le_2_pg1.setText(str(values[1]))
+                        self.dlg_flow_tt.le_3_pg1.setText(str(values[2]))
+                        self.dlg_flow_tt.le_4_pg1.setText(str(values[3]))
+                        self.dlg_flow_tt.le_5_pg1.setText(str(values[4]))
+                        self.dlg_flow_tt.le_6_pg1.setText(str(values[5]))
+                        self.dlg_flow_tt.le_7_pg1.setText(str(values[6]))
+                        self.dlg_flow_tt.le_8_pg1.setText(str(values[7]))
+                        self.dlg_flow_tt.le_9_pg1.setText(str(values[8]))
+                        self.dlg_flow_tt.le_10_pg1.setText(str(values[9]))
+                        self.dlg_flow_tt.le_11_pg1.setText(str(values[10]))
+                        self.dlg_flow_tt.le_12_pg1.setText(str(values[11]))
                         
-                            # Flow dir
-                            self.dlg_flow_tt.le_5_pg1.setText(str(values[12]))
-                            self.dlg_flow_tt.le_6_pg1.setText(str(values[16]))
-                            self.dlg_flow_tt.le_7_pg1.setText(str(values[14]))
-                            self.dlg_flow_tt.le_8_pg1.setText(str(values[15]))
-                            self.dlg_flow_tt.le_9_pg1.setText(str(values[16]))
-                            self.dlg_flow_tt.le_10_pg1.setText(str(values[17]))
-                            self.dlg_flow_tt.le_11_pg1.setText(str(values[18]))
-                            self.dlg_flow_tt.le_12_pg1.setText(str(values[19]))
-
-                        else:
-                            # Channel's information
-                            self.dlg_flow_tt.le_14_pg1.setText(str(values[3]))
-                            self.dlg_flow_tt.le_15_pg1.setText(str(values[4]))
-
-                            # Regional curve
-                            self.dlg_flow_tt.le_16_pg1.setText(str(values[5]))
-                            self.dlg_flow_tt.le_17_pg1.setText(str(values[6]))
-                            self.dlg_flow_tt.le_18_pg1.setText(str(values[7]))
-                            self.dlg_flow_tt.le_19_pg1.setText(str(values[8]))
-
-                            # Reservoirs
-                            self.dlg_flow_tt.le_20_pg1.setText(str(values[9]))
-                        
-                            # Flow dir
-                            self.dlg_flow_tt.le_5_pg1.setText(str(values[10]))
-                            self.dlg_flow_tt.le_6_pg1.setText(str(values[11]))
-                            self.dlg_flow_tt.le_7_pg1.setText(str(values[12]))
-                            self.dlg_flow_tt.le_8_pg1.setText(str(values[13]))
-                            self.dlg_flow_tt.le_9_pg1.setText(str(values[14]))
-                            self.dlg_flow_tt.le_10_pg1.setText(str(values[15]))
-                            self.dlg_flow_tt.le_11_pg1.setText(str(values[16]))
-                            self.dlg_flow_tt.le_12_pg1.setText(str(values[17]))
-
                         break
 
                     elif page == 2:
@@ -4369,9 +3650,9 @@ class HidroPixel:
                             # Armazenará os valores das linhas
                             values = []
                             for line in arquivo_txt:
-                                if '=' in line:
-                                    # Substitui o identificador =por uma string fazia e retira os espaços da linha
-                                    value = line.replace('=', '').strip()
+                                if '=>' in line:
+                                    # Substitui o identificador => por uma string fazia e retira os espaços da linha
+                                    value = line.replace('=>', '').strip()
                                     values.append(value)
                         
                         # Adiciona as informações lidas à seus respectivos campos
@@ -4381,18 +3662,16 @@ class HidroPixel:
                         self.dlg_flow_tt.te_1_pg2.append(str(values[3]))
                         self.dlg_flow_tt.le_3_pg2.setText(str(values[4]))
                         self.dlg_flow_tt.le_4_pg2.setText(str(values[5]))
-                        self.dlg_flow_tt.le_9_pg2.setText(str(values[6]))
-                        self.dlg_flow_tt.le_10_pg2.setText(str(values[7]))
+                        self.dlg_flow_tt.le_7_pg2.setText(str(values[6]))
 
                         # Atribui os valores do arquivo enviado a tabela em questão
-                        self.dlg_flow_tt.le_7_pg2.setText(str(values[8]))
-                        self.read_tb_from_file_2(self.dlg_flow_tt.tbw_1_pg2,values[8], 1)
-                        self.dlg_flow_tt.le_5_pg2.setText(str(values[9]))
+                        self.read_tb_from_file_2(self.dlg_flow_tt.tbw_1_pg2,values[6], 1)
+                        self.dlg_flow_tt.le_5_pg2.setText(str(values[7]))
+                        self.dlg_flow_tt.le_8_pg2.setText(str(values[8]))
 
                         # Atribui os valores do arquivo enviado a tabela em questão
-                        self.dlg_flow_tt.le_8_pg2.setText(str(values[10]))
-                        self.read_tb_from_file_2(self.dlg_flow_tt.tbw_2_pg2,values[10],2)
-                        self.dlg_flow_tt.le_6_pg2.setText(str(values[11]))
+                        self.read_tb_from_file_2(self.dlg_flow_tt.tbw_2_pg2,values[8],2)
+                        self.dlg_flow_tt.le_6_pg2.setText(str(values[9]))
                         
                         break               
 
@@ -4402,9 +3681,9 @@ class HidroPixel:
                             # Armazenará os valores das linhas
                             values = []
                             for line in arquivo_txt:
-                                if '=' in line:
-                                    # Substitui o identificador =por uma string fazia e retira os espaços da linha
-                                    value = line.replace('=', '').strip()
+                                if '=>' in line:
+                                    # Substitui o identificador => por uma string fazia e retira os espaços da linha
+                                    value = line.replace('=>', '').strip()
                                     values.append(value)
 
                         # Adiciona as informações lidas à seus respectivos campos            
@@ -4414,10 +3693,7 @@ class HidroPixel:
                         self.dlg_flow_tt.le_4_pg3.setText(str(values[3]))
                         self.dlg_flow_tt.le_5_pg3.setText(str(values[4]))
                         self.dlg_flow_tt.le_6_pg3.setText(str(values[5]))
-                        self.dlg_flow_tt.le_8_pg3.setText(str(values[6]))
-                        self.dlg_flow_tt.le_9_pg3.setText(str(values[7]))
-                        self.dlg_flow_tt.le_10_pg3.setText(str(values[8]))
-                        self.dlg_flow_tt.le_7_pg3.setText(str(values[9]))
+                        self.dlg_flow_tt.le_7_pg3.setText(str(values[6]))
                         break
 
                 elif function == 2:
@@ -4427,9 +3703,9 @@ class HidroPixel:
                             # Armazenará os valores das linhas
                             values = []
                             for line in arquivo_txt:
-                                if '=' in line:
-                                    # Substitui o identificador =por uma string fazia e retira os espaços da linha
-                                    value = line.replace('=', '').strip()
+                                if '=>' in line:
+                                    # Substitui o identificador => por uma string fazia e retira os espaços da linha
+                                    value = line.replace('=>', '').strip()
                                     values.append(value)      
                         self.dlg_exc_rain.le_1_pg1.setText(str(values[0]))                      
                         self.dlg_exc_rain.le_2_pg1.setText(str(values[1]))
@@ -4444,9 +3720,9 @@ class HidroPixel:
                             # Armazenará os valores das linhas
                             values = []
                             for line in arquivo_txt:
-                                if '=' in line:
-                                    # Substitui o identificador =por uma string fazia e retira os espaços da linha
-                                    value = line.replace('=', '').strip()
+                                if '=>' in line:
+                                    # Substitui o identificador => por uma string fazia e retira os espaços da linha
+                                    value = line.replace('=>', '').strip()
                                     values.append(value) 
 
                         self.dlg_exc_rain.le_1_pg_ri.setText(str(values[0]))           
@@ -4462,9 +3738,9 @@ class HidroPixel:
                             # Armazenará os valores das linhas
                             values = []
                             for line in arquivo_txt:
-                                if '=' in line:
-                                    # Substitui o identificador =por uma string fazia e retira os espaços da linha
-                                    value = line.replace('=', '').strip()
+                                if '=>' in line:
+                                    # Substitui o identificador => por uma string fazia e retira os espaços da linha
+                                    value = line.replace('=>', '').strip()
                                     values.append(value) 
 
                         self.dlg_exc_rain.le_1_pg2.setText(str(values[0]))           
@@ -4481,9 +3757,9 @@ class HidroPixel:
                             # Armazenará os valores das linhas
                             values = []
                             for line in arquivo_txt:
-                                if '=' in line:
-                                    # Substitui o identificador =por uma string fazia e retira os espaços da linha
-                                    value = line.replace('=', '').strip()
+                                if '=>' in line:
+                                    # Substitui o identificador => por uma string fazia e retira os espaços da linha
+                                    value = line.replace('=>', '').strip()
                                     values.append(value) 
                         self.dlg_exc_rain.le_1_pg4.setText(str(values[0]))           
                         self.dlg_exc_rain.le_2_pg4.setText(str(values[1]))           
@@ -4500,9 +3776,9 @@ class HidroPixel:
                             # Armazenará os valores das linhas
                             values = []
                             for line in arquivo_txt:
-                                if '=' in line:
-                                    # Substitui o identificador =por uma string fazia e retira os espaços da linha
-                                    value = line.replace('=', '').strip()
+                                if '=>' in line:
+                                    # Substitui o identificador => por uma string fazia e retira os espaços da linha
+                                    value = line.replace('=>', '').strip()
                                     values.append(value)
                         self.dlg_flow_rout.rb_1_pg1.setChecked(str(values[0])=='True')
                         self.dlg_flow_rout.rb_2_pg1.setChecked(str(values[1])=='True')
@@ -4518,9 +3794,9 @@ class HidroPixel:
                             # Armazenará os valores das linhas
                             values = []
                             for line in arquivo_txt:
-                                if '=' in line:
-                                    # Substitui o identificador =por uma string fazia e retira os espaços da linha
-                                    value = line.replace('=', '').strip()
+                                if '=>' in line:
+                                    # Substitui o identificador => por uma string fazia e retira os espaços da linha
+                                    value = line.replace('=>', '').strip()
                                     values.append(value)
 
                         self.dlg_flow_rout.le_1_pg2.setText(str(values[0]))
@@ -4535,9 +3811,9 @@ class HidroPixel:
                             # Armazenará os valores das linhas
                             values = []
                             for line in arquivo_txt:
-                                if '=' in line:
-                                    # Substitui o identificador =por uma string fazia e retira os espaços da linha
-                                    value = line.replace('=', '').strip()
+                                if '=>' in line:
+                                    # Substitui o identificador => por uma string fazia e retira os espaços da linha
+                                    value = line.replace('=>', '').strip()
                                     values.append(value)
 
                         self.dlg_flow_rout.le_1_pg4.setText(str(value[0]))
@@ -4577,9 +3853,9 @@ class HidroPixel:
                             for col in range(ncol_tb1):
                                 item = self.dlg_flow_tt.tbw_1_pg2.item(lin, col)
                                 # Verifica se o item existe
-                                if item is not None and item != '':  
+                                if item is not None:  
                                     arquivo_txt_csv.write(f'{item.text()}')
-                                    arquivo_txt_csv.write(';')
+                                arquivo_txt_csv.write(';')  
                             arquivo_txt_csv.write('\n')
                     break
                 else:
@@ -4598,15 +3874,15 @@ class HidroPixel:
 
                     # Escreve o arquivo de saída
                     with open(file_name, 'w', encoding='utf-8') as arquivo_txt_csv:
-                        arquivo_txt_csv.write('Class ID;Class Name;Manning Coef;Coefficient K\n')
+                        arquivo_txt_csv.write('Class ID;Class Name;Manning Coef\n')
                         # Adicionando as informações das linhas e colunas ao arquivo de saída
                         for lin in range(nlin_tb1):
                             for col in range(ncol_tb1):
                                 item = self.dlg_flow_tt.tbw_2_pg2.item(lin, col)
                                 # Verifica se o item existe
-                                if item is not None and item != '':
+                                if item is not None:  
                                     arquivo_txt_csv.write(f'{item.text()}')
-                                    arquivo_txt_csv.write(';')
+                                    arquivo_txt_csv.write(';')  
                             arquivo_txt_csv.write('\n')
                     break
                 else:
@@ -4635,6 +3911,8 @@ class HidroPixel:
                     # Abre o arquivo e processa as linhas
                     with open(file_, 'r', encoding='utf-8') as arquivo_txt_csv:
                         # Lê a linha e o cabeçalho
+                        self.global_vars.nclasses = arquivo_txt_csv.readline().strip().split(':')[1]
+                        self.global_vars.nclasses =int(self.global_vars.nclasses)
                         arquivo_txt_csv.readline()
 
                         # Define o número de linhas que a tabela receberá
@@ -4645,41 +3923,33 @@ class HidroPixel:
                         Sclasse_list = []
                         Mannclasse_list = []
                         Rhclasse_list = []
-                        cont = 0
+
                         # Iterando sobre as linhas do arquivo
                         for line in arquivo_txt_csv:
                             # Divide a linha nos espaços em branco e converte para float
-                            info = line.strip().split(';')
-                            # Armazenando os valores das linhas nas suas respectivas variáveis
-                            if info[0] !='' and info[1] !='' and info[2] !='' and info[3]:
-                                indice = info[0]
-                                Scla = info[1]
-                                Mann = info[2]
-                                Rh = info[3]
-                                # Adiciona os valores às listas
-                                id_class_list.append(indice)
-                                Sclasse_list.append(Scla)
-                                Mannclasse_list.append(Mann)
-                                Rhclasse_list.append(Rh)
-                            cont +=1
+                            indice, Scla, Mann, Rh = map(float, line.split())
+                            # Adiciona os valores às listas
+                            id_class_list.append(indice)
+                            Sclasse_list.append(Scla)
+                            Mannclasse_list.append(Mann)
+                            Rhclasse_list.append(Rh)
+                    
                     # Atualiza as variáveis gerais
                     self.global_vars.j = np.array(id_class_list)
                     self.global_vars.Sclasse = np.array(Sclasse_list)
                     self.global_vars.Mannclasse = np.array(Mannclasse_list)
                     self.global_vars.Rhclasse = np.array(Rhclasse_list)
-                    self.global_vars.nclasses = cont       
-
+                    
                     # Atualiza no número de linhas da tabela (recebe o número de classes dos rios da bacia hidrográfica)
-                    table.setRowCount(cont)
+                    table.setRowCount(num_row_total)
                     
                     # Coleta as dimensões da tabela
                     n_row = table.rowCount()
                     n_column = table.columnCount()
 
                     # Itera sobre os elementos da tabela
-                    for lin in range(n_row):                            
-                        for col in range(n_column):
-
+                    for col in range(n_column):
+                        for lin in range(n_row):
                             if col == 0:
                                 # Adiciona a coluna do id
                                 item = QTableWidgetItem(str(id_class_list[lin]))
@@ -4706,11 +3976,9 @@ class HidroPixel:
                     uso_manning = []
                     coef_maning = []
                     class_name = []
-                    coef_K = []
                     class_name_val = []
                     uso_manning_val = []
                     coef_maning_val = []
-                    coef_K_val = []
 
                     # Abrindo o arquivo que contém o coeficiente de Manning para os diferentes usos do solo
                     with open(file_, 'r', encoding='utf-8') as arquivo_txt_csv:
@@ -4720,25 +3988,22 @@ class HidroPixel:
                         # Lê as informações de uso do solo e coeficiente de Manning 
                         for line in arquivo_txt_csv:
                             # Coletando as informações de cada linha
-                            info = line.strip().split(';')
+                            info = line.strip().split()
                             # Armazenando os valores das linhas nas suas respectivas variáveis
-                            if info[0] !='' and info[1] !='' and info[2] !='' and info[3]:
-                                uso_manning = int(info[0])
-                                coef_maning = float(info[1])
-                                class_name = str(info[2])
-                                coef_K = float(info[3])
+                            uso_manning = int(info[0])
+                            coef_maning = float(info[1])
+                            class_name = str(info[2])
 
-                                # Adicionando os valores nas variáveis destinadas
-                                uso_manning_val = np.append(uso_manning_val, uso_manning)
-                                coef_maning_val = np.append(coef_maning_val, coef_maning)
-                                coef_K_val = np.append(coef_K_val, coef_K)
-                                class_name_val.append(class_name)
+
+                            # Adicionando os valores nas variáveis destinadas
+                            uso_manning_val = np.append(uso_manning_val, uso_manning)
+                            coef_maning_val = np.append(coef_maning_val, coef_maning)
+                            class_name_val.append(class_name)
 
                     # Adicionando cada valor às suas respectivas variáveis
                     self.global_vars.usaux = uso_manning_val
                     self.global_vars.Mann = coef_maning_val
-                    self.global_vars.coef_K = coef_K_val
-                    self.global_vars.n_tipo_uso = len(class_name_val)
+
                     # Atualiza o número de linhas da tabela
                     table.setRowCount(len(uso_manning_val))
 
@@ -4761,10 +4026,6 @@ class HidroPixel:
                                 # Adiciona a coluna do coef de Manning  
                                 item = QTableWidgetItem(str(coef_maning_val[lin]))
                                 table.setItem(lin, col, item)
-                            elif col == 3:
-                                # Adiciona a coluna do coef K (shallow concentreted flow) 
-                                item = QTableWidgetItem(str(coef_K_val[lin]))
-                                table.setItem(lin, col, item)                                
                     
                     break
 
@@ -4775,7 +4036,7 @@ class HidroPixel:
                     break 
                 
     def read_tb_from_file_2(self,table, line_edit,table_ordem):
-        '''Esta função adiciona os valores do arquivo enviado pelo usuário à tabela quando se clica no botão READ ME 
+        '''Esta função adiciona os valores do arquivo enviado pelo usuário ao clicar no botão READ FROM FILE da página 2.
             table == 1: a tabela de referência é a tabelea das caracteristicas da rede de drenagem
             table == 2 referencia a tabela das classes e coeficientes de manning. 
             '''
@@ -4907,6 +4168,7 @@ class HidroPixel:
             # Verifica se alguma lineEdit sobreu alteração: modifica a execução da função close
             line_edit_list = [
                 self.dlg_flow_tt.le_1_pg1.text(),
+                self.dlg_flow_tt.le_2_pg1.text(),
                 self.dlg_flow_tt.le_5_pg1.text(),
                 self.dlg_flow_tt.le_6_pg1.text(),
                 self.dlg_flow_tt.le_7_pg1.text(),
@@ -4915,14 +4177,6 @@ class HidroPixel:
                 self.dlg_flow_tt.le_10_pg1.text(),
                 self.dlg_flow_tt.le_11_pg1.text(),
                 self.dlg_flow_tt.le_12_pg1.text(),
-                self.dlg_flow_tt.le_13_pg1.text(),
-                self.dlg_flow_tt.le_14_pg1.text(),
-                self.dlg_flow_tt.le_15_pg1.text(),
-                self.dlg_flow_tt.le_16_pg1.text(),
-                self.dlg_flow_tt.le_17_pg1.text(),
-                self.dlg_flow_tt.le_18_pg1.text(),
-                self.dlg_flow_tt.le_19_pg1.text(),
-                self.dlg_flow_tt.le_20_pg1.text(),
                 self.dlg_flow_tt.le_21_pg1.text(),
                 self.dlg_flow_tt.le_1_pg2.text(),
                 self.dlg_flow_tt.le_2_pg2.text(),
@@ -4932,8 +4186,6 @@ class HidroPixel:
                 self.dlg_flow_tt.le_6_pg2.text(),
                 self.dlg_flow_tt.le_7_pg2.text(),
                 self.dlg_flow_tt.le_8_pg2.text(),
-                self.dlg_flow_tt.le_9_pg2.text(),
-                self.dlg_flow_tt.le_10_pg2.text(),
                 self.dlg_flow_tt.le_1_pg4.text(),
                 self.dlg_flow_tt.le_2_pg4.text(),
                 self.dlg_flow_tt.le_3_pg4.text(),
@@ -4955,6 +4207,9 @@ class HidroPixel:
                     else: 
                         # Limpando as informações armazenadas: line edit
                         self.dlg_flow_tt.le_1_pg1.clear()
+                        self.dlg_flow_tt.le_2_pg1.clear()
+                        self.dlg_flow_tt.le_3_pg1.clear()
+                        self.dlg_flow_tt.le_4_pg1.clear()
                         self.dlg_flow_tt.le_5_pg1.clear()
                         self.dlg_flow_tt.le_6_pg1.clear()
                         self.dlg_flow_tt.le_7_pg1.clear()
@@ -4963,14 +4218,6 @@ class HidroPixel:
                         self.dlg_flow_tt.le_10_pg1.clear()
                         self.dlg_flow_tt.le_11_pg1.clear()
                         self.dlg_flow_tt.le_12_pg1.clear()
-                        self.dlg_flow_tt.le_13_pg1.clear()
-                        self.dlg_flow_tt.le_14_pg1.clear()
-                        self.dlg_flow_tt.le_15_pg1.clear()
-                        self.dlg_flow_tt.le_16_pg1.clear()
-                        self.dlg_flow_tt.le_17_pg1.clear()
-                        self.dlg_flow_tt.le_18_pg1.clear()
-                        self.dlg_flow_tt.le_19_pg1.clear()
-                        self.dlg_flow_tt.le_20_pg1.clear()
                         self.dlg_flow_tt.le_21_pg1.clear()
 
                         self.dlg_flow_tt.le_1_pg2.clear()
@@ -4982,8 +4229,6 @@ class HidroPixel:
                         self.dlg_flow_tt.le_6_pg2.clear()
                         self.dlg_flow_tt.le_7_pg2.clear()
                         self.dlg_flow_tt.le_8_pg2.clear()
-                        self.dlg_flow_tt.le_9_pg2.clear()
-                        self.dlg_flow_tt.le_10_pg2.clear()
 
                         self.dlg_flow_tt.le_1_pg4.clear()
                         self.dlg_flow_tt.le_2_pg4.clear()
@@ -5250,11 +4495,6 @@ class HidroPixel:
         self.dlg_rain_interpl_run.te_rain_int('BREAKING THE RAINFALL INTERPOLATION PROCESSING...')
         self.dlg_rain_interpl_run.close()
 
-    def sheet_flow_status(self, checked):
-        '''Esta funçao atualiza libera ou bloqueia o campo de adição do comprimento a ser considerado para o sheet flow'''
-        self.dlg_flow_tt.le_13_pg1.setEnabled(checked)
-        self.dlg_flow_tt.label_7.setEnabled(checked)
-
     def run_flow_tt(self):
         '''Está função ativa a página de log e configura a ordem de execução das funções para o cálculo do tempo de viagem'''
         # Ativiva a página de log e limpa as informações passadas no text_edit 
@@ -5336,17 +4576,6 @@ class HidroPixel:
                     self.dlg_flow_tt.te_logg.append(mensagem_log1)
 
                     # ---Entradas---
-
-                    # Atribuição das variáveis
-                    self.global_vars.coef_c = self.dlg_flow_tt.le_16_pg1.text()
-                    self.global_vars.coef_d = self.dlg_flow_tt.le_17_pg1.text()
-                    self.global_vars.coef_g = self.dlg_flow_tt.le_18_pg1.text()
-                    self.global_vars.coef_h = self.dlg_flow_tt.le_19_pg1.text()
-                    self.global_vars.n_canal = self.dlg_flow_tt.le_14_pg1.text()
-                    self.global_vars.max_comp_trecho = self.dlg_flow_tt.le_15_pg1.text()
-                    self.global_vars.sheet_flow = self.dlg_flow_tt.le_13_pg1.text()
-                    self.global_vars.profundidade_resers = self.dlg_flow_tt.le_20_pg1.text()
-
                     mensagem_log1 = "READING INPUT FILES...\n"
                     arquivo_bacia = self.dlg_flow_tt.le_1_pg2.text()
                     self.leh_bacia(arquivo_bacia,1)
@@ -5372,6 +4601,139 @@ class HidroPixel:
                     # ---Cálculos---
                     mensagem_log1 = 'PROCESSING...\n'
                     self.dlg_flow_tt.te_logg.append(mensagem_log1)
+                    if self.global_vars.unidaderef3 == 'deg':
+                        # sistema em graus, assumindo latlong
+                        self.global_vars.metro = 0
+                    else:
+                        # sistema em metros
+                        # se sistema de referencia em metros, fazer metro=1 (não faz projeção)
+                        # caso contrário (se metro=0), assume que está graus e faz projeção para metros
+                        self.global_vars.metro = 1
+
+                    # Processing NumeraPix...
+                    self.numera_pixel()
+
+                    # Atualiza a progressbar
+                    self.dlg_flow_tt.progressBar.setValue(self.dlg_flow_tt.progressBar.value() + 10)
+
+                    # Processing DistDren...
+                    self.dist_drenagem()
+
+                    # Atualiza a progressbar
+                    self.dlg_flow_tt.progressBar.setValue(self.dlg_flow_tt.progressBar.value() + 10)
+
+                    # Processing DistTrecho...
+                    self.dist_trecho()
+                    
+                    # Atualiza a progressbar
+                    self.dlg_flow_tt.progressBar.setValue(self.dlg_flow_tt.progressBar.value() + 10)
+
+                    # Processing TempoSup...
+                    self.tempo_sup()
+                    
+                    # Atualiza a progressbar
+                    self.dlg_flow_tt.progressBar.setValue(self.dlg_flow_tt.progressBar.value() + 10)
+
+                    # Processing ComprimAcu...
+                    self.comprimento_acumulado()
+                    
+                    # Atualiza a progressbar
+                    self.dlg_flow_tt.progressBar.setValue(self.dlg_flow_tt.progressBar.value() + 10)
+
+                    # Processing TempoCanal...
+                    self.tempo_canal()
+                    
+                    # Atualiza a progressbar
+                    self.dlg_flow_tt.progressBar.setValue(self.dlg_flow_tt.progressBar.value() + 10)
+                    
+                    # Processig TempoTotal...
+                    self.tempo_total_func()
+                    
+                    # Atualiza a progressbar
+                    self.dlg_flow_tt.progressBar.setValue(self.dlg_flow_tt.progressBar.value() + 10)
+
+                    # Saídas
+                    mensagem_log1 = 'WRITING OUTPUT FILES...\n'
+                    self.dlg_flow_tt.te_logg.append(mensagem_log1)
+
+                    if self.dlg_flow_tt.ch_1_pg4.isChecked():
+                        # Cria o arquivo selecionado
+                        self.escreve_num_pix_drenagem()
+
+                    if self.dlg_flow_tt.ch_2_pg4.isChecked():
+                        # Cria o arquivo selecionado
+                        self.escreve_conectividade()
+
+                    if self.dlg_flow_tt.ch_3_pg4.isChecked():
+                        # Cria o arquivo selecionado
+                        self.escreve_comprimento_acumulado()
+
+                    if self.dlg_flow_tt.ch_4_pg4.isChecked():
+                        # Cria o arquivo selecionado
+                        self.escreve_comprimento_acumulado_foz()
+
+                    if self.dlg_flow_tt.ch_5_pg4.isChecked():
+                        # Cria o arquivo selecionado
+                        self.escreve_declivi_pixel()
+
+                    if self.dlg_flow_tt.ch_6_pg4.isChecked():
+                        # Cria o arquivo selecionado
+                        self.escreve_decliv_pixel_jus()
+
+                    if self.dlg_flow_tt.ch_7_pg4.isChecked():
+                        # Cria o arquivo selecionado
+                        self.escreve_tempo_total()
+
+                    # Atualiza a progressbar
+                    self.dlg_flow_tt.progressBar.setValue(self.dlg_flow_tt.progressBar.value() + 10)
+
+                    mensagem_log1 = 'ADDING FILES SELECTED TO PROJECT LAYERS IN QGIS...\n'
+                    self.dlg_flow_tt.te_logg.append(mensagem_log1)
+
+                    if self.dlg_flow_tt.ch_8_pg4.isChecked() and self.fn_num_pix_dren  != '':
+                        # Adiciona o arquivo selecionado: num_pix_dren
+                        self.adiciona_layer(self.fn_num_pix_dren)
+                        mensagem_log1 = 'Added...\n'
+                        self.dlg_flow_tt.te_logg.append(mensagem_log1)
+
+                    if self.dlg_flow_tt.ch_9_pg4.isChecked() and self.fn_n_conect_dren  != '':
+                        # Adiciona o arquivo selecionado: num_conexao_dren
+                        self.adiciona_layer(self.fn_n_conect_dren)
+                        mensagem_log1 = 'Added...\n'
+                        self.dlg_flow_tt.te_logg.append(mensagem_log1)
+
+                    if self.dlg_flow_tt.ch_10_pg4.isChecked() and self.fn_comp_acum != '':
+                        # Adiciona o arquivo selecionado
+                        self.adiciona_layer(self.fn_comp_acum)
+                        mensagem_log1 = 'Added...\n'
+                        self.dlg_flow_tt.te_logg.append(mensagem_log1)
+
+                    if self.dlg_flow_tt.ch_11_pg4.isChecked() and self.fn_comp_foz != '':
+                        # Adiciona o arquivo selecionado
+                        self.adiciona_layer(self.fn_comp_foz)
+                        mensagem_log1 = 'Added...\n'
+                        self.dlg_flow_tt.te_logg.append(mensagem_log1)
+
+                    if self.dlg_flow_tt.ch_12_pg4.isChecked() and self.fn_decli_pix != '':
+                        # Adiciona o arquivo selecionado
+                        self.adiciona_layer(self.fn_decli_pix)
+                        mensagem_log1 = 'Added...\n'
+                        self.dlg_flow_tt.te_logg.append(mensagem_log1)
+
+                    if self.dlg_flow_tt.ch_13_pg4.isChecked() and self.fn_decli_pix_jus != '':
+                        # Adiciona o arquivo selecionado
+                        self.adiciona_layer(self.fn_decli_pix_jus)
+                        mensagem_log1 = 'Added...\n'
+                        self.dlg_flow_tt.te_logg.append(mensagem_log1)
+
+                    if self.dlg_flow_tt.ch_14_pg4.isChecked() and self.fn_temp_total != '':
+                        # Adiciona o arquivo selecionado
+                        self.adiciona_layer(self.fn_temp_total)
+                        mensagem_log1 = 'Added...\n'
+                        self.dlg_flow_tt.te_logg.append(mensagem_log1)
+
+                    # Atualiza a progressbar
+                    self.dlg_flow_tt.progressBar.setValue(self.dlg_flow_tt.progressBar.value() + 10)
 
                     # Adiciona as informação ao text edit
                     QMessageBox.information(None, "Information", "Operation completed successfully!", )
@@ -5740,6 +5102,19 @@ class HidroPixel:
         else:
             # O usuário selecionou a opção para cancelar
             self.dlg_flow_rout.tabWidget.setCurrentIndex(0)
+            
+    def flow_trave_time(self):
+        '''Esta função ordena a execução das outras funções para determinação do tempo de concentração para os pixels da bacia hidrográfica'''
+        # Atribuição das variáveis
+        self.coef_c = self.dlg_flow_tt.le_16_pg1.text()
+        self.coef_d = self.dlg_flow_tt.le_17_pg1.text()
+        self.coef_c = self.dlg_flow_tt.le_18_pg1.text()
+        self.coef_c = self.dlg_flow_tt.le_19_pg1.text()
+        self.n_canal = self.dlg_flow_tt.le_14_pg1.text()
+        self.comp_treco = self.dlg_flow_tt.le_15_pg1.text()
+        self.sheet_flow = self.dlg_flow_tt.le_13_pg1.text()
+        self.profundidade_resers = self.dlg_flow_tt.le_20_pg1.text()
+
 
     def run(self):
         """Esta é a função principal do plugin, todas as funcionalidades propostas anteriormente serão efetivadas na função run"""
@@ -5773,8 +5148,6 @@ class HidroPixel:
             # Configura os botões da página configuration: flow travel time
             self.dlg_flow_tt.tbtn_pg1_1.clicked.connect(lambda: self.carrega_work_folder(self.dlg_flow_tt.le_21_pg1))
             
-            self.dlg_flow_tt.cb_1_pg1.toggled.connect(lambda: self.sheet_flow_status(self.dlg_flow_tt.cb_1_pg1.isChecked()))
-
             # Configura os botões da página input data : flow travel time
             self.dlg_flow_tt.tbtn_pg2_1.clicked.connect(lambda: self.carrega_arquivos(self.dlg_flow_tt.le_1_pg2))
             self.dlg_flow_tt.tbtn_pg2_2.clicked.connect(lambda: self.carrega_arquivos(self.dlg_flow_tt.le_2_pg2))
@@ -5782,8 +5155,6 @@ class HidroPixel:
             self.dlg_flow_tt.tbtn_pg2_4.clicked.connect(lambda: self.carrega_arquivos(self.dlg_flow_tt.le_3_pg2))
             self.dlg_flow_tt.tbtn_pg2_5.clicked.connect(lambda: self.carrega_arquivos(self.dlg_flow_tt.le_4_pg2))
             self.dlg_flow_tt.tbtn_pg2_6.clicked.connect(lambda: self.carrega_arquivos(self.dlg_flow_tt.le_5_pg2))
-            self.dlg_flow_tt.tbtn_pg2_9.clicked.connect(lambda: self.carrega_arquivos(self.dlg_flow_tt.le_9_pg2))
-            self.dlg_flow_tt.tbtn_pg2_10.clicked.connect(lambda: self.carrega_arquivos(self.dlg_flow_tt.le_10_pg2))
 
             # Configura os botões da página run page: flow travel time
             self.dlg_flow_tt.tbtn_pg4_1.clicked.connect(lambda: self.save_buttons(self.dlg_flow_tt.le_1_pg4))
@@ -5792,9 +5163,6 @@ class HidroPixel:
             self.dlg_flow_tt.tbtn_pg4_4.clicked.connect(lambda: self.save_buttons(self.dlg_flow_tt.le_4_pg4))
             self.dlg_flow_tt.tbtn_pg4_5.clicked.connect(lambda: self.save_buttons(self.dlg_flow_tt.le_5_pg4))
             self.dlg_flow_tt.tbtn_pg4_6.clicked.connect(lambda: self.save_buttons(self.dlg_flow_tt.le_6_pg4))
-            self.dlg_flow_tt.tbtn_pg4_8.clicked.connect(lambda: self.save_buttons(self.dlg_flow_tt.le_8_pg4))
-            self.dlg_flow_tt.tbtn_pg4_9.clicked.connect(lambda: self.save_buttons(self.dlg_flow_tt.le_9_pg4))
-            self.dlg_flow_tt.tbtn_pg4_10.clicked.connect(lambda: self.save_buttons(self.dlg_flow_tt.le_10_pg4))
             self.dlg_flow_tt.tbtn_pg4_7.clicked.connect(lambda: self.save_buttons(self.dlg_flow_tt.le_7_pg4))
 
             # configura botões de salvar e salvar para um arquivo: flow travel time

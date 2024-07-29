@@ -5,22 +5,15 @@
 [general]
 name=Hidropixel
 qgisMinimumVersion=3.0
-description=Hidropixel is a simple distributed rainfall-runoff model used to estimate the direct runoff hydrograph for storm events. First, the Hidropixel model determines the flow travel time from each Digital Elevation Model (DEM) pixel to the basin outlet. Then, excess precipitation is estimated for each DEM pixel using SCS-CN method. 
-The final direct runoff hydrograph for the entire basin is determined by the sum of the flow rate from all contributing pixels during each timestep
+description=This is just a test"
 version=0.1
 author=João Vitor & Adriano Rolim
 email=jvds@academico.ufpb.br
 
-about= The workflow of the Hidropixel model can be schematically divided into 5 main 
-steps as follows: (1) DEM processing, (2) estimating flow travel time from each 
-pixel  to  the  watershed  outlet,  (3)  calculating  excess  rainfall  for  each  pixel,  (4) 
-generating direct  runoff  hydrograph  for  each pixel,  (5)  aggregating  the  hydrographs 
-for the entire watershed. There are 2 main algorithms in the Hidropixel model: (1) Determination of the 
-travel  time  from each pixel  to the  basin  outlet;  (2)  Calculation  of the  hydrograph.  In 
-addition to these, other algorithms were developed to obtain certain input data. 
+about=(...)
 
 tracker=http://bugs
-repository=https://github.com/J1Vitor/HidroPixel_test.git
+repository=http://repo
 # End of mandatory metadata
 
 # Recommended items:

@@ -68,14 +68,15 @@ class Test():
                     self.rdc_vars.nlin = rst_file_bacia.RasterYSize               
                     self.rdc_vars.ncol = rst_file_bacia.RasterXSize
                     self.rdc_vars.geotransform = rst_file_bacia.GetGeoTransform()
-                    self.rdc_vars.projection = rst_file_bacia.GetProjection()                 
+                    self.rdc_vars.projection = rst_file_bacia.GetProjection()   
+
                     # Reorganizando os dados lidos da bacia em uma nova matriz chamada bacia.
 
                     self.global_vars.bacia = dados_lidos_bacia
                     # Fechando o dataset GDAL
                     rst_file_bacia = None
 
-                    print(f'Qtd pix bacia: {np.count_nonzero(self.global_vars.bacia)}\nÁrea da bacia: {(np.count_nonzero(self.global_vars.bacia))*100/1000000} Km²')
+                    print(f'Qtd pix bacia: {np.count_nonzero(self.global_vars.bacia)}\nÁrea da bacia: {(np.count_nonzero(self.global_vars.bacia))*(self.rdc_vars.geotransform[1]*np.abs(self.rdc_vars.geotransform[5]))/1000000} Km²')
 
             elif function == 2 or function == 3:
                 # Realizando a abertura do arquivo raster e coletando as informações referentes as dimensões do mesmo
@@ -99,8 +100,8 @@ class Test():
                     # Fechando o dataset GDAL
                     rst_file_bacia = None
 
-                    print(f'Qtd pix bacia: {np.count_nonzero(self.global_vars.bacia)}\nÁrea da bacia: {(np.count_nonzero(self.global_vars.bacia))*100/1000000} Km²')
-
+                    print(f'Qtd pix bacia: {np.count_nonzero(self.global_vars.bacia)}\nÁrea da bacia: {(np.count_nonzero(self.global_vars.bacia))*(self.rdc_vars.geotransform[1]*np.abs(self.rdc_vars.geotransform[5]))/1000000} Km²')
+                
                 else:
                     # Caso o arquivo raster apresente erros durante a abertura, ocorrerá um erro
                     resulte = f"Failde to open the raster file: {arquivo}"
@@ -1460,7 +1461,7 @@ class Test():
 
     def precipitacao_acumulada(self):
         '''Esta função lê o arquivo contendo o tempo de concentração de cada pixel presente na bacia hidrográfica e o armazena'''
-        arquivo = r"C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\Bacia_mulugun\hidropixel_files\Outputs\pe_acumulada_pixel.RST"
+        arquivo = r"C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\Bacia_mulugun\hidropixel_files\entrada_hidropixel\entrada_hidropixel\Input_bin\Output_bin\pe_acumulada_pixel.RST"
         # Tratamento de erros: verifica se o arquivo foi corretamente enviado
         if arquivo:
             # Realizando a abertura do arquivo raster e coletando as informações referentes as dimensões do mesmo
@@ -1708,7 +1709,8 @@ class Test():
 
         self.hexc_pix = np.zeros((self.numero_total_pix, self.quantidade_blocos_chuva))
         
-        arquivo_precipitacao = r"C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\Bacia_mulugun\hidropixel_files\rainfall_interpolated.txt"
+        # arquivo_precipitacao = r"C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\Bacia_mulugun\hidropixel_files\entrada_hidropixel\entrada_hidropixel\Input_ascii\Output_ascii\rainfall_file_rod1.txt"
+        arquivo_precipitacao = r"C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\Bacia_mulugun\hidropixel_files\entrada_hidropixel\entrada_hidropixel\Input_ascii\Output_ascii\rainfall_file_minus377mmET.txt"
         with open(arquivo_precipitacao, 'r', encoding = 'utf-8') as arquivo_txt:
             # Armazena cabeçalho do arquivo
             cabecalho = arquivo_txt.readline().strip()
@@ -1759,7 +1761,7 @@ class Test():
         # Definição das variáveis
         Tmax = 0
         a = 0
-        tempo_viagem = r"C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\Bacia_mulugun\hidropixel_files\TempoTotal.rst"
+        tempo_viagem = r"C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\Bacia_mulugun\hidropixel_files\entrada_hidropixel\entrada_hidropixel\Input_bin\Output_bin\travel_time_rod1_atualizado.rst"
         self.tempo_total = self.leh_tempo_viagem(tempo_viagem)
         self.Spotencial = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
         self.volume_total_pix = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
@@ -1769,7 +1771,7 @@ class Test():
         self.vazao_pixel = np.zeros(50000)
         self.tempo_intervalo = np.zeros(50000)
         time = np.zeros(50000)
-        pe_acumulada_pixel = self.precipitacao_acumulada()
+        # pe_acumulada_pixel = self.precipitacao_acumulada()
         self.tempo_vazao_pixel = np.zeros(50000)
         self.vazao_amortecida_pixel = np.zeros(50000)
         self.vazao = np.zeros(50000)
@@ -1818,7 +1820,7 @@ class Test():
         area_bacia = 0
 
         # lê hietograma 
-        arquivo_precipitacao = r'C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\Bacia_mulugun\hidropixel_files\Outputs\hietograma_pe.txt'
+        arquivo_precipitacao = r'C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\Bacia_mulugun\hidropixel_files\entrada_hidropixel\entrada_hidropixel\Input_bin\Output_bin\hietograma_pe_minus_ETP.txt'
         with open(arquivo_precipitacao, 'r', encoding = 'utf-8') as arquivo_txt:
             # Armazena cabecalho do arquivo com a precipitação efetiva por pixel
             cabecalho = arquivo_txt.readline().strip()
@@ -1848,10 +1850,10 @@ class Test():
                                 self.vazao_pixel[k] = self.Pexc
 
                         # Volume de água gerado por pixel
-                        self.volume_total_pix[lin][col] = (pe_acumulada_pixel[lin][col] / (10 ** 3)) * (self.global_vars.dx ** 2)  # em m³
+                        # self.volume_total_pix[lin][col] = (pe_acumulada_pixel[lin][col] / (10 ** 3)) * (self.global_vars.dx ** 2)  # em m³
 
                         # Volume total de água gerada em todo evento
-                        self.volume_total += self.volume_total_pix[lin][col]
+                        # self.volume_total += self.volume_total_pix[lin][col]
 
                         # Parâmetro para estimativa do armazenamento
                         storage_coefficient = self.tempo_total[lin][col] / ((1 / self.beta) - 1)  # em minutos
@@ -1886,7 +1888,7 @@ class Test():
             area_bacia = self.numero_total_pix * (self.global_vars.dx **2) # em m²
 
             # Chuva excedente calculada
-            self.chuva_excedente_calc = (self.volume_total / area_bacia) * (10**3) #em mm
+            # self.chuva_excedente_calc = (self.volume_total / area_bacia) * (10**3) #em mm
 
     def tamanho_numero(self, varaux, num):
         '''
@@ -2876,7 +2878,7 @@ class Test():
     
     def escreve_hidrograma_dlr(self):
         '''Esta função gera contento o hidrograma total da bacia hidrográfica estudada'''
-        file_name = r'C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\Bacia_mulugun\hidropixel_files\Outputs\hidrograma.txt'
+        file_name = r'C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\Bacia_mulugun\hidropixel_files\entrada_hidropixel\entrada_hidropixel\Input_bin\Output_bin\hidrograma_P24_max.txt'
         with open(file_name, 'w', encoding = 'utf-8') as arquivo_txt:
             arquivo_txt.write('tempo(min), vazão calculada(m³/s)\n')
             for k in range(self.blocos_vazao):
@@ -2886,7 +2888,7 @@ class Test():
         '''Esta função gera o arquivo contento o valor da precipitação efetiva por pixel durante os blocos de chuva'''
 
         # Recebe diretório e nome do arquivo do usurário      
-        arquivo = r'C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\Bacia_mulugun\hidropixel_files\Outputs\hietograma_pe.txt'
+        arquivo = r'C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\Bacia_mulugun\hidropixel_files\entrada_hidropixel\entrada_hidropixel\Input_bin\Output_bin\hietograma_pe_minus_ETP.txt'
         with open(arquivo, 'w', encoding = 'utf-8') as arquivo_txt:
             # JVD:optimize: Escreve cabeçalho
             arquivo_txt.write('Pixel,')
@@ -2912,7 +2914,7 @@ class Test():
 
         # Abrindo o arquivo(fn : file name) para escrita dos resultados
         # fn_numb_pix = self.dlg_exc_rain.le_1_pg4.text()
-        file_path = r'C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\Bacia_mulugun\hidropixel_files\Outputs'
+        file_path = r'C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\Bacia_mulugun\hidropixel_files\entrada_hidropixel\entrada_hidropixel\Input_bin\Output_bin'
         fn_numb_pix = file_path + r'\numb_pixel_bacia.RST'
 
         
@@ -2961,7 +2963,7 @@ class Test():
         perda_ini_max = np.amax(self.perdas_iniciais)
 
         # Abrindo o arquivo(fn : file name) para escrita dos resultados
-        file_path = r'C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\Bacia_mulugun\hidropixel_files\Outputs'
+        file_path = r'C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\Bacia_mulugun\hidropixel_files\entrada_hidropixel\entrada_hidropixel\Input_bin\Output_bin'
         fn_perda_ini = file_path + r'\perdas_iniciais.RST'
         
         # Define os dados a serem escritos
@@ -3009,7 +3011,7 @@ class Test():
         max_retencao = np.amax(self.Spotencial)
 
         # Abrindo o arquivo(fn : file name) para escrita dos resultados
-        file_path = r'C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\Bacia_mulugun\hidropixel_files\Outputs'
+        file_path = r'C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\Bacia_mulugun\hidropixel_files\entrada_hidropixel\entrada_hidropixel\Input_bin\Output_bin'
         fn_Spotencial = file_path + r'\Spotencial.RST'
         
         # Define os dados a serem escritos
@@ -3057,7 +3059,7 @@ class Test():
         pe_maxima = np.amax(self.pe_acumulada_pixel)
 
         # Abrindo o arquivo(fn : file name) para escrita dos resultados
-        file_path = r'C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\Bacia_mulugun\hidropixel_files\Outputs'
+        file_path = r'C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\Bacia_mulugun\hidropixel_files\entrada_hidropixel\entrada_hidropixel\Input_bin\Output_bin'
         fn_pe_acum = file_path + r'\pe_acumulada_pixel.RST'
         
         # Define os dados a serem escritos
@@ -3105,7 +3107,7 @@ class Test():
         p_acum_max = np.amax(self.chuva_total_pixel)
 
         # Abrindo o arquivo(fn : file name) para escrita dos resultados
-        file_path = r'C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\Bacia_mulugun\hidropixel_files\Outputs'
+        file_path = r'C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\Bacia_mulugun\hidropixel_files\entrada_hidropixel\entrada_hidropixel\Input_bin\Output_bin'
         fn_p_acum = file_path + r'\chuva_total_pixel.RST'
         
         # Define os dados a serem escritos
@@ -3153,7 +3155,7 @@ class Test():
         vol_max = np.amax(self.volume_total_pix)
 
         # Abrindo o arquivo(fn : file name) para escrita dos resultados
-        file_path = r'C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\Bacia_mulugun\hidropixel_files\Outputs'
+        file_path = r'C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\Bacia_mulugun\hidropixel_files\entrada_hidropixel\entrada_hidropixel\Input_bin\Output_bin'
         fn_vol = file_path + r'\volume_total_pix.RST'
         
         # Define os dados a serem escritos
@@ -3204,7 +3206,7 @@ class Test():
         vazao_pixo_max = np.amax(self.vazao_pico)
 
         # Abrindo o arquivo(fn : file name) para escrita dos resultados
-        file_path = r'C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\Bacia_mulugun\hidropixel_files\Outputs'
+        file_path = r'C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\Bacia_mulugun\hidropixel_files\entrada_hidropixel\entrada_hidropixel\Input_bin\Output_bin'
         fn_vazao_pico = file_path + r'\vazao_pico_pixel.RST'
 
         # Define os dados a serem escritos
@@ -3252,7 +3254,7 @@ class Test():
     def escreve_pe_calculada(self):
         '''Esta função é responsável por gerar o arquivo contento a precipitação efetiva para a bacia hidrográfica em questão'''
         # Abrindo o arquivo(fn : file name) para escrita dos resultados
-        file_path = r'C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\Bacia_mulugun\hidropixel_files\Outputs'
+        file_path = r'C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\Bacia_mulugun\hidropixel_files\entrada_hidropixel\entrada_hidropixel\Input_bin\Output_bin'
         fn_p_calc = file_path + r'\pe_calculada.txt'
         with open(fn_p_calc, 'w', encoding='utf-8') as arquivo_txt:
             arquivo_txt.write(f'Calculated excess rainfall (mm) = {self.chuva_excedente_calc}')
@@ -3360,11 +3362,11 @@ class Test():
 
         # Reading input files
         print('Reading input files')
-        arquivo_bacia = r"C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\Bacia_mulugun\hidropixel_files\bacia.rst"
+        arquivo_bacia = r"C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\Bacia_mulugun\hidropixel_files\entrada_hidropixel\entrada_hidropixel\Input_bin\bacia_recl.rst"
         self.leh_bacia(arquivo_bacia, 2)
-        arquivo_posto = r"C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\Bacia_mulugun\dados_postos_pluviometricos\localizao_postos.txt"
+        arquivo_posto = r"C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\Bacia_mulugun\hidropixel_files\entrada_hidropixel\entrada_hidropixel\Input_ascii\dados_postos_pluv.txt"
         self.leh_posto_pluv(arquivo_posto)
-        arquivo_precipitacao = r"C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\Bacia_mulugun\dados_postos_pluviometricos\rainfall_data.txt"
+        arquivo_precipitacao = r"C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\Bacia_mulugun\hidropixel_files\entrada_hidropixel\entrada_hidropixel\rainfall_data.txt"
         self.leh_arquivo_precipitacao(arquivo_precipitacao )
 
         # Processing and wrinting output files
@@ -3389,24 +3391,25 @@ class Test():
 
         # Reading input files
         print('Reading input files')
-        arquivo_bacia = r"C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\Bacia_mulugun\hidropixel_files\bacia.rst"
+        arquivo_bacia = r"C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\Bacia_mulugun\hidropixel_files\entrada_hidropixel\entrada_hidropixel\Input_bin\bacia_recl.rst"
         self.leh_bacia(arquivo_bacia, 2)
-        curve_number = r"C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\Bacia_mulugun\hidropixel_files\curve_number.rst"
+        curve_number = r"C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\Bacia_mulugun\hidropixel_files\entrada_hidropixel\entrada_hidropixel\Input_bin\curve_number_corrigido.rst"
         self.leh_CN(curve_number)
         self.numera_pix_bacia()
-        parametros = r"C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\Bacia_mulugun\hidropixel_files\parameters_hytograph.txt"
+        parametros = r"C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\Bacia_mulugun\hidropixel_files\entrada_hidropixel\entrada_hidropixel\Input_ascii\parametros_e_caract_bacia\hydograph_parameters.txt"
         self.leh_parametros(parametros)
-        precipitacao_distribuida = r"C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\Bacia_mulugun\hidropixel_files\rainfall_interpolated.txt"
+        # precipitacao_distribuida = r"C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\Bacia_mulugun\hidropixel_files\entrada_hidropixel\entrada_hidropixel\Input_ascii\Output_ascii\rainfall_file_rod1.txt"
+        precipitacao_distribuida = r"C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\Bacia_mulugun\hidropixel_files\entrada_hidropixel\entrada_hidropixel\Input_ascii\Output_ascii\rainfall_file_minus377mmET.txt"
         self.leh_precip_distribuida(precipitacao_distribuida)
         
         # Processing and wrinting output files
         self.excess_rainfall()    
         print('Writing outputs...')
-        self.escreve_numb_pix_bacia()
-        self.escreve_S_potencial()
-        self.escreve_perdas_ini()
-        self.escreve_precipitacao_total_acum()
-        self.escreve_precipitacao_excedente()
+        # self.escreve_numb_pix_bacia()
+        # self.escreve_S_potencial()
+        # self.escreve_perdas_ini()
+        # self.escreve_precipitacao_total_acum()
+        # self.escreve_precipitacao_excedente()
         self.escreve_hietograma_pe()
         end = perf_counter()
         print(f'The processing time was: {(end-start)/60} min')     
@@ -3424,18 +3427,19 @@ class Test():
             
         # Reading input files
         print('Reading input files')
-        arquivo_bacia = r"C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\Bacia_mulugun\hidropixel_files\bacia.rst"
+        arquivo_bacia = r"C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\Bacia_mulugun\hidropixel_files\entrada_hidropixel\entrada_hidropixel\Input_bin\bacia_recl.rst"
         self.leh_bacia(arquivo_bacia, 3)
         self.numera_pix_bacia()
-        precipitacao_distribuida = r"C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\Bacia_mulugun\hidropixel_files\rainfall_interpolated.txt"
+        # precipitacao_distribuida = r"C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\Bacia_mulugun\hidropixel_files\entrada_hidropixel\entrada_hidropixel\Input_ascii\Output_ascii\rainfall_file_rod1.txt"
+        precipitacao_distribuida = r"C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\Bacia_mulugun\hidropixel_files\entrada_hidropixel\entrada_hidropixel\Input_ascii\Output_ascii\rainfall_file_minus377mmET.txt"
         self.leh_precip_distribuida(precipitacao_distribuida)
-        parametros = r"C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\Bacia_mulugun\hidropixel_files\parameters_hytograph.txt"
+        parametros = r"C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\Bacia_mulugun\hidropixel_files\entrada_hidropixel\entrada_hidropixel\Input_ascii\parametros_e_caract_bacia\hydograph_parameters.txt"
         self.leh_parametros(parametros)
         # Processing and wrinting output files
         print('Processing and Writing outputs...')
         self.hidrograma_dlr()
-        self.escreve_vazao_pico_pixel(1)
-        self.escreve_volume_gerado_pixel()
+        # self.escreve_vazao_pico_pixel(1)
+        # self.escreve_volume_gerado_pixel()
         self.escreve_hidrograma_dlr()
         self.escreve_pe_calculada()
         end = perf_counter()
@@ -3445,5 +3449,5 @@ class Test():
 cla_test = Test()
 # cla_test.run_flow_tt()
 # cla_test.run_rainfall_interpolation(2)
-# cla_test.run_exc_rain()
+cla_test.run_exc_rain()
 cla_test.run_flow_routing()

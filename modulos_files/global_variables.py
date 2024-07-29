@@ -19,58 +19,73 @@ class GlobalVariables:
         This method is responsible for creating the general variables necessary for the HidroPixel Plugin operation.
         """
         # Matrix's declaration
-        self.direcoes = np.empty((0,0), dtype = np.int16)
-        self.dren = np.empty((0,0), dtype = np.int16)   
-        self.MDEint = np.empty((0,0), dtype = np.int16)
-        self.cabeceira = np.empty((0,0), dtype = np.int16)
-        self.bacia = np.empty((0,0), dtype = np.int16)
-        self.classerio = np.empty((0,0), dtype = np.int16)
-        self.decliv_pixel = np.empty((0,0), dtype = np.int16)
-        self.decliv_pixel_jus = np.empty((0,0), dtype = np.int16)
-        self.usosolo = np.empty((0,0), dtype = np.int16)
-        self.refcabtre = np.empty((0,0), dtype = np.int16)
-        self.pixeldren = np.empty((0,0), dtype = np.int16)
-        self.contaaux = np.empty((0,0))
-        self.TREpix = np.empty((0,0), dtype = np.int16)
-        self.CABEpix = np.empty((0,0), dtype = np.float16)
-        self.numcabe = np.empty((0,0), dtype = np.float16)
-        self.MEDreal = np.empty((0,0))
-        self.MDE = np.empty((0,0), dtype = np.float64)
-        self.DIST = np.empty((0,0), dtype = np.float64) # !
-        self.DISTtre = np.empty((0,0), dtype = np.float64)# !
-        self.DISTult = np.empty((0,0), dtype = np.float64)# !
-        self.TS = np.empty((0,0), dtype = np.float64)
-        self.TScabe = np.empty((0,0), dtype = np.float64)
-        self.TScabe2d = np.empty((0,0), dtype = np.float64)
-        self.TSnaocabe2d = np.empty((0,0), dtype = np.float64)
-        self.TStodos2d = np.empty((0,0), dtype = np.float64)
-        self.contadren = np.empty((0,0), dtype = np.float16)
-        self.TempoRio = np.empty((0,0), dtype = np.float64)
-        self.TempoRioR = np.empty((0,0), dtype = np.float64)
-        self.Lac = np.empty((0,0), dtype = np.float64)
-        self.Lfoz = np.empty((0,0), dtype = np.float64)
-        self.TempoTot = np.empty((0,0), dtype = np.float64)
-        self.DECLIVpix = np.empty((0,0), dtype = np.float64)
-        self.Somaaux = np.empty((0,0), dtype = np.float64)
-        self.Somaauxpond = np.empty((0,0), dtype = np.float64)
-        self.SomaauxDist = np.empty((0,0), dtype = np.float64)
-        self.DECLIVpixjus = np.empty((0,0),dtype = np.float64)
-        self.TSpix = np.empty((0,0), dtype = np.float64)
-        self.TSpixacum = np.empty((0,0), dtype = np.float64)
-        self.Ltre = np.empty((0,0), dtype = np.float64)
-        self.cotaini = np.empty((0,0), dtype = np.float64)
-        self.cotafim = np.empty((0,0), dtype = np.float64)
-        self.Stre = np.empty((0,0), dtype = np.float64)
-        self.usotre = np.empty((0,0), dtype = np.float64)
-        self.contaaux = np.empty((0,0), dtype = np.float64)
-        self.delimitaBacia = np.zeros((0,0))
-        self.TempoTotal_reclass = np.zeros((0,0))
-        self.Spotencial = np.zeros((0,0))
-        self.perdas_iniciais = np.zeros((0,0))
-        self.chuva_acumulada_pixel = np.zeros((0,0))
-        self.chuva_total_pixel = np.zeros((0,0))
-        self.CN = np.zeros((0,0))
-        self.TempoTotal_1 = np.zeros((0,0))
+        self.direcoes = np.empty((5000,5000), dtype = np.int16)
+        self.dren = np.empty((5000,5000), dtype = np.int16)   
+        self.MDEint = np.empty((5000,5000), dtype = np.int16)
+        self.cabeceira = np.empty((5000,5000), dtype = np.int16)
+        self.bacia = np.empty((5000,5000), dtype = np.int16)
+        self.classerio = np.empty((5000,5000), dtype = np.int16)
+        self.decliv_pixel = np.empty((5000,5000), dtype = np.int16)
+        self.decliv_pixel_jus = np.empty((5000,5000), dtype = np.int16)
+        self.usosolo = np.empty((5000,5000), dtype = np.int16)
+        self.refcabtre = np.empty((5000,5000), dtype = np.int16)
+        self.pixeldren = np.empty((5000,5000), dtype = np.int16)
+        self.contaaux = np.empty((5000,5000))
+        self.TREpix = np.empty((5000,5000), dtype = np.int16)
+        self.CABEpix = np.empty((5000,5000), dtype = np.float16)
+        self.numcabe = np.empty((5000,5000), dtype = np.float16)
+        self.MEDreal = np.empty((5000,5000))
+        self.MDE = np.empty((5000,5000), dtype = np.float64)
+        self.DIST = np.empty((5000,5000), dtype = np.float64) # !
+        self.DISTtre = np.empty((5000,5000), dtype = np.float64)# !
+        self.DISTult = np.empty((5000,5000), dtype = np.float64)# !
+        self.TS = np.empty((5000,5000), dtype = np.float64)
+        self.TScabe = np.empty((5000,5000), dtype = np.float64)
+        self.TScabe2d = np.empty((5000,5000), dtype = np.float64)
+        self.TSnaocabe2d = np.empty((5000,5000), dtype = np.float64)
+        self.TStodos2d = np.empty((5000,5000), dtype = np.float64)
+        self.contadren = np.empty((5000,5000), dtype = np.float16)
+        self.TempoRio = np.empty((5000,5000), dtype = np.float64)
+        self.TempoRioR = np.empty((5000,5000), dtype = np.float64)
+        self.Lac = np.empty((5000,5000), dtype = np.float64)
+        self.Lfoz = np.empty((5000,5000), dtype = np.float64)
+        self.TempoTot = np.empty((5000,5000), dtype = np.float64)
+        self.DECLIVpix = np.empty((5000,5000), dtype = np.float64)
+        self.Somaaux = np.empty((5000,5000), dtype = np.float64)
+        self.Somaauxpond = np.empty((5000,5000), dtype = np.float64)
+        self.SomaauxDist = np.empty((5000,5000), dtype = np.float64)
+        self.DECLIVpixjus = np.empty((5000,5000),dtype = np.float64)
+        self.TSpix = np.empty((5000,5000), dtype = np.float64)
+        self.TSpixacum = np.empty((5000,5000), dtype = np.float64)
+        self.Ltre = np.empty((5000,5000), dtype = np.float64)
+        self.cotaini = np.empty((5000,5000), dtype = np.float64)
+        self.cotafim = np.empty((5000,5000), dtype = np.float64)
+        self.Stre = np.empty((5000,5000), dtype = np.float64)
+        self.usotre = np.empty((5000,5000), dtype = np.float64)
+        self.contaaux = np.empty((5000,5000), dtype = np.float64)
+        self.delimitaBacia = np.zeros((5000,5000))
+        self.TempoTotal_reclass = np.zeros((5000,5000))
+        self.Spotencial = np.zeros((5000,5000))
+        self.perdas_iniciais = np.zeros((5000,5000))
+        self.chuva_acumulada_pixel = np.zeros((5000,5000))
+        self.chuva_total_pixel = np.zeros((5000,5000))
+        self.CN = np.zeros((5000,5000))
+        self.reservoir = np.zeros((5000,5000))
+        self.dren_area = np.zeros((5000,5000))
+        self.coef_k_pixel = np.zeros((5000,5000))
+        self.tempo_viagem_tot = np.zeros((5000,5000)) # da versão nova
+        self.tempo_viagem = np.zeros((5000,5000)) # da versão nova
+        self.nSolo = np.zeros((5000,5000))
+        self.comp_pixel = np.zeros((5000,5000))
+        self.divisao_trecho = np.zeros((5000,5000))
+        self.comp_total = np.zeros((5000,5000))
+        self.Seq = np.zeros((5000,5000))
+        self.area_molhada = np.zeros((5000,5000))
+        self.bankfull_width = np.zeros((5000,5000))
+        self.rh_medio = np.zeros((5000,5000))
+        self.tipo_escoamento = np.zeros((5000,5000))
+        self.ttotal = np.zeros((5000,5000))
+        self.tempo_total = np.zeros((5000,5000))
 
         # vector's declaration
         self.lincontadren =  np.empty([], dtype = np.int16)
@@ -95,6 +110,9 @@ class GlobalVariables:
         self.tempo_vazao = np.zeros(50000)
         self.vazao_amortecida_pixel = np.zeros(50000)
         self.vazao = np.zeros(50000)
+        self.coef_K = np.zeros(50000)
+        self.id_trechos = np.zeros(50000)
+        self.tempo_viagem_pixel = np.zeros(50000)
 
         # string's declaration
         self.subtipodecliv = ""
@@ -111,6 +129,7 @@ class GlobalVariables:
         self.colaux2 = 0
         self.linaux3 = 0
         self.colaux3 = 0
+        self.n_tipo_uso = 0
         self.caminho = 0
         self.numcabeaux = 0
         self.numcabeaux2 = 0
@@ -122,7 +141,6 @@ class GlobalVariables:
         self.F = 0
         self.G = 0
         self.H = 0
-        self.j = 0
         self.resplist = 0
         self.cont = 0
         self.t = 0
@@ -150,7 +168,7 @@ class GlobalVariables:
         self.chuva_excedente_calc = 0
         self.blocos_vazao = 0
         self.alfa, self.delta_t, self.criterio_parada, self.beta = 0,0,0,0
-                
+       
         # Real varibles declaration
         self.xmin = 0.0
         self.xmax = 0.0
@@ -192,6 +210,14 @@ class GlobalVariables:
         self.Smin = np.float64(0.0)
         self.tempocam = np.float64(0.0)
         self.Smax = np.float64(0.0)
+        self.coef_c = 0.0
+        self.coef_d = 0.0
+        self.coef_c = 0.0
+        self.coef_c = 0.0
+        self.n_canal = 0.0
+        self.max_comp_trecho = 0.0
+        self.sheet_flow = 0.0
+        self.profundidade_resers = 0.0
 
         # Int 4bytes
         self.numncabeaux = np.int32(0)
