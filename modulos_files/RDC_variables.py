@@ -14,18 +14,18 @@ class RDCVariables:
     """
     This class is responsible for creating the RDC's variables necessary for the HidroPixel Plugin operation.
     """
-    def __init__(self):
+    def __init__(self,nlin,ncol):
         """
         This method is responsible for creating the RDC's variables necessary for the HidroPixel Plugin operation.
         """
         # Matrix's declaration
-        self.Var2D = np.empty((0,0), dtype=float)
-        self.xx = np.empty((0,0), dtype=float)
-        self.yy = np.empty((0,0), dtype=float)
-        self.P2lc = np.empty((0,0), dtype=float)
-        self.VarMM2 = np.empty((0,0), dtype=float)
-        self.VarMM3 = np.empty((0,0,0), dtype=float)
-        self.cell = np.empty((0,0), dtype=np.int16)
+        self.Var2D = np.empty((nlin,ncol), dtype=float)
+        self.xx = np.empty((nlin,ncol), dtype=float)
+        self.yy = np.empty((nlin,ncol), dtype=float)
+        self.P2lc = np.empty((nlin,ncol), dtype=float)
+        self.VarMM2 = np.empty((nlin,ncol), dtype=float)
+        self.VarMM3 = np.empty((nlin,ncol,0), dtype=float)
+        self.cell = np.empty((nlin,ncol), dtype=np.int16)
       
         # string's declaration
         self.iauxchar1 = ""
