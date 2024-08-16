@@ -501,7 +501,7 @@ class DesenvolvePlugin():
         self.global_vars.uso_mann = uso_manning_val
         self.global_vars.Mann = coef_maning_val
         self.global_vars.coef_K = coef_K_val
-        self.global_vars.n_tipo_uso = len(class_name_val)
+        self.global_vars.n_tipo_uso = len(uso_manning)
 
     def leh_drainage_area(self):
         """Esta função é utilizada para ler as informações acerca do uso do solo (arquivo raster - .rst)"""
@@ -1460,6 +1460,8 @@ class DesenvolvePlugin():
         for col in range(self.rdc_vars.ncol):
             for lin in range(self.rdc_vars.nlin):
                 if self.global_vars.bacia[lin,col] == 1:
+                    pixel_atual += 1
+
                     for k in range(self.global_vars.n_tipo_uso):
                         if self.global_vars.usosolo[lin,col] == self.global_vars.usaux[k]:
                             self.global_vars.nSolo[lin,col] = self.global_vars.Mann[k]
@@ -1499,9 +1501,13 @@ class DesenvolvePlugin():
         # a rotina sai procurando o pixel com cota menor que esteja a jusante e a declividade é caluclada como sendo a diferença de cotas dividida pela distância percorrida pelo escoamento até o pixel com cota menor)
 
         print('Determina declividade do pixel')
+        pixel_atual = 0
+
         for lin in range(self.rdc_vars.nlin):
             for col in range(self.rdc_vars.ncol):
                 if self.global_vars.bacia[lin,col] == 1:
+                    pixel_atual += 1
+
                     if self.global_vars.direcoes[lin,col] == 45:
                         i_test = lin - 1
                         j_test = col + 1
@@ -1551,9 +1557,12 @@ class DesenvolvePlugin():
         
         # Identificação dos pixels que iniciam a rede de drenagem
         print('Determinação dos pixels que são cabeceira')
+        pixel_atual = 0
         for lin in range(self.rdc_vars.nlin):
             for col in range(self.rdc_vars.ncol):
                 if self.global_vars.dren[lin,col] == 1:
+                    pixel_atual += 1
+
                     k = 0
                     if self.global_vars.direcoes[lin-1,col-1] == 135 and self.global_vars.dren[lin-1,col-1] == 1:
                         k+=1
@@ -1714,10 +1723,13 @@ class DesenvolvePlugin():
 
         # Cálculo da declividade equivalente e raio hidráulico para os trechos da rede de drenagem que não foram carregados pelo usuário
         print('Cálculo da declividade equivalente e raio hidráulico para os trechos da rede de drenagem que não foram carregados pelo usuário')
+        pixel_atual = 0
+        
         k = self.global_vars.nclasses
         for lin in range(self.rdc_vars.nlin):
             for col in range(self.rdc_vars.ncol):
                 if self.global_vars.bacia[lin,col] == 1:
+                    pixel_atual += 1
 
                     # Identifica o pixel que inicia um trecho sem informação sebre a seção transversal
                     if self.global_vars.divisao_trecho[lin,col] == 1:
@@ -1929,9 +1941,13 @@ class DesenvolvePlugin():
         # Definição sobre o tipo de escoamento
         # Se a variável TipoEscoamento é igual a 2, significa que o escoamento no pixel é do tipo sheet flow, isto é, a partir do pixel inicial onde se iniciou o escoamento a água percorreu no máximo um valor igual a "sheetflow"
         print('Definição do tipo de escoamento')
+        pixel_atual = 0
+
         for lin in range(self.rdc_vars.nlin):
             for col in range(self.rdc_vars.ncol):
                 if self.global_vars.bacia[lin,col] == 1:
+                    pixel_atual += 1
+                    
                     i_atual = lin
                     j_atual = col
 
@@ -1991,6 +2007,8 @@ class DesenvolvePlugin():
 
         # Cálculo do tempo de viagem
         print('Cálculo do tempo de viagem')
+        pixel_atual = 0
+
         self.global_vars.P24 = self.global_vars.P24 * 0.0393701 #mudança de unidade
         area_molhada_max = 0
         bank_full_width_max = 0
@@ -1998,6 +2016,7 @@ class DesenvolvePlugin():
         for lin in range(self.rdc_vars.nlin):
             for col in range(self.rdc_vars.ncol):
                 if self.global_vars.bacia[lin,col] == 1:
+                    pixel_atual += 1
 
                     # Tempo de viagem em superfície
                     if self.global_vars.dren[lin,col] == 0:
@@ -2632,16 +2651,16 @@ class DesenvolvePlugin():
         negativo, nzeros, pp, varaux2, limsup = None, None, None, None, None
         
         if varaux < 0:
-            negativo = 1
+            negativo: int = 1
         else:
-            negativo = 0
+            negativo: int = 0
         
         varaux2 = np.abs(varaux)
         
         for pp in range(11):
             limsup = 10.0**pp
             if varaux2 < limsup:
-                nzeros = pp
+                nzeros:int = pp
                 break
 
         # Se o valor for inteiro
@@ -2969,7 +2988,6 @@ class DesenvolvePlugin():
         self.rdc_vars.Xmax3 = self.rdc_vars.xmax
         self.rdc_vars.Ymin3 = self.rdc_vars.ymin
         self.rdc_vars.Ymax3 = self.rdc_vars.ymax
-        nomeRST = fn_comp_acum
         nomeRST = fn_comp_foz
         self.global_vars.metrordc = self.global_vars.metro
         self.min_max()
@@ -2980,11 +2998,11 @@ class DesenvolvePlugin():
 
         # Definindo o caminho para o arquivo RST
         file_path = r'C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\resultados_test_modelo'
-        fn_num_cab = file_path + r'\numb_pixel_cabeceiras.RST'
+        fn_num_cab = file_path + r'\numb_pixel_drenagem.RST'
 
         # Definindo os dados a serem escritos
         dados_num_cab = np.array([[float(self.contadren[lin][col]) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)])
-
+        num_pix_max = np.amax(dados_num_cab)
         # Definindo o tipo de dados para Float32
         tipo_dados = gdalconst.GDT_Float32
 
@@ -3007,7 +3025,7 @@ class DesenvolvePlugin():
         # Alocando as variáveis para escrita do arquivo rdc para o comprimento da rede de drenagem
         self.rdc_vars.nlin3 = self.rdc_vars.nlin
         self.rdc_vars.ncol3 = self.rdc_vars.ncol
-        self.rdc_vars.tipo_dado = 2
+        self.rdc_vars.tipo_dado = 1
         self.rdc_vars.tipoMM = 2
         self.rdc_vars.VarMM2 = self.contadren
         self.rdc_vars.i3 = 0 
@@ -3015,9 +3033,10 @@ class DesenvolvePlugin():
         self.rdc_vars.Xmax3 = self.rdc_vars.xmax
         self.rdc_vars.Ymin3 = self.rdc_vars.ymin
         self.rdc_vars.Ymax3 = self.rdc_vars.ymax
-        nomeRST = fn_num_cab 
+        self.rdc_vars.Varmax = num_pix_max
+        self.rdc_vars.Varmin = 0
+        nomeRST = fn_num_cab
         self.global_vars.metrordc = self.global_vars.metro
-        self.min_max()
         self.escreve_RDC(nomeRST)
 
     def escreve_conectividade(self):
@@ -3030,7 +3049,6 @@ class DesenvolvePlugin():
 
         # Escrevendo o resultado do mapa de conectividade dos pixels da superficie a rede de drenagem
         fn_n_conect_dren = file_path + r'\num_conexao_drenagem.RST'
-
         # Valor máximo
         var_max = np.amax(self.global_vars.pixeldren) 
 
@@ -3039,13 +3057,14 @@ class DesenvolvePlugin():
 
         # Os arquivos terão formato RST
         driver = gdal.GetDriverByName('RST')
+        tipo_dados = gdalconst.GDT_Float32
 
         # Cria arquivo final
-        dataset = driver.Create(fn_cab_pix, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
+        dataset = driver.Create(fn_n_conect_dren, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
 
         # Escreve os dados na banda do arquivo
         banda = dataset.GetRasterBand(1)
-        banda.WriteArray(dados_cab_pix)
+        banda.WriteArray(dados_n_conect_dren)
 
         # Escreve os dados na banda do arquivo
         banda = dataset.GetRasterBand(1)
@@ -3211,15 +3230,16 @@ class DesenvolvePlugin():
         self.rdc_vars.ncol3 = self.rdc_vars.ncol
         self.rdc_vars.tipo_dado = 2
         self.rdc_vars.tipoMM = 2
-        self.rdc_vars.VarMM2 = self.global_vars.DISTtre
+        self.rdc_vars.VarMM2 = self.contadren
         self.rdc_vars.i3 = 0 
         self.rdc_vars.Xmin3 = self.rdc_vars.xmin
         self.rdc_vars.Xmax3 = self.rdc_vars.xmax
         self.rdc_vars.Ymin3 = self.rdc_vars.ymin
         self.rdc_vars.Ymax3 = self.rdc_vars.ymax
+        self.rdc_vars.Varmax = np.amax()
+        self.rdc_vars.Varmin = 0
         nomeRST = fn_dist_rel_tre
         self.global_vars.metrordc = self.global_vars.metro
-        self.min_max()
         self.escreve_RDC(nomeRST)
 
     def escreve_num_pix_drenagem(self):

@@ -2877,13 +2877,14 @@ class HidroPixel:
 
         # Os arquivos terão formato RST
         driver = gdal.GetDriverByName('RST')
+        tipo_dados = gdalconst.GDT_Float32
 
         # Cria arquivo final
-        dataset = driver.Create(fn_cab_pix, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
+        dataset = driver.Create(fn_n_conect_dren, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
 
         # Escreve os dados na banda do arquivo
         banda = dataset.GetRasterBand(1)
-        banda.WriteArray(dados_cab_pix)
+        banda.WriteArray(dados_n_conect_dren)
 
         # Escreve os dados na banda do arquivo
         banda = dataset.GetRasterBand(1)
@@ -5261,7 +5262,7 @@ class HidroPixel:
                     self.dlg_flow_tt.te_logg.append(mensagem_log1)
                     # Configura condições para execução das funções de escrita dos resultados
                     if self.dlg_flow_tt.ch_1_pg4.isChecked() and self.dlg_flow_tt.le_1_pg4.text() != '':
-                        self.escreve_num_pix_dren()
+                        self.escreve_num_pix_drenagem()
 
                     if self.dlg_flow_tt.ch_2_pg4.isChecked() and self.dlg_flow_tt.le_2_pg4.text() != '':
                         self.escreve_conectividade()
