@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>774</width>
-    <height>648</height>
+    <width>770</width>
+    <height>620</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -78,8 +78,8 @@
                  <string>...</string>
                 </property>
                 <property name="icon">
-                 <iconset>
-                  <normaloff>folder_icon.png</normaloff>folder_icon.png</iconset>
+                 <iconset resource="resources.qrc">
+                  <normaloff>:/plugins/hidroPixel/icons/icons/folder_icon</normaloff>:/plugins/hidroPixel/icons/icons/folder_icon</iconset>
                 </property>
                </widget>
               </item>
@@ -134,8 +134,8 @@
                 <rect>
                  <x>0</x>
                  <y>0</y>
-                 <width>695</width>
-                 <height>761</height>
+                 <width>691</width>
+                 <height>728</height>
                 </rect>
                </property>
                <layout class="QGridLayout" name="gridLayout_68">
@@ -437,7 +437,7 @@
                       <string/>
                      </property>
                      <property name="pixmap">
-                      <pixmap>flowdirs.png</pixmap>
+                      <pixmap resource="resources.qrc">:/plugins/hidroPixel/icons/icons/flowdirs.png</pixmap>
                      </property>
                     </widget>
                    </item>
@@ -484,7 +484,7 @@
                       <string/>
                      </property>
                      <property name="pixmap">
-                      <pixmap>tip_icon.png</pixmap>
+                      <pixmap resource="resources.qrc">:/plugins/hidroPixel/icons/icons/tip_icon.png</pixmap>
                      </property>
                     </widget>
                    </item>
@@ -580,7 +580,7 @@
                         <string/>
                        </property>
                        <property name="pixmap">
-                        <pixmap>tip_icon.png</pixmap>
+                        <pixmap resource="resources.qrc">:/plugins/hidroPixel/icons/icons/tip_icon.png</pixmap>
                        </property>
                       </widget>
                      </item>
@@ -791,7 +791,7 @@
                           <string/>
                          </property>
                          <property name="pixmap">
-                          <pixmap>tip_icon.png</pixmap>
+                          <pixmap resource="resources.qrc">:/plugins/hidroPixel/icons/icons/tip_icon.png</pixmap>
                          </property>
                         </widget>
                        </item>
@@ -827,7 +827,7 @@
                           <string/>
                          </property>
                          <property name="pixmap">
-                          <pixmap>tip_icon.png</pixmap>
+                          <pixmap resource="resources.qrc">:/plugins/hidroPixel/icons/icons/tip_icon.png</pixmap>
                          </property>
                         </widget>
                        </item>
@@ -866,7 +866,7 @@
                           <string/>
                          </property>
                          <property name="pixmap">
-                          <pixmap>tip_icon.png</pixmap>
+                          <pixmap resource="resources.qrc">:/plugins/hidroPixel/icons/icons/tip_icon.png</pixmap>
                          </property>
                         </widget>
                        </item>
@@ -955,7 +955,7 @@
                         <string/>
                        </property>
                        <property name="pixmap">
-                        <pixmap>tip_icon.png</pixmap>
+                        <pixmap resource="resources.qrc">:/plugins/hidroPixel/icons/icons/tip_icon.png</pixmap>
                        </property>
                       </widget>
                      </item>
@@ -966,15 +966,29 @@
                      <property name="title">
                       <string>Regional curve parameters:</string>
                      </property>
-                     <layout class="QGridLayout" name="gridLayout_66">
-                      <item row="1" column="0">
+                     <layout class="QGridLayout" name="gridLayout_77">
+                      <item row="0" column="0" rowspan="2">
+                       <layout class="QGridLayout" name="gridLayout_66">
+                        <item row="0" column="0">
+                         <widget class="QLabel" name="label_90">
+                          <property name="text">
+                           <string/>
+                          </property>
+                          <property name="pixmap">
+                           <pixmap resource="resources.qrc">:/plugins/hidroPixel/icons/icons/equation_regional_curve.png</pixmap>
+                          </property>
+                         </widget>
+                        </item>
+                       </layout>
+                      </item>
+                      <item row="0" column="1">
                        <layout class="QVBoxLayout" name="verticalLayout_2">
                         <item>
                          <layout class="QGridLayout" name="gridLayout_64">
                           <item row="0" column="2">
                            <layout class="QGridLayout" name="gridLayout_63">
                             <item row="0" column="1" alignment="Qt::AlignLeft">
-                             <widget class="QLineEdit" name="le_18_pg1">
+                             <widget class="QLineEdit" name="le_17_pg1">
                               <property name="maximumSize">
                                <size>
                                 <width>80</width>
@@ -1012,7 +1026,46 @@
                                </font>
                               </property>
                               <property name="text">
-                               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;justify&quot;&gt;Coefficient g:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;justify&quot;&gt;Coefficient d:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                              </property>
+                             </widget>
+                            </item>
+                            <item row="0" column="3">
+                             <widget class="QLabel" name="label_91">
+                              <property name="sizePolicy">
+                               <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                                <horstretch>0</horstretch>
+                                <verstretch>0</verstretch>
+                               </sizepolicy>
+                              </property>
+                              <property name="minimumSize">
+                               <size>
+                                <width>16</width>
+                                <height>16</height>
+                               </size>
+                              </property>
+                              <property name="maximumSize">
+                               <size>
+                                <width>16</width>
+                                <height>16</height>
+                               </size>
+                              </property>
+                              <property name="font">
+                               <font>
+                                <pointsize>9</pointsize>
+                               </font>
+                              </property>
+                              <property name="toolTip">
+                               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Add the diagonal step, which by default is set to 1.4241.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                              </property>
+                              <property name="whatsThis">
+                               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Add the description or function of the object&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                              </property>
+                              <property name="text">
+                               <string/>
+                              </property>
+                              <property name="pixmap">
+                               <pixmap resource="resources.qrc">:/plugins/hidroPixel/icons/icons/tip_icon.png</pixmap>
                               </property>
                              </widget>
                             </item>
@@ -1058,6 +1111,9 @@
                                 <pointsize>9</pointsize>
                                </font>
                               </property>
+                              <property name="tabletTracking">
+                               <bool>false</bool>
+                              </property>
                               <property name="text">
                                <string/>
                               </property>
@@ -1069,24 +1125,23 @@
                         </item>
                        </layout>
                       </item>
-                      <item row="2" column="0">
+                      <item row="1" column="1">
                        <layout class="QVBoxLayout" name="verticalLayout_10">
                         <item>
                          <layout class="QGridLayout" name="gridLayout_65">
                           <item row="0" column="2">
                            <layout class="QGridLayout" name="gridLayout_69">
-                            <item row="0" column="2">
-                             <spacer name="horizontalSpacer_17">
-                              <property name="orientation">
-                               <enum>Qt::Horizontal</enum>
+                            <item row="0" column="0">
+                             <widget class="QLabel" name="label_70">
+                              <property name="font">
+                               <font>
+                                <pointsize>9</pointsize>
+                               </font>
                               </property>
-                              <property name="sizeHint" stdset="0">
-                               <size>
-                                <width>40</width>
-                                <height>20</height>
-                               </size>
+                              <property name="text">
+                               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;justify&quot;&gt;Coefficient h:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                               </property>
-                             </spacer>
+                             </widget>
                             </item>
                             <item row="0" column="1" alignment="Qt::AlignLeft">
                              <widget class="QLineEdit" name="le_19_pg1">
@@ -1106,15 +1161,55 @@
                               </property>
                              </widget>
                             </item>
-                            <item row="0" column="0">
-                             <widget class="QLabel" name="label_70">
+                            <item row="0" column="2">
+                             <spacer name="horizontalSpacer_17">
+                              <property name="orientation">
+                               <enum>Qt::Horizontal</enum>
+                              </property>
+                              <property name="sizeHint" stdset="0">
+                               <size>
+                                <width>40</width>
+                                <height>20</height>
+                               </size>
+                              </property>
+                             </spacer>
+                            </item>
+                            <item row="0" column="3">
+                             <widget class="QLabel" name="label_92">
+                              <property name="sizePolicy">
+                               <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                                <horstretch>0</horstretch>
+                                <verstretch>0</verstretch>
+                               </sizepolicy>
+                              </property>
+                              <property name="minimumSize">
+                               <size>
+                                <width>16</width>
+                                <height>16</height>
+                               </size>
+                              </property>
+                              <property name="maximumSize">
+                               <size>
+                                <width>16</width>
+                                <height>16</height>
+                               </size>
+                              </property>
                               <property name="font">
                                <font>
                                 <pointsize>9</pointsize>
                                </font>
                               </property>
+                              <property name="toolTip">
+                               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Add the diagonal step, which by default is set to 1.4241.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                              </property>
+                              <property name="whatsThis">
+                               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Add the description or function of the object&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                              </property>
                               <property name="text">
-                               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;justify&quot;&gt;Coefficient h:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                               <string/>
+                              </property>
+                              <property name="pixmap">
+                               <pixmap resource="resources.qrc">:/plugins/hidroPixel/icons/icons/tip_icon.png</pixmap>
                               </property>
                              </widget>
                             </item>
@@ -1130,7 +1225,7 @@
                                </font>
                               </property>
                               <property name="text">
-                               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;justify&quot;&gt;Coefficient d:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;justify&quot;&gt;Coefficient g:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                               </property>
                              </widget>
                             </item>
@@ -1148,7 +1243,7 @@
                              </spacer>
                             </item>
                             <item row="0" column="2" alignment="Qt::AlignRight">
-                             <widget class="QLineEdit" name="le_17_pg1">
+                             <widget class="QLineEdit" name="le_18_pg1">
                               <property name="maximumSize">
                                <size>
                                 <width>80</width>
@@ -1171,46 +1266,52 @@
                         </item>
                        </layout>
                       </item>
-                      <item row="0" column="0" alignment="Qt::AlignRight">
-                       <widget class="QLabel" name="label_82">
-                        <property name="sizePolicy">
-                         <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-                          <horstretch>0</horstretch>
-                          <verstretch>0</verstretch>
-                         </sizepolicy>
-                        </property>
-                        <property name="minimumSize">
-                         <size>
-                          <width>16</width>
-                          <height>16</height>
-                         </size>
-                        </property>
-                        <property name="maximumSize">
-                         <size>
-                          <width>16</width>
-                          <height>16</height>
-                         </size>
-                        </property>
-                        <property name="font">
-                         <font>
-                          <pointsize>9</pointsize>
-                         </font>
-                        </property>
-                        <property name="toolTip">
-                         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Add the diagonal step, which by default is set to 1.4241.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                        </property>
-                        <property name="whatsThis">
-                         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Add the description or function of the object&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                        </property>
-                        <property name="text">
-                         <string/>
-                        </property>
-                        <property name="pixmap">
-                         <pixmap>tip_icon.png</pixmap>
-                        </property>
-                       </widget>
-                      </item>
                      </layout>
+                     <widget class="QLabel" name="label_82">
+                      <property name="geometry">
+                       <rect>
+                        <x>826</x>
+                        <y>27</y>
+                        <width>16</width>
+                        <height>16</height>
+                       </rect>
+                      </property>
+                      <property name="sizePolicy">
+                       <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                        <horstretch>0</horstretch>
+                        <verstretch>0</verstretch>
+                       </sizepolicy>
+                      </property>
+                      <property name="minimumSize">
+                       <size>
+                        <width>16</width>
+                        <height>16</height>
+                       </size>
+                      </property>
+                      <property name="maximumSize">
+                       <size>
+                        <width>16</width>
+                        <height>16</height>
+                       </size>
+                      </property>
+                      <property name="font">
+                       <font>
+                        <pointsize>9</pointsize>
+                       </font>
+                      </property>
+                      <property name="toolTip">
+                       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Add the diagonal step, which by default is set to 1.4241.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                      </property>
+                      <property name="whatsThis">
+                       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Add the description or function of the object&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                      </property>
+                      <property name="text">
+                       <string/>
+                      </property>
+                      <property name="pixmap">
+                       <pixmap>tip_icon.png</pixmap>
+                      </property>
+                     </widget>
                     </widget>
                    </item>
                    <item row="0" column="0">
@@ -1280,7 +1381,7 @@
                         <string/>
                        </property>
                        <property name="pixmap">
-                        <pixmap>tip_icon.png</pixmap>
+                        <pixmap resource="resources.qrc">:/plugins/hidroPixel/icons/icons/tip_icon.png</pixmap>
                        </property>
                       </widget>
                      </item>
@@ -1301,95 +1402,7 @@
                   </property>
                   <layout class="QGridLayout" name="gridLayout_6">
                    <item row="0" column="0">
-                    <layout class="QHBoxLayout" name="horizontalLayout_10">
-                     <item>
-                      <widget class="QLabel" name="label_3">
-                       <property name="font">
-                        <font>
-                         <pointsize>9</pointsize>
-                        </font>
-                       </property>
-                       <property name="text">
-                        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;justify&quot;&gt;Consider Shallow Concentrated Flow:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                       </property>
-                      </widget>
-                     </item>
-                     <item>
-                      <widget class="QCheckBox" name="cb_1_pg1">
-                       <property name="text">
-                        <string/>
-                       </property>
-                      </widget>
-                     </item>
-                     <item>
-                      <spacer name="horizontalSpacer_13">
-                       <property name="orientation">
-                        <enum>Qt::Horizontal</enum>
-                       </property>
-                       <property name="sizeHint" stdset="0">
-                        <size>
-                         <width>40</width>
-                         <height>20</height>
-                        </size>
-                       </property>
-                      </spacer>
-                     </item>
-                     <item>
-                      <widget class="QLabel" name="label_73">
-                       <property name="sizePolicy">
-                        <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-                         <horstretch>0</horstretch>
-                         <verstretch>0</verstretch>
-                        </sizepolicy>
-                       </property>
-                       <property name="minimumSize">
-                        <size>
-                         <width>16</width>
-                         <height>16</height>
-                        </size>
-                       </property>
-                       <property name="maximumSize">
-                        <size>
-                         <width>16</width>
-                         <height>16</height>
-                        </size>
-                       </property>
-                       <property name="font">
-                        <font>
-                         <pointsize>9</pointsize>
-                        </font>
-                       </property>
-                       <property name="toolTip">
-                        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Add the diagonal step, which by default is set to 1.4241.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                       </property>
-                       <property name="whatsThis">
-                        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Add the description or function of the object&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                       </property>
-                       <property name="text">
-                        <string/>
-                       </property>
-                       <property name="pixmap">
-                        <pixmap>tip_icon.png</pixmap>
-                       </property>
-                      </widget>
-                     </item>
-                    </layout>
-                   </item>
-                   <item row="1" column="0">
                     <layout class="QHBoxLayout" name="horizontalLayout_24">
-                     <item>
-                      <spacer name="horizontalSpacer_10">
-                       <property name="orientation">
-                        <enum>Qt::Horizontal</enum>
-                       </property>
-                       <property name="sizeHint" stdset="0">
-                        <size>
-                         <width>40</width>
-                         <height>20</height>
-                        </size>
-                       </property>
-                      </spacer>
-                     </item>
                      <item>
                       <widget class="QLabel" name="label_7">
                        <property name="enabled">
@@ -1470,7 +1483,7 @@
                <property name="geometry">
                 <rect>
                  <x>0</x>
-                 <y>-427</y>
+                 <y>-488</y>
                  <width>695</width>
                  <height>952</height>
                 </rect>
@@ -1529,7 +1542,7 @@
                           <string/>
                          </property>
                          <property name="pixmap">
-                          <pixmap>tip_icon.png</pixmap>
+                          <pixmap resource="resources.qrc">:/plugins/hidroPixel/icons/icons/tip_icon.png</pixmap>
                          </property>
                         </widget>
                        </item>
@@ -1595,7 +1608,7 @@
                               </widget>
                              </item>
                              <item row="0" column="1">
-                              <widget class="QLineEdit" name="le_8_pg2">
+                              <widget class="QLineEdit" name="le_10_pg2">
                                <property name="minimumSize">
                                 <size>
                                  <width>220</width>
@@ -1802,7 +1815,7 @@
                         <string/>
                        </property>
                        <property name="pixmap">
-                        <pixmap>tip_icon.png</pixmap>
+                        <pixmap resource="resources.qrc">:/plugins/hidroPixel/icons/icons/tip_icon.png</pixmap>
                        </property>
                       </widget>
                      </item>
@@ -1818,7 +1831,7 @@
                       </widget>
                      </item>
                      <item row="0" column="1">
-                      <widget class="QLineEdit" name="le_4_pg2">
+                      <widget class="QLineEdit" name="le_5_pg2">
                        <property name="minimumSize">
                         <size>
                          <width>0</width>
@@ -1870,7 +1883,7 @@
                         <string/>
                        </property>
                        <property name="pixmap">
-                        <pixmap>tip_icon.png</pixmap>
+                        <pixmap resource="resources.qrc">:/plugins/hidroPixel/icons/icons/tip_icon.png</pixmap>
                        </property>
                       </widget>
                      </item>
@@ -1886,7 +1899,7 @@
                       </widget>
                      </item>
                      <item row="0" column="1">
-                      <widget class="QLineEdit" name="le_9_pg2">
+                      <widget class="QLineEdit" name="le_6_pg2">
                        <property name="minimumSize">
                         <size>
                          <width>0</width>
@@ -1938,7 +1951,7 @@
                         <string/>
                        </property>
                        <property name="pixmap">
-                        <pixmap>tip_icon.png</pixmap>
+                        <pixmap resource="resources.qrc">:/plugins/hidroPixel/icons/icons/tip_icon.png</pixmap>
                        </property>
                       </widget>
                      </item>
@@ -1946,42 +1959,6 @@
                    </item>
                    <item row="2" column="0">
                     <layout class="QGridLayout" name="gridLayout_23">
-                     <item row="0" column="0">
-                      <widget class="QLabel" name="label_30">
-                       <property name="maximumSize">
-                        <size>
-                         <width>16777215</width>
-                         <height>24</height>
-                        </size>
-                       </property>
-                       <property name="text">
-                        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;justify&quot;&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Flow direction:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                       </property>
-                      </widget>
-                     </item>
-                     <item row="0" column="1">
-                      <widget class="QTextEdit" name="te_1_pg2">
-                       <property name="minimumSize">
-                        <size>
-                         <width>0</width>
-                         <height>24</height>
-                        </size>
-                       </property>
-                       <property name="maximumSize">
-                        <size>
-                         <width>360</width>
-                         <height>24</height>
-                        </size>
-                       </property>
-                      </widget>
-                     </item>
-                     <item row="0" column="2">
-                      <widget class="QToolButton" name="tbtn_pg2_3">
-                       <property name="text">
-                        <string>...</string>
-                       </property>
-                      </widget>
-                     </item>
                      <item row="0" column="3">
                       <widget class="QLabel" name="label_34">
                        <property name="sizePolicy">
@@ -2009,7 +1986,43 @@
                         <string/>
                        </property>
                        <property name="pixmap">
-                        <pixmap>tip_icon.png</pixmap>
+                        <pixmap resource="resources.qrc">:/plugins/hidroPixel/icons/icons/tip_icon.png</pixmap>
+                       </property>
+                      </widget>
+                     </item>
+                     <item row="0" column="0">
+                      <widget class="QLabel" name="label_30">
+                       <property name="maximumSize">
+                        <size>
+                         <width>16777215</width>
+                         <height>24</height>
+                        </size>
+                       </property>
+                       <property name="text">
+                        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;justify&quot;&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Flow direction:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                       </property>
+                      </widget>
+                     </item>
+                     <item row="0" column="2">
+                      <widget class="QToolButton" name="tbtn_pg2_3">
+                       <property name="text">
+                        <string>...</string>
+                       </property>
+                      </widget>
+                     </item>
+                     <item row="0" column="1">
+                      <widget class="QLineEdit" name="le_3_pg2">
+                       <property name="minimumSize">
+                        <size>
+                         <width>0</width>
+                         <height>24</height>
+                        </size>
+                       </property>
+                       <property name="maximumSize">
+                        <size>
+                         <width>360</width>
+                         <height>24</height>
+                        </size>
                        </property>
                       </widget>
                      </item>
@@ -2077,7 +2090,7 @@
                         <string/>
                        </property>
                        <property name="pixmap">
-                        <pixmap>tip_icon.png</pixmap>
+                        <pixmap resource="resources.qrc">:/plugins/hidroPixel/icons/icons/tip_icon.png</pixmap>
                        </property>
                       </widget>
                      </item>
@@ -2093,7 +2106,7 @@
                       </widget>
                      </item>
                      <item row="0" column="1">
-                      <widget class="QLineEdit" name="le_10_pg2">
+                      <widget class="QLineEdit" name="le_7_pg2">
                        <property name="minimumSize">
                         <size>
                          <width>0</width>
@@ -2145,7 +2158,7 @@
                         <string/>
                        </property>
                        <property name="pixmap">
-                        <pixmap>tip_icon.png</pixmap>
+                        <pixmap resource="resources.qrc">:/plugins/hidroPixel/icons/icons/tip_icon.png</pixmap>
                        </property>
                       </widget>
                      </item>
@@ -2194,12 +2207,12 @@
                         <string/>
                        </property>
                        <property name="pixmap">
-                        <pixmap>tip_icon.png</pixmap>
+                        <pixmap resource="resources.qrc">:/plugins/hidroPixel/icons/icons/tip_icon.png</pixmap>
                        </property>
                       </widget>
                      </item>
                      <item row="0" column="1">
-                      <widget class="QLineEdit" name="le_3_pg2">
+                      <widget class="QLineEdit" name="le_4_pg2">
                        <property name="minimumSize">
                         <size>
                          <width>0</width>
@@ -2256,7 +2269,7 @@
                         </spacer>
                        </item>
                        <item row="0" column="1">
-                        <widget class="QLineEdit" name="le_6_pg2">
+                        <widget class="QLineEdit" name="le_11_pg2">
                          <property name="minimumSize">
                           <size>
                            <width>80</width>
@@ -2308,7 +2321,7 @@
                           <string/>
                          </property>
                          <property name="pixmap">
-                          <pixmap>tip_icon.png</pixmap>
+                          <pixmap resource="resources.qrc">:/plugins/hidroPixel/icons/icons/tip_icon.png</pixmap>
                          </property>
                         </widget>
                        </item>
@@ -2353,7 +2366,7 @@
                         </spacer>
                        </item>
                        <item row="0" column="1">
-                        <widget class="QLineEdit" name="le_5_pg2">
+                        <widget class="QLineEdit" name="le_9_pg2">
                          <property name="minimumSize">
                           <size>
                            <width>220</width>
@@ -2405,7 +2418,7 @@
                           <string/>
                          </property>
                          <property name="pixmap">
-                          <pixmap>tip_icon.png</pixmap>
+                          <pixmap resource="resources.qrc">:/plugins/hidroPixel/icons/icons/tip_icon.png</pixmap>
                          </property>
                         </widget>
                        </item>
@@ -2506,7 +2519,7 @@
                         <string/>
                        </property>
                        <property name="pixmap">
-                        <pixmap>tip_icon.png</pixmap>
+                        <pixmap resource="resources.qrc">:/plugins/hidroPixel/icons/icons/tip_icon.png</pixmap>
                        </property>
                       </widget>
                      </item>
@@ -2563,7 +2576,7 @@
                        <item row="0" column="0">
                         <layout class="QGridLayout" name="gridLayout_56">
                          <item row="0" column="1">
-                          <widget class="QLineEdit" name="le_7_pg2">
+                          <widget class="QLineEdit" name="le_8_pg2">
                            <property name="minimumSize">
                             <size>
                              <width>220</width>
@@ -2745,8 +2758,8 @@
                 <rect>
                  <x>0</x>
                  <y>0</y>
-                 <width>254</width>
-                 <height>64</height>
+                 <width>708</width>
+                 <height>481</height>
                 </rect>
                </property>
                <layout class="QGridLayout" name="gridLayout_30">
@@ -2800,8 +2813,8 @@
                <property name="geometry">
                 <rect>
                  <x>0</x>
-                 <y>-139</y>
-                 <width>695</width>
+                 <y>-189</y>
+                 <width>691</width>
                  <height>670</height>
                 </rect>
                </property>
@@ -2810,6 +2823,9 @@
                  <layout class="QHBoxLayout" name="horizontalLayout_7">
                   <item>
                    <widget class="QCheckBox" name="ch_4_pg4">
+                    <property name="enabled">
+                     <bool>false</bool>
+                    </property>
                     <property name="text">
                      <string/>
                     </property>
@@ -2851,12 +2867,15 @@
                        <string/>
                       </property>
                       <property name="pixmap">
-                       <pixmap>tip_icon.png</pixmap>
+                       <pixmap resource="resources.qrc">:/plugins/hidroPixel/icons/icons/tip_icon.png</pixmap>
                       </property>
                      </widget>
                     </item>
                     <item row="0" column="2">
                      <widget class="QToolButton" name="tbtn_pg4_4">
+                      <property name="enabled">
+                       <bool>false</bool>
+                      </property>
                       <property name="text">
                        <string>...</string>
                       </property>
@@ -2864,6 +2883,9 @@
                     </item>
                     <item row="0" column="1">
                      <widget class="QLineEdit" name="le_4_pg4">
+                      <property name="enabled">
+                       <bool>false</bool>
+                      </property>
                       <property name="maximumSize">
                        <size>
                         <width>220</width>
@@ -2880,7 +2902,7 @@
                   <item>
                    <widget class="QCheckBox" name="ch_15_pg4">
                     <property name="enabled">
-                     <bool>true</bool>
+                     <bool>false</bool>
                     </property>
                     <property name="sizePolicy">
                      <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
@@ -2997,7 +3019,7 @@
                        <string/>
                       </property>
                       <property name="pixmap">
-                       <pixmap>tip_icon.png</pixmap>
+                       <pixmap resource="resources.qrc">:/plugins/hidroPixel/icons/icons/tip_icon.png</pixmap>
                       </property>
                      </widget>
                     </item>
@@ -3090,7 +3112,7 @@
                        <string/>
                       </property>
                       <property name="pixmap">
-                       <pixmap>tip_icon.png</pixmap>
+                       <pixmap resource="resources.qrc">:/plugins/hidroPixel/icons/icons/tip_icon.png</pixmap>
                       </property>
                      </widget>
                     </item>
@@ -3198,6 +3220,9 @@
                  <layout class="QHBoxLayout" name="horizontalLayout_6">
                   <item>
                    <widget class="QCheckBox" name="ch_3_pg4">
+                    <property name="enabled">
+                     <bool>false</bool>
+                    </property>
                     <property name="text">
                      <string/>
                     </property>
@@ -3232,12 +3257,15 @@
                        <string/>
                       </property>
                       <property name="pixmap">
-                       <pixmap>tip_icon.png</pixmap>
+                       <pixmap resource="resources.qrc">:/plugins/hidroPixel/icons/icons/tip_icon.png</pixmap>
                       </property>
                      </widget>
                     </item>
                     <item row="0" column="1">
                      <widget class="QLineEdit" name="le_3_pg4">
+                      <property name="enabled">
+                       <bool>false</bool>
+                      </property>
                       <property name="maximumSize">
                        <size>
                         <width>220</width>
@@ -3258,6 +3286,9 @@
                     </item>
                     <item row="0" column="2">
                      <widget class="QToolButton" name="tbtn_pg4_3">
+                      <property name="enabled">
+                       <bool>false</bool>
+                      </property>
                       <property name="text">
                        <string>...</string>
                       </property>
@@ -3266,7 +3297,7 @@
                     <item row="0" column="4">
                      <widget class="QCheckBox" name="ch_14_pg4">
                       <property name="enabled">
-                       <bool>true</bool>
+                       <bool>false</bool>
                       </property>
                       <property name="sizePolicy">
                        <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
@@ -3355,7 +3386,7 @@
                        <string/>
                       </property>
                       <property name="pixmap">
-                       <pixmap>tip_icon.png</pixmap>
+                       <pixmap resource="resources.qrc">:/plugins/hidroPixel/icons/icons/tip_icon.png</pixmap>
                       </property>
                      </widget>
                     </item>
@@ -3465,7 +3496,7 @@
                        <string/>
                       </property>
                       <property name="pixmap">
-                       <pixmap>tip_icon.png</pixmap>
+                       <pixmap resource="resources.qrc">:/plugins/hidroPixel/icons/icons/tip_icon.png</pixmap>
                       </property>
                      </widget>
                     </item>
@@ -3595,6 +3626,9 @@ color: rgb(0, 0, 0);
                  <layout class="QHBoxLayout" name="horizontalLayout_9">
                   <item>
                    <widget class="QCheckBox" name="ch_5_pg4">
+                    <property name="enabled">
+                     <bool>false</bool>
+                    </property>
                     <property name="text">
                      <string/>
                     </property>
@@ -3604,6 +3638,9 @@ color: rgb(0, 0, 0);
                    <layout class="QGridLayout" name="gridLayout_57">
                     <item row="0" column="2">
                      <widget class="QToolButton" name="tbtn_pg4_5">
+                      <property name="enabled">
+                       <bool>false</bool>
+                      </property>
                       <property name="text">
                        <string>...</string>
                       </property>
@@ -3611,6 +3648,9 @@ color: rgb(0, 0, 0);
                     </item>
                     <item row="0" column="1">
                      <widget class="QLineEdit" name="le_5_pg4">
+                      <property name="enabled">
+                       <bool>false</bool>
+                      </property>
                       <property name="maximumSize">
                        <size>
                         <width>220</width>
@@ -3656,14 +3696,14 @@ color: rgb(0, 0, 0);
                        <string/>
                       </property>
                       <property name="pixmap">
-                       <pixmap>tip_icon.png</pixmap>
+                       <pixmap resource="resources.qrc">:/plugins/hidroPixel/icons/icons/tip_icon.png</pixmap>
                       </property>
                      </widget>
                     </item>
                     <item row="0" column="4">
                      <widget class="QCheckBox" name="ch_16_pg4">
                       <property name="enabled">
-                       <bool>true</bool>
+                       <bool>false</bool>
                       </property>
                       <property name="sizePolicy">
                        <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
@@ -3736,7 +3776,7 @@ color: rgb(0, 0, 0);
                        <string/>
                       </property>
                       <property name="pixmap">
-                       <pixmap>tip_icon.png</pixmap>
+                       <pixmap resource="resources.qrc">:/plugins/hidroPixel/icons/icons/tip_icon.png</pixmap>
                       </property>
                      </widget>
                     </item>
@@ -3844,6 +3884,9 @@ color: rgb(0, 0, 0);
                  <layout class="QHBoxLayout" name="horizontalLayout_3">
                   <item>
                    <widget class="QCheckBox" name="ch_1_pg4">
+                    <property name="enabled">
+                     <bool>false</bool>
+                    </property>
                     <property name="text">
                      <string/>
                     </property>
@@ -3878,12 +3921,15 @@ color: rgb(0, 0, 0);
                        <string/>
                       </property>
                       <property name="pixmap">
-                       <pixmap>tip_icon.png</pixmap>
+                       <pixmap resource="resources.qrc">:/plugins/hidroPixel/icons/icons/tip_icon.png</pixmap>
                       </property>
                      </widget>
                     </item>
                     <item row="0" column="2">
                      <widget class="QToolButton" name="tbtn_pg4_1">
+                      <property name="enabled">
+                       <bool>false</bool>
+                      </property>
                       <property name="text">
                        <string>...</string>
                       </property>
@@ -3892,7 +3938,7 @@ color: rgb(0, 0, 0);
                     <item row="0" column="4">
                      <widget class="QCheckBox" name="ch_12_pg4">
                       <property name="enabled">
-                       <bool>true</bool>
+                       <bool>false</bool>
                       </property>
                       <property name="sizePolicy">
                        <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
@@ -3932,6 +3978,9 @@ color: rgb(0, 0, 0);
                     </item>
                     <item row="0" column="1">
                      <widget class="QLineEdit" name="le_1_pg4">
+                      <property name="enabled">
+                       <bool>false</bool>
+                      </property>
                       <property name="maximumSize">
                        <size>
                         <width>220</width>
@@ -4048,6 +4097,9 @@ color: rgb(0, 0, 0);
                  <layout class="QHBoxLayout" name="horizontalLayout_5">
                   <item>
                    <widget class="QCheckBox" name="ch_2_pg4">
+                    <property name="enabled">
+                     <bool>false</bool>
+                    </property>
                     <property name="text">
                      <string/>
                     </property>
@@ -4057,6 +4109,9 @@ color: rgb(0, 0, 0);
                    <layout class="QGridLayout" name="gridLayout_58">
                     <item row="0" column="2">
                      <widget class="QToolButton" name="tbtn_pg4_2">
+                      <property name="enabled">
+                       <bool>false</bool>
+                      </property>
                       <property name="text">
                        <string>...</string>
                       </property>
@@ -4071,6 +4126,9 @@ color: rgb(0, 0, 0);
                     </item>
                     <item row="0" column="1">
                      <widget class="QLineEdit" name="le_2_pg4">
+                      <property name="enabled">
+                       <bool>false</bool>
+                      </property>
                       <property name="sizePolicy">
                        <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                         <horstretch>0</horstretch>
@@ -4121,14 +4179,14 @@ color: rgb(0, 0, 0);
                        <string/>
                       </property>
                       <property name="pixmap">
-                       <pixmap>tip_icon.png</pixmap>
+                       <pixmap resource="resources.qrc">:/plugins/hidroPixel/icons/icons/tip_icon.png</pixmap>
                       </property>
                      </widget>
                     </item>
                     <item row="0" column="4">
                      <widget class="QCheckBox" name="ch_13_pg4">
                       <property name="enabled">
-                       <bool>true</bool>
+                       <bool>false</bool>
                       </property>
                       <property name="sizePolicy">
                        <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
@@ -4201,7 +4259,7 @@ color: rgb(0, 0, 0);
                        <string/>
                       </property>
                       <property name="pixmap">
-                       <pixmap>tip_icon.png</pixmap>
+                       <pixmap resource="resources.qrc">:/plugins/hidroPixel/icons/icons/tip_icon.png</pixmap>
                       </property>
                      </widget>
                     </item>

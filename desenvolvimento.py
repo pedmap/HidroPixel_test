@@ -66,7 +66,7 @@ class DesenvolvePlugin():
                 if rst_file_bacia is not None:
                     
                     # Obtenção da dimensão da imagem raster
-                    nlin = rst_file_bacia.RasterYSize               
+                    nlin = rst_file_bacia.RasterYSize             
                     ncol = rst_file_bacia.RasterXSize
 
                     # Criando instâncias das classes de criação de variáveis
@@ -84,6 +84,7 @@ class DesenvolvePlugin():
                     # Fechando o dataset GDAL
 
                     rst_file_bacia = None
+                    return self.global_vars.bacia
                     print(f'Qtd pix bacia: {np.count_nonzero(self.global_vars.bacia)}\nÁrea da bacia: {(np.count_nonzero(self.global_vars.bacia))*30**2/1000000} Km²')
 
             elif function == 2 or function == 3:
@@ -117,6 +118,7 @@ class DesenvolvePlugin():
                     rst_file_bacia = None
 
                     print(f'Qtd pix bacia: {np.count_nonzero(self.global_vars.bacia)}\nÁrea da bacia: {(np.count_nonzero(self.global_vars.bacia))*100/1000000} Km²')
+                    return self.global_vars.bacia
 
                 else:
                     """Caso o arquivo raster apresente erros durante a abertura, ocorrerá um erro"""
@@ -3951,7 +3953,7 @@ class DesenvolvePlugin():
         self.rdc_vars.Varmin = 0
         nomeRST = fn_vol
         self.global_vars.metrordc = self.global_vars.metro
-        self.escreve_RDC(nomeRST)  
+        self.escreve_RDC(nomeRST) 
 
     def escreve_vazao_pico_pixel(self, unit):
         '''Esta função gera o arquivo raster contendo o volume gerado por pixel presente na bacia hidrográfica
@@ -4191,10 +4193,85 @@ class DesenvolvePlugin():
         self.escreve_pe_calculada()
         end = perf_counter()
         print(f'The processing time was: {(end-start)/60} min')
+        
+    def leh_geotiff_escreve_ascii(self, arquivo, arquivo2, int_float):
+        '''Esta função realiza a leitura do arquivo .tif enviado pelo user e o converte em .rst tipo ascii para leitura no visual basic''' 
+        raster_enviado = gdal.Open(arquivo)
 
+        # Lendo os dados raster como um array 
+        dados_lidos_bacia = raster_enviado.GetRasterBand(1).ReadAsArray()
+
+        # Tratamento de erro: verifica se o arquivo foi aberto corretamente
+        if raster_enviado is not None:
+
+            # Obtenção da dimensão da imagem raster
+            self.rdc_vars.nlin = dados_lidos.RasterYSize           
+            self.rdc_vars.ncol = dados_lidos.RasterXSize
+            self.rdc_vars.geotransform = dados_lidos.GetGeoTransform()
+            self.rdc_vars.resolucao = dados_lidos.GetProjection()[1]
+            
+        # Leitura do arquivo ascii
+        if int_float == 'int':
+            with open(arquivo2, 'r') as arquivo_ascii:
+                for lin in range(self.rdc_vars.nlin):
+                    for col in range(self.rdc_vars.ncol):
+                        bacia_ascii[lin,col] = int(arquivo_ascii.readline())
+
+        elif int_float == 'float':
+            with open(arquivo2, 'r') as arquivo_ascii:
+                for lin in range(self.rdc_vars.nlin):
+                    for col in range(self.rdc_vars.ncol):
+                        bacia_ascii[lin,col] = float(arquivo_ascii.readline())          
+
+        arquivo2_doc = arquivo2.replace('.rst','.RDC')
+        arquivo2_doc = arquivo2.replace('.RST','.RDC')
+        with open(arquivo2_doc, 'w', encoding = 'utf-8') as arquivo_rdc:
+            arquivo_rdc.write(f'Rows\n{self.rdc_vars.nlin}')
+            arquivo_rdc.write(f'Columns\n{self.rdc_vars.ncol}')
+            arquivo_rdc.write(f'resolution\n{self.rdc_vars.resolucao}')
+
+    def run_22(self):
+        '''Verifica possíveis inconsistências'''
+        # Leitura do mesmo arquivo (bacia) por dois métodos: leitura do .rst bin; leitura do geotiff (.tif)
+        arquivo_bacia_bin = r"C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\SmallExample\input_binary\1_WATERSHED_EXbin.RST"
+        arquivo_bacia_tif = r"C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\SmallExample\input_geotiff\1_bacia.tif"
+        arquivo_bacia_ascii = r"C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\SmallExample\1_TravelTime\Input\1_WATERSHED_EX.RST"
+        result = leh_geotiff_escreve_ascii(arquivo_bacia_tif, arquivo_bacia_ascii)
+        bacia_ascii = result[1]
+        bacia_bin = self.leh_bacia(arquivo_bacia_bin, 2)
+        bacia_tif = result[0]
+
+        # comparação do arquivo lido
+        print(bacia_bin == bacia_ascii)
+        print(bacia_bin == bacia_tif)
+        print(bacia_ascii == bacia_tif)
+
+        # Convertendo arquivo ascii para geotiff
+        fn_bacia_geotiff = r"C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\SmallExample\output_geotiff\bacia_out_gt.tif"
+        # Define os dados a serem escritos
+        dados_p_acum = bacia_ascii
+        tipo_dados = gdalconst.GDT_Int16
+
+        # Obtendo o driver para escrita do arquivo em GeoTiff
+        driver = gdal.GetDriverByName('GTiff')
+
+        # Cria arquivo final
+        dataset = driver.Create(fn_bacia_geotiff, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
+        dataset.SetGeoTransform(self.rdc_vars.geotransform)
+        dataset.SetProjection(self.rdc_vars.projection)
+
+        # Escreve os dados na banda do arquivo
+        banda = dataset.GetRasterBand(1)
+        banda.WriteArray(dados_p_acum)
+
+        # Fechando o arquivo
+        dataset = None
+        banda = None
+        driver = None
+        tipo_dados = None 
 
 cla_test = DesenvolvePlugin()
-cla_test.run_flow_tt()
+cla_test.run_22()
 # cla_test.run_rainfall_interpolation(2)
 # cla_test.run_exc_rain()
 # cla_test.run_flow_routing()

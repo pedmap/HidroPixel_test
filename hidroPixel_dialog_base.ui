@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Hidropixel Plugin</string>
+   <string>Hidropixel Plugin</string>ICON
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_2">
    <item>

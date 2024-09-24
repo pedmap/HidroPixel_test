@@ -1,8 +1,9 @@
 <RCC>
-  <qresource prefix="/plugins/hidroPixel">
-    <file>folder_icon</file>
-    <file>flowdirs</file>
-    <file>icon.png</file>
-    <file>tip_icon.png</file>
+  <qresource prefix="/plugins/hidroPixel/icons">
+    <file>icons/equation_regional_curve.png</file>
+    <file>icons/folder_icon</file>
+    <file>icons/flowdirs.png</file>
+    <file>icons/icon.png</file>
+    <file>icons/tip_icon.png</file>
   </qresource>
 </RCC>

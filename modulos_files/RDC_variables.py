@@ -56,6 +56,7 @@ class RDCVariables:
         self.col2 = 0
         self.col3 =0 
         self.nlin3 = 0
+        self.resolucao = 0
         self.ncol3 = 0
         self.tipodado = 0
         self.tamnum = 0

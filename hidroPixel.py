@@ -31,6 +31,7 @@ from qgis.utils import iface
 # Import the code for the dialog
 import os.path
 import sys, os
+import glob
 import logging
 from .hidroPixel_dialog import HidroPixelDialog
 from pathlib import Path
@@ -44,6 +45,7 @@ from .resources import *
 
 # Importing libs
 import numpy as np
+import subprocess
 from osgeo import ogr, gdal, gdalconst
 from functools import wraps
 
@@ -128,6 +130,9 @@ class HidroPixel:
         self.chuva_excedente_calc = 0
         self.blocos_vazao = 0
         self.Pexc = 0
+        self.diretorio_atual = os.path.dirname(os.path.abspath(__file__))
+        self.file_name_tb1:str = ''
+        self.file_name_tb2:str = ''
         
     # noinspection PyMethodMayBeStatic
     def tr(self, message):
@@ -221,8 +226,9 @@ class HidroPixel:
 
     def initGui(self):
         """Create the menu entries and toolbar icons inside the QGIS GUI."""
+        # Armazena diretório do plugin
+        icon_path = self.diretorio_atual + '\icons\icon.png'
 
-        icon_path = ':/plugins/hidroPixel/icon.png'
         self.add_action(
             icon_path,
             text=self.tr(u'Hidropixel Plugin'),
@@ -232,7 +238,6 @@ class HidroPixel:
         # will be set False in run()
         self.first_start = False
 
-
     def unload(self):
         """Removes the plugin menu item and icon from QGIS GUI."""
         for action in self.actions:
@@ -240,140 +245,6 @@ class HidroPixel:
                 self.tr(u'&Hidropixel'),
                 action)
             self.iface.removeToolBarIcon(action)
-
-    def leh_bacia(self, file_, function):
-        """Esta função é utilizada para ler o arquivo raster da bacia hidrográfica (arquivo .RST)
-           funciton == 1: flow travel time
-           function == 2: excesse rainfall
-           function == 3: flow routing"""
-
-        arquivo = file_
-        # Tratamento de erros: verifica se o arquivo foi corretamente enviado
-        if arquivo:
-            if function == 1:
-                # Realizando a abertura do arquivo raster e coletando as informações referentes as dimensões do mesmo
-                rst_file_bacia = gdal.Open(arquivo)
-
-                # Lendo os dados raster como um array 
-                dados_lidos_bacia = rst_file_bacia.GetRasterBand(1).ReadAsArray()
-                
-                # Tratamento de erro: verifica se o arquivo foi aberto corretamente
-                if rst_file_bacia is not None:
-                    
-                    # Obtenção da dimensão da imagem raster
-                    nlin = rst_file_bacia.RasterYSize               
-                    ncol = rst_file_bacia.RasterXSize
-
-                    # Criando instâncias das classes de criação de variáveis
-                    self.global_vars = GlobalVariables(nlin,ncol)
-                    self.rdc_vars = RDCVariables(nlin,ncol)
-
-                    # atualizando os valores das variáveis para coletar o número de linhas e colunas do arquivo raster lido
-                    self.rdc_vars.nlin = nlin               
-                    self.rdc_vars.ncol = ncol
-                    self.rdc_vars.geotransform = rst_file_bacia.GetGeoTransform()
-                    self.rdc_vars.projection = rst_file_bacia.GetProjection()                 
-                    # Reorganizando os dados lidos da bacia em uma nova matriz chamada bacia.
-
-                    self.global_vars.bacia = dados_lidos_bacia
-                    # Fechando o dataset GDAL
-
-                    rst_file_bacia = None
-
-            elif function == 2 or function == 3:
-                # Realizando a abertura do arquivo raster e coletando as informações referentes as dimensões do mesmo
-                rst_file_bacia = gdal.Open(arquivo)
-
-                # Lendo os dados raster como um array 
-                dados_lidos_bacia = rst_file_bacia.GetRasterBand(1).ReadAsArray()
-                
-                # Tratamento de erro: verifica se o arquivo foi aberto corretamente
-                if rst_file_bacia is not None:
-                    
-                    # Obtenção da dimensão da imagem raster
-                    nlin = rst_file_bacia.RasterYSize               
-                    ncol = rst_file_bacia.RasterXSize
-
-                    # Criando instâncias das classes de criação de variáveis
-                    self.global_vars = GlobalVariables(nlin,ncol)
-                    self.rdc_vars = RDCVariables(nlin,ncol)
-
-                    # atualizando os valores das variáveis para coletar o número de linhas e colunas do arquivo raster lido
-                    self.rdc_vars.nlin = nlin               
-                    self.rdc_vars.ncol = ncol
-                    self.rdc_vars.geotransform = rst_file_bacia.GetGeoTransform()
-                    self.rdc_vars.projection = rst_file_bacia.GetProjection()
-
-                    # Reorganizando os dados lidos da bacia em uma nova matriz chamada bacia.
-                    self.global_vars.bacia = dados_lidos_bacia
-
-                    # Fechando o dataset GDAL
-                    rst_file_bacia = None
-
-                    print(f'Qtd pix bacia: {np.count_nonzero(self.global_vars.bacia)}\nÁrea da bacia: {(np.count_nonzero(self.global_vars.bacia))*100/1000000} Km²')
-
-                else:
-                    """Caso o arquivo raster apresente erros durante a abertura, ocorrerá um erro"""
-                    resulte = f"Failde to open the raster file: {arquivo}"
-                    QMessageBox.warning(None, "ERROR!", resulte)
-
-                # Lê informações do arquivo de metadados (.rdc)
-                if '.RST' in arquivo:
-                    arquivo_rdc = arquivo.replace('.RST', '.RDC')
-                elif '.rst' in arquivo:
-                    arquivo_rdc = arquivo.replace('.rst', '.RDC')
-
-                if os.path.exists(arquivo_rdc) and os.path.isfile(arquivo_rdc):
-                    arquivo_rdc = arquivo_rdc
-                else:
-                    arquivo_rdc.replace('.RDC','.rdc')
-                    if os.path.exists(arquivo_rdc) and os.path.isfile(arquivo_rdc):
-                        arquivo_rdc = arquivo_rdc
-                    else:
-                        resulte = f"There is no file named {arquivo_rdc} in the same directory as {arquivo}!"
-                        QMessageBox.warning(None, "ERROR!", resulte)                        
-
-                if arquivo_rdc is not None:
-                    with open(arquivo_rdc, 'r', encoding='iso-8859-1') as rdc_file:
-                        # Separando os dados do arquivo RDC em função das linhas que contém alguma das palavras abaixo
-                        k_words = ["columns", "rows", "ref. system", "ref. units", "min. X", "max. X", "min. Y", "max. Y", "resolution"]
-                        lines_RDC = [line.strip() for line in rdc_file.readlines() if any(word in line for word in k_words)]
-                        
-                        # Iterando sobre a lista de lines_rdc para guardas as informações das palavras da lista (k_words) nas ruas respectivas variáveis
-                        for line in lines_RDC:
-                            # Separando as linhas de acordo com o refencial (:)
-                            split_line = line.split(":")
-                            # Armazenando o primeiro valor da linha (antes do sinal ":")em uma variável e retirando os espaços (caracter) do inicio e fim da linha repartida
-                            key = split_line[0].strip()
-                            # Armazenando o segundo valor da linha (antes do sinal ":") em uma variáveis e retirando os espaços (caracter) do inicio e fim da linha repartida
-                            value = split_line[-1].strip()
-
-                            # Estrutura condicional para verificar quais são as informações de cada linha e armazenando elas em suas respectivas variáveis
-                            if key == "ref. system":
-                                self.rdc_vars.sistemaref = value
-                            elif key == "ref. units":
-                                self.rdc_vars.unidaderef = value
-                            elif key == "min. X":
-                                self.X_minimo = float(value)
-                            elif key == "max. X":
-                                self.X_maximo = float(value)
-                            elif key == "min. Y":
-                                self.Y_minimo = float(value)
-                            elif key == "max. Y":
-                                self.Y_maximo = float(value)
-                            elif key == "resolution":
-                                self.global_vars.dx = float(value)
-                    # Definição das caracteristicas do pixel
-                    self.d_x = (self.X_maximo - self.X_minimo)/self.rdc_vars.ncol
-                    self.d_y = (self.Y_maximo - self.Y_minimo)/self.rdc_vars.nlin    
-                else:
-                    # Arquivo não existente: mostra erro para usuário
-                    resulte = f"There is no file named {arquivo_rdc} in the same directory as {arquivo}!"
-                    QMessageBox.warning(None, "ERROR!", resulte)                 
-
-        else:
-            result ="Nenhum arquivo foi selecionado!"
-            QMessageBox.warning(None, "ERROR!", result)
 
     def carrega_work_folder(self, line_edit):
         '''Esta função define a pasta padrão tanto para buscar, quanto para salvar os arquivos'''
@@ -402,7 +273,7 @@ class HidroPixel:
 
         while True:  # Loop até que o usuário selecione um arquivo ou cancele
             if qtd == 2:
-                file_, _ = QFileDialog.getOpenFileNames(None, caption="Select the files!", directory=directory, filter="Raster or RDC file (*.rst *.tif *.rdc)", options=options)
+                file_, _ = QFileDialog.getOpenFileNames(None, caption="Select the files!", directory=directory, filter="GeoTIFF (*.tif)", options=options)
                 if file_:
                     lineEdit.setPlainText("\n".join(file_))
                     self.rdc_vars.nomeRDC = file_[0] if file_ else None
@@ -416,7 +287,7 @@ class HidroPixel:
             else:
                 # Janela de diálogo com o Usuário
                 if file_type == "raster".lower():
-                    file_, _ = QFileDialog.getOpenFileName(None, caption="Select a file!", directory=directory, filter="Raster Files (*.rst *.tif)", options=options)
+                    file_, _ = QFileDialog.getOpenFileName(None, caption="Select a file!", directory=directory, filter="GeoTIFF (*.tif)", options=options)
                 elif file_type == "text".lower():
                     file_, _ = QFileDialog.getOpenFileName(None, caption="Select a file!", directory=directory, filter="Text Files (*.txt)", options=options)
 
@@ -431,3242 +302,13 @@ class HidroPixel:
                     if reply == QMessageBox.Cancel:
                         break 
 
-    def leh_valores_table_1(self):
-        '''Esta função coleta as informações adicionadas nos itens da tabela da característica dos rios e adiciona em suas variáveis'''
-
-        # Verifica a dimensão da tabela
-        nlin_tb = self.dlg_flow_tt.tbw_1_pg2.rowCount()
-        ncol_tb = self.dlg_flow_tt.tbw_1_pg2.columnCount()
-
-        # Define variáveis para obtenção das informações
-        id_class = []
-        slope_class = []
-        mann_coef_class = []
-        hydraul_rad_class = []
-        item = 0
-
-        # Itera sobre os itens da tabela
-        for col in range(ncol_tb):
-            for lin in range(nlin_tb):
-                item_tb = self.dlg_flow_tt.tbw_1_pg2.item(lin,col).text()
-
-                if item_tb is not None:
-                    # coleta o item da celula atual e tenta converter para float
-                    item_tb = float(self.dlg_flow_tt.tbw_1_pg2.item(lin,col).text())
-
-                    # coleta o id das classes
-                    if col == 0:
-                        id_class.append(item_tb)
-
-                    # coleta a inclinação
-                    elif col == 1:
-                        slope_class.append(item_tb)
-                    
-                    # coleta o coeficiente de Manning
-                    elif col == 2:
-                        mann_coef_class.append(item_tb)
-                    
-                    # coleta o raio hidráulico
-                    elif col == 3:
-                        hydraul_rad_class.append(item_tb)
-
-        # Atualiza a variável 
-        # Atualiza as variáveis globais com os valores enviados
-        self.global_vars.id_trechos = np.array(id_class)
-        self.global_vars.Sclasse = np.array(slope_class)
-        self.global_vars.Mannclasse = np.array(mann_coef_class)
-        self.global_vars.Rhclasse = np.array(hydraul_rad_class)
-
-    def leh_classes_rios(self):
-        """Esta função é utilizada para ler as informações acerca da classe dos rios da bacia hidrográfica (arquivo raster -  .rst)"""
-        
-        # Abrindo o arquivo com as informações acerca das classes dos rios
-        arquivo = self.dlg_flow_tt.le_4_pg2.text()
-
-        # Tratamento de erros: verifica se o arquivo foi corretamente enviado
-        if arquivo:
-            # Realizando a abertura do arquivo raster e coletando as informações referentes as dimensões do mesmo
-            rst_file_claRIO = gdal.Open(arquivo)
-            
-            # Lendo os dados raste como um array 
-            dados_lidos_raster_claRIO = rst_file_claRIO.GetRasterBand(1).ReadAsArray()
-
-            #  Tratamento de erros: verifica se o arquivo raster foi aberto corretamente
-            if rst_file_claRIO is not None:
-                # Reorganizando os dados lidos em uma nova matriz, essa possui as informações sobre as classes dos rios
-                self.global_vars.classerio = dados_lidos_raster_claRIO
-                # Fechando o dataset GDAL referente ao arquivo raster
-                rst_file_claRIO = None
-            else:
-                # Caso o arquivo raster apresente erros durante a abertura, ocorrerá um erro
-                resulte = f"Failde to open the raster file: {arquivo}"
-                QMessageBox.warning(None, "ERROR!", resulte)
-                
-        else:
-            # Exibe uma mensagem de erro
-            result ="Nenhum arquivo foi selecionado!"
-            QMessageBox.warning(None, "ERROR!", result)
-
-    def leh_direcoes_de_fluxo(self):
-        """Esta função é utilizada para ler as informações acerca da direção de escoamento dos rios (arquivo raster - .rst)"""
-
-        # Recebendo os arquivos necessários
-        linhas_text_edit = self.dlg_flow_tt.te_1_pg2.toPlainText()
-        linhas = linhas_text_edit.split('\n')
-        self.rdc_vars.nomeRDC = linhas[0]
-        self.rdc_vars.nomeRST = linhas[1]
-
-        if self.rdc_vars.nomeRDC !='' and self.rdc_vars.nomeRST !='':
-            # Verificando a extensão do arquivo: ordem de leitura, 1st o arquivo rdc
-            exten1 = Path(self.rdc_vars.nomeRDC).suffix.lower()
-            exten2 = Path(self.rdc_vars.nomeRST).suffix.lower()
-            # Verifica se o primeiro arquivo é .rdc e o segundo .rst
-            if exten1 == ".rdc" and exten2 == ".rst":
-                self.rdc_vars.nomeRDC, self.rdc_vars.nomeRST = self.rdc_vars.nomeRDC, self.rdc_vars.nomeRST
-            # Verifica se o primeiro arquivo é .rst e o segundo .rdc, caso contrário, troca os nomes
-            elif exten1 == ".rst" and exten2 == ".rdc":
-                self.rdc_vars.nomeRDC, self.rdc_vars.nomeRST = self.rdc_vars.nomeRST, self.rdc_vars.nomeRDC
-
-            # Abrindo o arquivo RDC
-            arquivo = self.rdc_vars.nomeRDC
-            with open(arquivo, 'r',  encoding='iso-8859-1') as rdc_file:
-                # Separando os dados do arquivo RDC em função das linhas que contém alguma das palavras abaixo
-                k_words = ["columns", "rows", "ref. system", "ref. units", "min. X", "max. X", "min. Y", "max. Y", "resolution"]
-                lines_RDC = [line.strip() for line in rdc_file.readlines() if any(word in line for word in k_words)]
-                
-                # Iterando sobre a lista de lines_rdc para guardas as informações das palavras da lista (k_words) nas ruas respectivas variáveis
-                for line in lines_RDC:
-                    # Separando as linhas de acordo com o refencial (:)
-                    split_line = line.split(":")
-                    # Armazenando o primeiro valor da linha (antes do sinal ":")em uma variável e retirando os espaços (caracter) do inicio e fim da linha repartida
-                    key = split_line[0].strip()
-                    # Armazenando o segundo valor da linha (antes do sinal ":") em uma variáveis e retirando os espaços (caracter) do inicio e fim da linha repartida
-                    value = split_line[-1].strip()
-
-                    # Estrutura condicional para verificar quais são as informações de cada linha e armazenando elas em suas respectivas variáveis
-                    if key == "rows":
-                        self.rdc_vars.nlin = int(value)
-                    elif key == "columns":
-                        self.rdc_vars.ncol = int(value)
-                    elif key == "ref. system":
-                        self.rdc_vars.sistemaref = value
-                    elif key == "ref. units":
-                        self.rdc_vars.unidaderef3 = value
-                    elif key == "min. X":
-                        self.rdc_vars.xmin = float(value)
-                    elif key == "max. X":
-                        self.rdc_vars.xmax = float(value)
-                    elif key == "min. Y":
-                        self.rdc_vars.ymin = float(value)
-                    elif key == "max. Y":
-                        self.rdc_vars.ymax = float(value)
-                    elif key == "resolution":
-                        self.global_vars.dx = float(value)
-            
-            # Atualizando algumas variáveis com as informações coletadas do arquivo RDC
-            self.global_vars.Xres2 = self.global_vars.dx
-            self.global_vars.Xres = float(self.global_vars.Xres2)
-            self.global_vars.Yres = self.global_vars.Xres
-
-            # Abrindo o arquivo raster
-            rst_file_dir = gdal.Open(self.rdc_vars.nomeRST)
-            # Lendo os dados raster como um array
-            dados_lidos_direcoes = rst_file_dir.GetRasterBand(1).ReadAsArray()
-
-            # Tratamento de erros: verifica se o arquivo raster foi aberto corretamente
-            if rst_file_dir is not None:
-                # Reorganizando os dados lidos na matriz destinadas às informações da drenagem da bacia hidrográfica
-                self.global_vars.direcoes = dados_lidos_direcoes
-
-                # Fechando o dataset GDAL referente ao arquivo raster
-                rst_file_dir = None
-            else:
-                """Caso o arquivo raster apresente erros durante a abertura, ocorrerá um erro"""
-                resulte = f"Failde to open the raster file: {self.rdc_vars.nomeRST}"
-                QMessageBox.warning(None, "ERROR!", resulte)
-
-            # Verificação do valor da variável maxdir
-            self.global_vars.maxdir = np.amax(self.global_vars.direcoes)
-
-            # Iniciando a iterações com base nas linhas e colunas
-            if self.global_vars.maxdir < 360:
-                # Mapeamento das direções de fluxo do tipo idrisi
-                A = self.dlg_flow_tt.le_5_pg1.text()
-                B = self.dlg_flow_tt.le_6_pg1.text()
-                C = self.dlg_flow_tt.le_7_pg1.text()
-                D = self.dlg_flow_tt.le_8_pg1.text()
-                E = self.dlg_flow_tt.le_9_pg1.text()
-                F = self.dlg_flow_tt.le_10_pg1.text()
-                G = self.dlg_flow_tt.le_11_pg1.text()
-                H = self.dlg_flow_tt.le_12_pg1.text()
-                chaves = [A, B, C, D, E, F, G, H]
-                valores = [45, 90, 135, 180, 225, 270, 315, 360]
-                value_error = [valor for valor in valores if type(valor) != int]
-
-                # Dicionário com as combinações das direções de fluxo
-                idrisi_map = {}
-                for chave, valor in zip(chaves, valores):
-                    try:
-                        idrisi_map[chave] = int(valor) # devem ser diferentes entre si, i+1 != i e i-1
-                    except ValueError:
-                        result = f'The value(s) "{value_error}" is(are) not (a) valid integer number(s)!'
-                        QMessageBox.warning(None, "ERROR!", result)
-                
-                for lin in range(self.rdc_vars.nlin):
-                    for col in range(self.rdc_vars.ncol):
-                        # Verifica se os valores fornecidos pertencem ao código de direção do plugin, se não, os modifica 
-                        if self.global_vars.direcoes[lin][col] in idrisi_map:
-                            # Atualiza o valor do elemento atual da matriz dir de acordo com os novos valores
-                            self.global_vars.direcoes[lin][col] = idrisi_map[self.global_vars.direcoes[lin][col]]
-
-            # Definindo a numeração das direções &
-            # Definindo a posição relativa dos pixels vizinhos
-            # lin viz = lin centro + dlin(i)
-            # col viz = col centro + dcol(i)
-            
-            self.global_vars.dlin = {
-                                45: -1,
-                                90: 0,
-                                135: 1,
-                                180: 1,
-                                225: 1,
-                                270: 0,
-                                315: -1,
-                                360: -1
-                                }
-            self.global_vars.dcol = {
-                                45: 1,
-                                90: 1,
-                                135: 1,
-                                180: 0,
-                                225: -1,
-                                270: -1,
-                                315: -1,
-                                360: 0
-                                }
-
-            # ATENÇÃO PARA O VALOR NUMÉRICO DAS DIRECÕES
-            # ---------------------------------------------------------
-            # - G  H  A      ArcView:  32 64 128    MGB-IPH:  64  128  1 -
-            # - F  *  B                16  *  1               32   *   2 -
-            # - E  D  C                 8  4  2               16   8   4 -
-
-            # Tratamento das direções na borda
-            self.global_vars.direcoes[0, :] = 360
-            self.global_vars.direcoes[-1, :] = 180
-            self.global_vars.direcoes[:, 0] = 270
-            self.global_vars.direcoes[:, -1] = 90
-
-    def leh_drenagem(self):
-        """Esta função é utilizada para ler as informações acerca da drenagem dos rios (arquivo raster - .rst)"""
-
-        # Obtendo o arquivo referente as calasses dos rios da bacia hidrográfica
-        arquivo = self.dlg_flow_tt.le_3_pg2.text()
-        # Abrindo o arquivo raster com as informações acerda do sistema de drenagem da bacia hidrográfica
-        rst_file_drenagem = gdal.Open(arquivo)
-        
-        # Lendo os dados raster como um array
-        dados_lidos_drenagem = rst_file_drenagem.GetRasterBand(1).ReadAsArray()
-
-        # Tratamento de erros: verifica se o arquivo raster foi aberto corretamente
-        if rst_file_drenagem is not None:
-            # Reorganizando os dados lidos na matriz destinadas às informações da drenagem da bacia hidrográfica
-            self.global_vars.dren = dados_lidos_drenagem
-            
-            # Fechando o dataset GDAl referente ao arquivo raster
-            rst_file_drenagem = None
-        else:
-            """Caso o arquivo raster apresente erros durante a abertura, ocorrerá um erro"""
-            resulte = f"Failde to open the raster file: {arquivo}"
-            QMessageBox.warning(None, "ERROR!", resulte)
-
-    def leh_modelo_numerico_dTerreno(self):
-        """Esta função é utilizada para ler as informações acerca do modelo numérico do terreno (arquivo raster - .rst)"""
-
-        # Obtendo o arquivo referente ao MDE da bacia hidrográfica
-        arquivo = self.dlg_flow_tt.le_2_pg2.text()
-
-        # Realizando a abertura do arquivo raster e coletando as informações referentes as dimensões do mesmo
-        rst_file_MDE = gdal.Open(arquivo)
-
-        # Lendo os dados raster como um array
-        dados_lidos_MDE = rst_file_MDE.GetRasterBand(1).ReadAsArray()
-
-        #  Tratamento de erros: verifica se o arquivo raster foi aberto corretamente
-        if rst_file_MDE is not None:
-            # Reoganizando os dados lidos em uma nova matriz que possuirá os dados ligados ao MDE da baciaa hidrográfica
-            self.global_vars.MDE = dados_lidos_MDE
-
-            # Fechando o dataset GDAL
-            rst_file_MDE = None
-        else:
-            """Caso o arquivo raster apresente erros durante a abertura, ocorrerá um erro"""
-            resulte = f"Failde to open the raster file: {arquivo}"
-            QMessageBox.warning(None, "ERROR!", resulte)
-
-    def leh_precipitacao_24h(self):
-        """Esta função é utilizada para ler as informações acerca da precipitação das últimas 24 horas, P24 (arquivo texto - .txt)"""
-
-        # Armazenando o valor da precipitação de 24 horas em uma variável específica
-        self.global_vars.P24 = float(self.dlg_flow_tt.le_6_pg2.text())
-
-    def leh_uso_do_solo(self):
-        """Esta função é utilizada para ler as informações acerca do uso do solo (arquivo raster - .rst)"""
-
-        # Obtendo o arquivo raster referente ao uso do solo
-        arquivo = self.dlg_flow_tt.le_5_pg2.text()
-
-        # Abrindo o arquivo raster com as informações acerda do uso do solo da bacia hidrográfica
-        rst_file_usoSolo = gdal.Open(arquivo)
-
-        # Lendo os dados do arquivo raster como um array
-        dados_lidos_usoSolo = rst_file_usoSolo.GetRasterBand(1).ReadAsArray()
-
-        # Tratamento de erros: verifica se o arquivo raster foi aberto corretamente
-        if rst_file_usoSolo is not None:
-            # Reorganizando os dados lidos na matriz destinadas às informações da drenagem da bacia hidrográfica
-            self.global_vars.usosolo = dados_lidos_usoSolo
-
-            # Inicializando as variáveis fundamentais
-            self.global_vars.Nusomax = np.amax(self.global_vars.usosolo)
-
-        else:
-            """Caso o arquivo raster apresente erros durante a abertura, ocorrerá um erro"""
-            resulte = f"Failde to open the raster file: {arquivo}"
-            QMessageBox.warning(None, "ERROR!", resulte)
-
-    def leh_drainage_area(self):
-        """Esta função é utilizada para ler as informações acerca do uso do solo (arquivo raster - .rst)"""
-
-        # Obtendo o arquivo raster referente ao uso do solo
-        arquivo = self.dlg_flow_tt.le_9_pg2.text()
-
-        # Abrindo o arquivo raster com as informações acerda do uso do solo da bacia hidrográfica
-        rst_file_dren_area = gdal.Open(arquivo)
-
-        # Lendo os dados do arquivo raster como um array
-        dados_lidos_dren_area = rst_file_dren_area.GetRasterBand(1).ReadAsArray()
-
-        # Tratamento de erros: verifica se o arquivo raster foi aberto corretamente
-        if rst_file_dren_area is not None:
-            # Reorganizando os dados lidos na matriz destinadas às informações da drenagem da bacia hidrográfica
-            self.global_vars.dren_area = dados_lidos_dren_area
-
-        else:
-            """Caso o arquivo raster apresente erros durante a abertura, ocorrerá um erro"""
-            resulte = f"Failde to open the raster file: {arquivo}"
-            QMessageBox.warning(None, "ERROR!", resulte)
-
-    def leh_reservoir(self):
-        """Esta função é utilizada para ler as informações acerca do uso do solo (arquivo raster - .rst)"""
-
-        # Obtendo o arquivo raster referente ao uso do solo
-        arquivo = self.dlg_flow_tt.le_10_pg2.text()
-
-        # Abrindo o arquivo raster com as informações acerda do uso do solo da bacia hidrográfica
-        rst_file_reservoir = gdal.Open(arquivo)
-
-        # Lendo os dados do arquivo raster como um array
-        dados_lidos_reservoir = rst_file_reservoir.GetRasterBand(1).ReadAsArray()
-
-        # Tratamento de erros: verifica se o arquivo raster foi aberto corretamente
-        if rst_file_reservoir is not None:
-            # Reorganizando os dados lidos na matriz destinadas às informações da drenagem da bacia hidrográfica
-            self.global_vars.reservoir = dados_lidos_reservoir
-
-        else:
-            """Caso o arquivo raster apresente erros durante a abertura, ocorrerá um erro"""
-            resulte = f"Failde to open the raster file: {arquivo}"
-            QMessageBox.warning(None, "ERROR!", resulte)
-                  
-    def leh_valores_table_2(self):
-        '''Esta função coleta as informações adicionadas nos itens da tabela das classes do uso e ocupação do solo e adiciona em suas variáveis'''
-        # Verifica a dimensão da tabela
-        nlin_tb = self.dlg_flow_tt.tbw_2_pg2.rowCount()
-        ncol_tb = self.dlg_flow_tt.tbw_2_pg2.columnCount()
-
-        # Cria variáveis necessárias
-        uso_manning_val = []
-        coef_maning_val = {}
-        coef_K = []
-
-        # Itera sobre os itens da tabela
-        for lin in range(nlin_tb):
-            for col in range(ncol_tb):
-                item_tb = self.dlg_flow_tt.tbw_2_pg2.item(lin,col).text()
-
-                if item_tb is not None:
-                    
-                    # Coleta os ID's das classes
-                    if col == 0:
-                        # coleta o item da celula atual e tenta converter para int
-                        item_tb = int(self.dlg_flow_tt.tbw_2_pg2.item(lin,col).text())
-
-                        # Armazena o valor do ID em sua variável
-                        uso_manning_val[item_tb] = lin
-
-                    # Coleta os valores dos coeficiente de Mannning por classe
-                    if col == 2:
-                        # coleta o item da celula atual e tenta converter para float
-                        item_tb = float(self.dlg_flow_tt.tbw_2_pg2.item(lin,col).text())
-
-                        # Armazena o valor do coef. de Manning em sua variável
-                        coef_maning_val.append(item_tb)
-
-                    if col == 3:
-                        # coleta o item da celula atual e tenta converter para float
-                        item_tb = float(self.dlg_flow_tt.tbw_2_pg2.item(lin,col).text())
-
-                        # Armazena o valor do coef. de Manning em sua variável
-                        coef_K.append(item_tb)
-
-        # Adicionando cada valor às suas respectivas variáveis
-        self.global_vars.uso_mann = uso_manning_val
-        self.global_vars.Mann = coef_maning_val
-        self.global_vars.coef_K = coef_K
-
-    def project(self,x1, x2, y1,y2,tipo2,dist2,lado2,diagonal2):
-        """Esta função calcula as distâncias sobre a superfície considerando o elipsóide WGS84"""
-        # Definindo as constantes
-        PI = 3.141592
-        A = 6378.137 #comprimento do semi eixo maior do elipsóide (km)
-        B = 6358.752 #comprimento do semi eixo menor do elipsóide (km)
-
-        # Iniciando os cálulos
-        ylat = (y1 + y2) / 2
-
-        # Definição do achatamento do elipsóide
-        f = (A - B) / A 
-        # Determinando o quadrado da excentricidade
-        e2 = (2*f) - (f**2) 
-        # Determinando o raio da curvatura da Terra na latitude ylat
-        rn = A / ((1 - e2*(np.sin(ylat)))**0.2) 
-
-        # Calculando o raio da circunferência de um círculo determinado pelo plano que corta o elipsóide na latitude ylat
-        raio_circ = rn*np.cos(ylat)
-        dgx = x2 - x1
-        dgy = y1 - y2
-
-        dx = raio_circ*dgx*(PI/180.0)
-        dy = rn*dgy*(PI/180.0)
-
-        # Verificando o conteúdo da vairável tipo2 e atualizando a distanância com base nele
-        if tipo2 == 1:
-            dist2 = dx*lado2
-        elif tipo2 == 2:
-            dist2 = dy*lado2
-        elif tipo2 == 3:
-            dist2 = np.sqrt(dx**2+dy**2)*diagonal2/1.414
-
-        self.global_vars.dist_2 = dist2
-
-        return dist2
-
-    def comprimento_acumulado(self):
-        """Esta função determina o comprimento dos pixels que fazem partes da rede de drenagem da bacia hidrográfica. Da cabeceira ao exutório em questão"""
-        # Define variáveis
-        Lfoz = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
-        self.global_vars.Lfoz= Lfoz
-        Lac = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
-        self.global_vars.Lac = Lac
-        Lac = None
-        Lfoz = None
-
-        # Redefinindo as respectivas variáveis
-        self.global_vars.lado = float(self.dlg_flow_tt.le_3_pg1.text())
-        self.global_vars.diagonal = float(self.dlg_flow_tt.le_4_pg1.text())
-        
-        # Iniciando a iteração para varrer todos os elementos da bacia hidrográfica
-        for col in range(self.rdc_vars.ncol):
-            for lin in range(self.rdc_vars.nlin):
-                # Delimitando apenas os elementos que estão presentes na bacia hidrográfica
-                if self.global_vars.bacia[lin,col] == 1:
-                    # Coletando as informações referentes ao sistema de drenagem da bacia hidrográfica
-                    if self.global_vars.dren[lin,col] == 1:
-                        self.global_vars.linaux = lin
-                        self.global_vars.colaux = col
-                        self.global_vars.caminho = 0
-                        
-                        while self.global_vars.caminho == 0:
-
-                            # Criando condição de parada
-                            condicao = self.global_vars.linaux <= 1 or self.global_vars.linaux >= self.rdc_vars.nlin \
-                            or self.global_vars.colaux<=1 or self.global_vars.colaux>= self.rdc_vars.ncol \
-                            or self.global_vars.bacia[self.global_vars.linaux][self.global_vars.colaux] == 0
-
-                            if condicao:
-                                self.global_vars.caminho = 1
-
-                            else:
-                                # Continuar caminho: determina a contagem das distâncias projetadas (WGS84) e \
-                                # determina as coordenadas verticais do pixel+
-
-                                self.global_vars.Xesq = self.rdc_vars.xmin + (self.global_vars.colaux - 1)*self.global_vars.Xres
-                                self.global_vars.Xdir = self.global_vars.Xesq + self.global_vars.Xres
-                                self.global_vars.Yinf = self.global_vars.ymax - self.global_vars.linaux*self.global_vars.Yres
-                                self.global_vars.Ysup = self.global_vars.Yinf + self.global_vars.Yres
-
-                                # Determinando a posição relativa ao pixel anterior
-                                condicao2 = self.global_vars.linaux2 == self.global_vars.linaux or self.global_vars.colaux2 == self.global_vars.colaux
-                                if condicao2:
-                                    if self.global_vars.linaux2 == self.global_vars.linaux:
-                                        self.rdc_vars.tipo = 1
-                                    else:
-                                        self.rdc_vars.tipo = 2
-                                else:
-                                    self.rdc_vars.tipo = 3
-
-                                # Deteminando a distância incremental projetada
-                                if self.global_vars.metro == 0:
-                                    self.global_vars.auxdist = self.project(self.global_vars.Xesq,
-                                                                        self.global_vars.Xdir,
-                                                                        self.global_vars.Ysup,
-                                                                        self.global_vars.Yinf,
-                                                                        self.rdc_vars.tipo,
-                                                                        self.global_vars.auxdist,
-                                                                        self.global_vars.lado,
-                                                                        self.global_vars.diagonal)
-                                    
-                                else:
-                                    if self.rdc_vars.tipo == 1 or self.rdc_vars.tipo == 2:
-                                        self.global_vars.auxdist = self.global_vars.dx*self.global_vars.lado
-
-                                    else:
-                                        self.global_vars.auxdist = self.global_vars.dx*self.global_vars.diagonal
-                                        
-                                # Atualizando o comprimento do rio desde o pixel inicial
-                                self.global_vars.tamcam += self.global_vars.auxdist
-                                self.global_vars.tamfoz = self.global_vars.tamcam
-
-                                # Condição para verificar se o tamanho do rio é maior que o armazenameto do pixel
-                                condicao3 = self.global_vars.tamcam > self.global_vars.Lac[self.global_vars.linaux, self.global_vars.colaux]
-                                if condicao3:
-                                    # O valor do pixel é armazenado em um novo rio
-                                    self.global_vars.Lac[self.global_vars.linaux, self.global_vars.colaux] = self.global_vars.tamcam
-                                
-                                # Armazena o pixel contabilizado
-                                self.global_vars.linaux2 = self.global_vars.linaux
-                                self.global_vars.colaux2 = self.global_vars.colaux
-
-                                # determina o próximo píxel do caminho
-                                self.global_vars.diraux = self.global_vars.direcoes[self.global_vars.linaux, self.global_vars.colaux]
-                                self.global_vars.linaux += self.global_vars.dlin[self.global_vars.diraux]
-                                self.global_vars.colaux += self.global_vars.dcol[self.global_vars.diraux]
-                                # JVD: alocação redundante(caminho = 0)
-                                self.global_vars.sda = 0
-
-                        # Atulizando a variável lfoz
-                        self.global_vars.Lfoz[lin][col] = self.global_vars.tamfoz
-
-    def numera_pixel(self):
-        '''
-        Esta função enumera os píxels presentes na rede de drenagem
-        '''
-        # Define variáveis
-        self.contadren = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol), dtype=np.float64)
-        self.numcabe = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol), dtype=np.float64)
-        self.cabeceira = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
-        self.numcabeaux = 0
-        
-        # Enumerando os píxels pertencentes à bacia e à rede de drenagem
-        pix_bacia_e_dren = (self.global_vars.bacia == 1) & (self.global_vars.dren == 1)
-
-        self.rdc_vars.cont += np.sum(pix_bacia_e_dren)
-
-        self.contadren[pix_bacia_e_dren] = self.rdc_vars.cont
-
-        pixel_dren = np.where(self.global_vars.dren == 1)
-        self.global_vars.lincontadren = np.array(pixel_dren[0])
-        self.global_vars.colcontadren = np.array(pixel_dren[1])
-
-
-        # Numeração dos píxels internos a bacia: São chamados de cabeceira, pois o caminho do fluxo é iniciado a partir de cada um deles
-        for col in range(1, self.rdc_vars.ncol - 1):
-            for lin in range(1, self.rdc_vars.nlin - 1):
-            
-                # Atualizará apenas os píxel que estão na bacia hidrográfica(cabeceira == 1)
-                if self.global_vars.bacia[lin][col] == 1:
-                    # A priori, todos os píxels serão considerados de cabeceira
-                    self.cabeceira[lin][col] = 1
-                    # Cria vizinhança 3x3 para estudar a direção de fluxo do píxel central.
-                    for linaux in range(lin - 1, lin + 2):
-                        for colaux in range(col - 1, col + 2):
-                            # Para cada vizinho, verifica a direção de fluxo dela e para qual pixel ele drena
-                            self.global_vars.diraux = self.global_vars.direcoes[linaux][colaux]
-                            self.global_vars.linaux2 = linaux + self.global_vars.dlin[self.global_vars.diraux]
-                            self.global_vars.colaux2 = colaux + self.global_vars.dcol[self.global_vars.diraux]
-
-                            # Se algum vizinho drenar para o central em análise, este não é de cabeceira
-                            if self.global_vars.linaux2 == lin and self.global_vars.colaux2 == col:
-                                self.cabeceira[lin][col] = 0
-
-                    # Contagem de píxels que são cabeceira
-                    if self.cabeceira[lin][col] == 1:
-                        self.numcabeaux += 1
-                        self.numcabe[lin][col] = self.numcabeaux
-
-        # Atualiza variáveis globais
-        self.global_vars.numcabe = self.numcabe
-
-        # JVD: redundancia de variáveis, Ncabe = numcabeaux
-        self.global_vars.numcabeaux = self.numcabeaux
-
-    def dist_drenagem(self):
-        """Esta funçao determina a distância incremental percorrida pela água na rede de drenagem,
-            assim como a declividade pixel a pixel"""
-
-        # Redimenciona as variáveis necessárias
-        dist = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
-        pixeldren = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
-        self.global_vars.pixeldren = pixeldren
-        pixeldren = None
-        Difcota = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
-        self.global_vars.Difcota = Difcota
-        Difcota = None
-        DECLIVpixjus = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
-        self.global_vars.DECLIVpixjus = DECLIVpixjus
-        DECLIVpixjus = None
-        TSpix = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
-        self.global_vars.TSpix = TSpix
-        TSpix = None
-
-        # Atualizando as referidas variáveis
-        self.global_vars.lado = float(self.dlg_flow_tt.le_3_pg1.text())
-        self.global_vars.diagonal = float(self.dlg_flow_tt.le_4_pg1.text())
-
-        # iterando sobre os elementos do arquivo raster
-        for col in range(self.rdc_vars.ncol):
-            for lin in range(self.rdc_vars.nlin):
-                # Relaizando operações no apenas na região da bacia hidográfica
-                if self.global_vars.bacia[lin][col] == 1:
-                    self.global_vars.linaux = lin
-                    self.global_vars.colaux = col
-                    self.global_vars.caminho = 0
-                    self.global_vars.tamcam = 0.0
-
-                    if self.global_vars.dren[lin][col] == 1:
-                        self.global_vars.caminho = 1
-
-                    else:
-                        while self.global_vars.caminho == 0:
-                            
-                            condicao = (self.global_vars.linaux<= 1
-                            or self.global_vars.linaux>=self.rdc_vars.nlin
-                            or self.global_vars.colaux<=1 or self.global_vars.colaux>= self.rdc_vars.ncol
-                            or self.global_vars.bacia[self.global_vars.linaux][self.global_vars.colaux]==0)
-
-                            # Verificando a resposta da variável condicao
-                            if condicao:
-                                self.global_vars.caminho = 1
-                            
-                            else:
-                                # Criando a segunda condição: 
-                                # valores pertencentes ao sistema de drenagem da bacia
-                                condicao2 = self.global_vars.dren[self.global_vars.linaux][self.global_vars.colaux] == 1
-
-                                if condicao2:
-                                    # Após alocação do pixel da rede de drenagem: encerra o processo de busca
-                                    self.global_vars.caminho = 1
-                                    dist[lin][col] = self.global_vars.tamcam
-                                    self.global_vars.pixeldren[lin][col] = self.contadren[self.global_vars.linaux][self.global_vars.colaux]
-                                else:
-                                    self.global_vars.diraux = self.global_vars.direcoes[self.global_vars.linaux][self.global_vars.colaux]
-                                    self.global_vars.caminho = 0
-                                    self.global_vars.colaux2 = self.global_vars.colaux
-                                    self.global_vars.linaux2 = self.global_vars.linaux
-
-                                    self.global_vars.linaux += self.global_vars.dlin[self.global_vars.diraux]
-                                    self.global_vars.colaux += self.global_vars.dcol[self.global_vars.diraux]
-
-                                    # Calculando a distância incremental percorrida &
-                                    # Contabilizar distancias projetadas (WGS84) &
-                                    # Determina coordenadas vertices do pixel
-                                    self.global_vars.Xesq = self.rdc_vars.xmin + (self.global_vars.colaux2 - 1) * self.global_vars.Xres
-                                    self.global_vars.Xdir = self.global_vars.Xesq + self.global_vars.Xres
-                                    self.global_vars.Yinf = self.rdc_vars.ymax - self.global_vars.linaux2 * self.global_vars.Yres
-                                    self.global_vars.Ysup = self.global_vars.Yinf + self.global_vars.Yres
-
-                                    # Determina a posição relativa ao píxel anterior
-                                    condicao3 = self.global_vars.linaux2 == self.global_vars.linaux or self.global_vars.colaux2 == self.global_vars.colaux
-                                    if condicao3:
-                                        if self.global_vars.linaux2 == self.global_vars.linaux:
-                                            self.rdc_vars.tipo = 1
-                                        else:
-                                            self.rdc_vars.tipo = 2
-                                    else:
-                                        self.rdc_vars.tipo = 3
-
-                                    # Determinando a distância incremental projetada
-                                    if self.global_vars.metro == 0:
-                                        self.global_vars.auxdist = self.project(self.global_vars.Xesq,
-                                                           self.global_vars.Xdir,
-                                                           self.global_vars.Ysup,
-                                                           self.global_vars.Yinf,
-                                                           self.rdc_vars.tipo,
-                                                           self.global_vars.auxdist,
-                                                           self.global_vars.lado,
-                                                           self.global_vars.diagonal)
-                                    else:
-                                        condicao4 = self.rdc_vars.tipo == 1 or self.rdc_vars.tipo == 2
-                                        if  condicao4:
-                                            self.global_vars.auxdist = self.global_vars.dx * self.global_vars.lado
-                                        else:
-                                            self.global_vars.auxdist = self.global_vars.dx * self.global_vars.diagonal
-                                    
-                                    # atualiza o comprimento do rio desde o pixel inicial
-                                    self.global_vars.tamcam += self.global_vars.auxdist
-
-                                    # ARPdeclivjus
-                                    if self.global_vars.tipo_decliv == 4:
-                                        # calcula declividade do pixel relativo ao pixel de jusante (este pixel)
-                                        self.global_vars.Lincr = self.global_vars.auxdist
-                                        self.global_vars.Difcota = self.global_vars.MDE[self.global_vars.linaux2][self.global_vars.colaux2] - self.global_vars.MDE[self.global_vars.linaux][self.global_vars.colaux]
-                                        self.global_vars.DECLIVpixjus[self.global_vars.linaux2][self.global_vars.colaux2] = self.global_vars.Difcota/self.global_vars.Lincr*1000.0
-                                        self.global_vars.Streaux = self.global_vars.DECLIVpixjus[self.global_vars.linaux2][self.global_vars.colaux2]
-                                        self.global_vars.Ltreaux = self.global_vars.Lincr
-                                        self.global_vars.usaux = self.global_vars.usosolo[self.global_vars.linaux2][self.global_vars.colaux2]
-                                        self.global_vars.Smin = float(self.dlg_flow_tt.le_1_pg1.text()) #em m/km
-
-                                        if self.global_vars.Streaux < self.global_vars.Smin:
-                                            self.global_vars.Streaux = self.global_vars.Smin
-                                        
-                                        self.global_vars.Smax = 0 #em m/km
-                                        if self.global_vars.Streaux > self.global_vars.Smax:
-                                            self.global_vars.Streaux = self.global_vars.Smax
-
-                                        # JVD: correção da indexação para o python (inicia no zero)
-                                        # Calcula o TS por píxel
-                                        self.global_vars.TSpix[self.global_vars.linaux2][self.global_vars.colaux2] = 5.474 * ((self.global_vars.Mann[self.global_vars.uso_mann[self.global_vars.usaux]] * self.global_vars.Ltreaux)**0.8) / ((self.global_vars.P24**0.5)*((self.global_vars.Streaux/1000.0)**0.4))
-
-        # Atualiza as variáveis globais
-        self.global_vars.DIST = dist
-                         
-    def tempo_canal(self):
-        '''
-        Esta função é responsável por determinar o tempo de viagem/concentração da água da foz até o exutório da bacia hidrográfica
-        '''
-        # Declara e redemenciona variáveis
-        condicao = None
-        condicao2 = None
-        TempoRio = np.zeros((self.rdc_vars.nlin,self.rdc_vars.ncol))
-        self.global_vars.TempoRio = TempoRio
-        TempoRio = None
-
-        for col in range(self.rdc_vars.ncol):
-            for lin in range(self.rdc_vars.nlin):
-                # O cáclulos são executados apenas na região da bacia
-                if self.global_vars.bacia[lin][col] == 1:
-                    # Os cálculos acontecerão na rede de drenagem da bacia hidrográfica
-                    if  self.global_vars.dren[lin][col] == 1:
-                        self.global_vars.linaux = lin
-                        self.global_vars.colaux = col
-                        self.global_vars.linaux1 = lin
-                        self.global_vars.colaux1 = col
-                        self.global_vars.linaux2 = lin
-                        self.global_vars.colaux2 = col
-                        self.global_vars.caminho = 0
-                        self.global_vars.Tempoauxac = 0
-
-                        # Guarda as características do tipo de trecho que o píxel em questão faz parte
-                        self.global_vars.classerio_aux = self.global_vars.classerio[lin][col]
-
-                        while self.global_vars.caminho == 0:
-                            condicao = self.global_vars.linaux < 1 or self.global_vars.linaux > self.rdc_vars.nlin or self.global_vars.colaux < 1 or self.global_vars.colaux > self.rdc_vars.ncol    
-                            
-                            if condicao:
-                                self.global_vars.caminho = 1
-
-                                # Contabilizando o último trecho
-                                self.global_vars.Lfozaux1 = self.global_vars.Lfoz[self.global_vars.linaux1][self.global_vars.colaux1]
-                                self.global_vars.Lfozaux2 = self.global_vars.Lfoz[self.global_vars.linaux2][self.global_vars.colaux2]
-                                # Determina a diferença entre o píxel do Lfoz inicial e o do final
-                                self.global_vars.Laux = self.global_vars.Lfozaux1 - self.global_vars.Lfozaux2
-                                
-                                # A declividade(Saux), o coeficiente de Manning(naux) e o raio hidráulico(Rhaux) são aqueles do tipo de rio (rede de drenagem)
-                                self.global_vars.Saux = self.global_vars.Sclasse[self.global_vars.classerio_aux]
-                                self.global_vars.naux = self.global_vars.Mannclasse[self.global_vars.classerio_aux]
-                                self.global_vars.Rhaux = self.global_vars.Rhclasse[self.global_vars.classerio_aux]
-
-                                # Determinando a velocidade do percurso
-                                condicao1 = self.global_vars.linaux2 == self.global_vars.linaux and self.global_vars.colaux2 == self.global_vars.colaux1
-                                if condicao1:
-                                    # Significa que não há mudança de pixel, ou seja, o pixel a montante é igual ao de jusante
-                                    self.global_vars.Velaux = 0
-                                    self.global_vars.Tempoaux = 0
-                                else:
-                                    # Determina a velocidade por percurso
-                                    self.global_vars.Velaux = self.global_vars.Rhaux ** (2.0/3.0)*self.global_vars.Saux**(1.0/2.0)/self.global_vars.naux
-                                    
-                                    # Calculando o tempo de viagem/concentração do percuso em min
-                                    # em que: Laux em metros e Velaux em m/s; resultado em min
-                                    self.global_vars.Tempoaux = self.global_vars.Laux / self.global_vars.Velaux / 60.0
-                                
-                                # O tempo é acocumulado desde o primeiro percurso
-                                self.global_vars.Tempoauxac += self.global_vars.Tempoaux
-                            
-                                # Após o fim do traçado desde o inicío do píxel, o tempo será armazenado e o acumulador zerado
-                                self.global_vars.TempoRio[lin][col] = self.global_vars.Tempoauxac
-                                self.global_vars.Tempoauxac = 0
-                        
-                            else:
-                                condicao2 = self.global_vars.classerio[self.global_vars.linaux][self.global_vars.colaux] != self.global_vars.classerio_aux
-                                # Checando se o caminho ainda está no trecho de mesma classe
-                                if condicao2:
-                                    self.global_vars.Lfozaux1 = self.global_vars.Lfoz[self.global_vars.linaux1][self.global_vars.colaux1]
-                                    self.global_vars.Lfozaux2 = self.global_vars.Lfoz[self.global_vars.linaux2][self.global_vars.colaux2]
-
-                                    # Determina a diferença entre o píxel do Lfoz inicial e o do final
-                                    self.global_vars.Laux = self.global_vars.Lfozaux1 - self.global_vars.Lfozaux2
-                                    
-                                    # A declividade(Saux), o coeficiente de Manning(naux) e o raio hidráulico(Rhaux) são aqueles do tipo de rio (rede de drenagem)
-                                    self.global_vars.Saux = self.global_vars.Sclasse[self.global_vars.classerio_aux]
-                                    self.global_vars.naux = self.global_vars.Mannclasse[self.global_vars.classerio_aux]
-                                    self.global_vars.Rhaux = self.global_vars.Rhclasse[self.global_vars.classerio_aux]
-
-                                    # Determinando a velocidade do percurso
-                                    condicao1 = self.global_vars.linaux2 == self.global_vars.linaux and self.global_vars.colaux2 == self.global_vars.colaux1
-                                    if condicao1:
-                                        self.global_vars.Velaux = 0
-                                        self.global_vars.Tempoaux = 0
-                                    else:
-                                        self.global_vars.Velaux = self.global_vars.Rhaux ** (2.0/3.0)*self.global_vars.Saux**(1.0/2.0)/self.global_vars.naux
-                                        
-                                        # Calculando o tempo de viagem/concentração do percuso em min 
-                                        # em que: Laux em metros e Velaux em m/s; resultado em min
-                                        self.global_vars.Tempoaux = self.global_vars.Laux / self.global_vars.Velaux / 60.0
-                                    
-                                    # O tempo é acocumulado desde o primeiro percurso
-                                    self.global_vars.Tempoauxac += self.global_vars.Tempoaux
-
-                                    # Atualizando o novo ponto de partida
-                                    self.global_vars.linaux1 = self.global_vars.linaux
-                                    self.global_vars.colaux1 = self.global_vars.colaux
-                                    self.global_vars.classerio_aux = self.global_vars.classerio[self.global_vars.linaux1][self.global_vars.colaux1]
-                                
-                                # Armazenando o píxel contabilizado
-                                self.global_vars.linaux2 = self.global_vars.linaux
-                                self.global_vars.colaux2 = self.global_vars.colaux  
-
-                                # Deteminando o próximo píxel do caminho
-                                self.global_vars.diraux = self.global_vars.direcoes[self.global_vars.linaux][self.global_vars.colaux]
-                                self.global_vars.caminho = 0 
-                                self.global_vars.linaux += self.global_vars.dlin[self.global_vars.diraux]
-                                self.global_vars.colaux += self.global_vars.dcol[self.global_vars.diraux]
-    def tempo_sup(self):
-        """
-        Esta função função determina o tempo de concentração/escoamento para os píxels da superfície da rede de drenagem (aqueles que não são canais)
-        """
-        # Redimenciona as variáveis necessárias
-        lincabe = np.zeros(self.global_vars.numcabeaux)
-        self.global_vars.lincabe = lincabe
-        lincabe = None
-        colcabe = np.zeros(self.global_vars.numcabeaux)
-        self.global_vars.colcabe = colcabe
-        colcabe = None
-        TS = np.zeros((self.global_vars.numcabeaux, self.global_vars.Ntre))
-        self.global_vars.TS = TS
-        TS = None
-        TScabe = np.zeros(self.global_vars.numcabeaux)
-        self.global_vars.TScabe = TScabe
-        TScabe = None
-        TScabe2d = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
-        self.global_vars.TScabe2d = TScabe2d
-        TScabe2d = None
-        TSnaocabe2d = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
-        self.global_vars.TSnaocabe2d = TSnaocabe2d
-        TSnaocabe2d = None
-        TSpixacum = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
-        self.global_vars.TSpixacum = TSpixacum
-        TSpixacum = None
-
-        for lin in range(self.rdc_vars.nlin):
-            for col in range(self.global_vars):
-                if self.global_vars.numcabe[lin][col] > 0:
-                    self.global_vars.numcabeaux = int(self.global_vars.numcabe[lin][col])
-                    self.global_vars.lincabe[self.global_vars.numcabeaux] = lin
-                    self.global_vars.colcabe[self.global_vars.numcabeaux] = col
-
-
-        for item in range(self.global_vars.Ncabec):
-            self.global_vars.numtreaux = self.global_vars.numtre[item]
-            for t in range(self.global_vars.numtreaux):
-                self.global_vars.usaux = self.global_vars.numtre[self.global_vars.numcabeaux][t]
-                self.global_vars.Ltreaux = self.global_vars.Ltre[self.global_vars.numcabeaux][t]
-                self.global_vars.Streaux = self.global_vars.Stre[self.global_vars.numcabeaux][t] 
-
-                if self.global_vars.Streaux > 0:
-                    # Determinando o TS: tempo de concentração
-                    self.global_vars.TS[self.global_vars.numcabeaux][t] = 5.474 * ((self.global_vars.Mann[self.global_vars.usaux]*self.global_vars.Ltreaux)**0.8)/((self.global_vars.P24**0.5)*((self.global_vars.Streaux/1000.0)**0.4))
-                else:
-                    self.global_vars.TS[self.global_vars.numcabeaux][t] = 0
-                
-                self.global_vars.TScabe[self.global_vars.numcabeaux] += self.global_vars.TS[self.global_vars.numcabeaux][t]
-            
-            lin1 = self.global_vars.lincabe[self.global_vars.numcabeaux]
-            col1 = self.global_vars.colcabe[self.global_vars.numcabeaux]
-            self.global_vars.TScabe2d[lin1][col1] = self.global_vars.TScabe[self.global_vars.numcabeaux]
-        
-        for lin in range(self.rdc_vars.nlin):
-            for col in range(self.rdc_vars.ncol):
-                # As ações são baseadas na região da bacia hidrográfica
-                if self.global_vars.bacia[lin][col] == 1:
-                    self.global_vars.numcabeaux = int(self.global_vars.CABEpix[lin][col])
-                    self.global_vars.Taux = 0
-
-                    # Verificando se o píxel é válido; executando cabeceiras
-                    if self.global_vars.numcabeaux > 0 and self.global_vars.numcabe[lin][col] == 0:
-                        
-                        self.global_vars.t = self.global_vars.refcabtre[lin][col]
-                        self.global_vars.Ltreaux = self.global_vars.Ltre[self.global_vars.numcabeaux][self.global_vars.t]
-                        self.global_vars.Ttreaux = self.global_vars.TS[self.global_vars.numcabeaux][self.global_vars.t]
-                        self.global_vars.DISTtreaux = self.global_vars.DISTtre[lin][col]
-                        self.global_vars.Taux = self.global_vars.DISTtreaux * self.global_vars.Ttreaux / self.global_vars.Ltreaux
-
-                        # ARPdecliv
-                        if self.global_vars.subtipodecliv == 'b':
-                            self.global_vars.Streaux = self.global_vars.Stre[self.global_vars.numcabeaux][self.global_vars.t]
-                            self.global_vars.usaux = self.global_vars.usotre[self.global_vars.numcabeaux][self.global_vars.t]
-                            
-                            if self.global_vars.Streaux > 0:
-                                self.global_vars.Taux = 5.474 * ((self.global_vars.Mann[self.global_vars.usaux] * self.global_vars.DISTtreaux)**0.8) / ((self.global_vars.P24**0.5)*((self.global_vars.Streaux / 1000.0)**0.4))
-                            else:
-                                self.global_vars.Taux = 0
-
-                        self.global_vars.numtreaux = self.global_vars.numtre[self.global_vars.numcabeaux]
-
-                        if self.global_vars.t < self.global_vars.numtreaux:
-                            tt = self.global_vars.t + 1
-                            for tt in range(self.global_vars.numtreaux):
-                                self.global_vars.Taux += self.global_vars.TS[self.global_vars.numcabeaux][tt]
-                        
-                        self.global_vars.TSnaocabe2d[lin][col] = self.global_vars.Taux
-
-        self.global_vars.TStodos2d = self.global_vars.TSnaocabe2d + self.global_vars.TScabe2d
-
-        if self.global_vars.tipo_decliv == 4:
-
-            for col in range(self.rdc_vars.ncol):
-                for lin in range(self.rdc_vars.nlin):
-                    # Exclindo a região fora da bacia
-                    self.global_vars.linaux = lin
-                    self.global_vars.colaux = col
-                    self.global_vars.caminho = 0 
-                    self.global_vars.tempocam = 0.0
-                    
-                    # Para píxels que representam a rede de drenagem
-                    if self.global_vars.dren[lin][col]== 1:
-                        self.global_vars.caminho = 1
-                    else:
-                        while self.global_vars.caminho == 0:
-                            condicao = self.global_vars.linaux <= 1 or self.global_vars.linaux >=self.rdc_vars.nlin or self.global_vars.colaux <= 1 or self.global_vars.colaux >=self.rdc_vars.nlin \
-                                                                    or self.global_vars.bacia[self.global_vars.colaux][self.global_vars.colaux]==0
-                            if condicao:
-                                self.global_vars.caminho = 1
-                            else:
-                                if self.global_vars.dren[self.global_vars.linaux][self.global_vars.colaux]:
-                                    # Alcançou a rede de drenagem: encerra a busca
-                                    self.global_vars.caminho = 1
-                                    self.global_vars.TSpixacum[lin][col] = self.global_vars.tempocam
-                                else:
-                                    self.global_vars.diraux = self.global_vars.direcoes[self.global_vars.linaux][self.global_vars.colaux]
-                                    self.global_vars.caminho = 0
-
-                                    self.global_vars.colaux2 = self.global_vars.colaux
-                                    self.global_vars.linaux2 = self.global_vars.linaux
-
-                                    # Calculando a distância incremental percorrida
-                                    self.global_vars.linaux += self.global_vars.dlin[self.global_vars.diraux]
-                                    self.global_vars.colaux += self.global_vars.dcol[self.global_vars.diraux]
-
-                                    # Atualizando o tempo de escoamento desde o píxel inicial
-                                    self.global_vars.tempocam += self.global_vars.TSpix[self.global_vars.linaux2][self.global_vars.colaux2]
-
-    def tempo_total_func(self):
-        '''
-        Esta função determina o tempo total de escoamento/concentração (por pixel) para a bacia hidrográfica enviada
-        '''
-        # Redimenciona as variáveis necessárias
-        TempoTot = np.zeros((self.rdc_vars.nlin,self.rdc_vars.ncol))
-        self.global_vars.TempoTot = TempoTot
-        TempoTot = None
-
-        for col in range(self.rdc_vars.ncol):
-            for lin in range(self.rdc_vars.nlin):
-                # Os procedimentos são realizados ao longo da bacia hidrográfica
-                if self.global_vars.bacia[lin][col] == 1:
-                    # Ainda, as verificaçãoes seão baseadas na rede de drenagem
-                    if self.global_vars.dren[lin][col] == 1:
-                        self.global_vars.TempoTot[lin][col] = self.global_vars.TempoRio[lin][col]
-                    else:
-                        # ARPlidar: otimização
-                        self.global_vars.pixel_ref_dren = self.global_vars.pixeldren[lin][col]
-                        if self.global_vars.pixel_ref_dren != 0:
-                            self.global_vars.ll = self.global_vars.lincontadren[self.global_vars.pixel_ref_dren]
-                            self.global_vars.cc = self.global_vars.colcontadren[self.global_vars.pixel_ref_dren]
-                            self.global_vars.auxTempoCanal = self.global_vars.TempoRio[self.global_vars.ll][self.global_vars.cc]
-                    # ARPtest
-                    if self.global_vars.tipo_decliv == 1 or self.global_vars.tipo_decliv == 2 or self.global_vars.tipo_decliv == 3:
-                        self.global_vars.TempoTot[lin][col] = self.global_vars.TStodos2d[lin][col] + self.global_vars.auxTempoCanal
-
-                    if self.global_vars.tipo_decliv == 4:
-                        self.global_vars.TempoTot[lin][col] = self.global_vars.TSpixacum[lin][col] + self.global_vars.auxTempoCanal
-
-# Funções para as rotinas Flow Travel Time (versão Dário), Excess rainfall e flow routing
-    def tempo_concentracao(self):
-        '''Está função calcula o tempo de concentração para a bacia hidrográfica fornecida'''
-        # Definição das variáveis
-        self.global_vars.Seq = np.zeros((self.rdc_vars.nlin,self.rdc_vars.ncol))
-        self.global_vars.decliv_pixel = np.zeros((self.rdc_vars.nlin,self.rdc_vars.ncol))
-
-        # Determinação do Manning do pixel e determinação do parâmetro K para o cálculo do Shallow concentrated flow
-        for col in range(self.rdc_vars.ncol):
-            for lin in range(self.rdc_vars.nlin):
-                if self.global_vars.bacia[lin,col] == 1:
-                    for k in range(self.global_vars.n_tipo_uso):
-                        if self.global_vars.usosolo[lin,col] == self.global_vars.usaux[k]:
-                            self.global_vars.nSolo[lin,col] = self.global_vars.Mann[k]
-                            self.global_vars.coef_k_pixel[lin,col] = self.global_vars.coef_K[k]
-        
-        # Determinação do comprimento L ao longo do escoamento dentro do pixel
-        for col in range(1, self.rdc_vars.ncol - 1):
-            for lin in range(1, self.rdc_vars.nlin - 1):
-                if self.global_vars.direcoes[lin,col] == 45:
-                    self.global_vars.comp_pixel[lin,col] = self.global_vars.dx * float(self.dlg_flow_tt.le_4_pg1.text())
-
-                if self.global_vars.direcoes[lin,col] == 90:
-                    self.global_vars.comp_pixel[lin,col] = self.global_vars.dx * float(self.dlg_flow_tt.le_3_pg1.text())
-
-                if self.global_vars.direcoes[lin,col] == 135:
-                    self.global_vars.comp_pixel[lin,col] = self.global_vars.dx * float(self.dlg_flow_tt.le_4_pg1.text())
-
-                if self.global_vars.direcoes[lin,col] == 180:
-                    self.global_vars.comp_pixel[lin,col] = self.global_vars.dx * float(self.dlg_flow_tt.le_3_pg1.text())
-
-                if self.global_vars.direcoes[lin,col] == 225:
-                    self.global_vars.comp_pixel[lin,col] = self.global_vars.dx * float(self.dlg_flow_tt.le_4_pg1.text())
-
-                if self.global_vars.direcoes[lin,col] == 270:
-                    self.global_vars.comp_pixel[lin,col] = self.global_vars.dx * float(self.dlg_flow_tt.le_3_pg1.text())
-      
-                if self.global_vars.direcoes[lin,col] == 315:
-                    self.global_vars.comp_pixel[lin,col] = self.global_vars.dx * float(self.dlg_flow_tt.le_4_pg1.text())
-
-                if self.global_vars.direcoes[lin,col] == 360:
-                    self.global_vars.comp_pixel[lin,col] = self.global_vars.dx * float(self.dlg_flow_tt.le_3_pg1.text())
-
-        # Determinção da declividade S dos pixels do escoamento em superfície (caso o pixel a jusante tenha uma cota maior que o oixel que se quer estimar a declividade,
-        # a rotina sai procurando o pixel com cota menor que esteja a jusante e a declividade é caluclada como sendo a diferença de cotas dividida pela distância percorrida pelo escoamento até o pixel com cota menor)
-
-        for lin in range(self.rdc_vars.nlin):
-            for col in range(self.rdc_vars.ncol):
-                if self.global_vars.bacia[lin,col] == 1:
-                    if self.global_vars.direcoes[lin,col] == 45:
-                        i_test = lin - 1
-                        j_test = col + 1
-
-                    elif self.global_vars.direcoes[lin,col] == 90:
-                        i_test = lin
-                        j_test = col + 1
-
-                    elif self.global_vars.direcoes[lin,col] == 135:
-                        i_test = lin + 1
-                        j_test = col + 1
-
-                    elif self.global_vars.direcoes[lin,col] == 180:
-                        i_test = lin + 1
-                        j_test = col
-
-                    elif self.global_vars.direcoes[lin,col] == 225:
-                        i_test = lin + 1
-                        j_test = col - 1
-
-                    elif self.global_vars.direcoes[lin,col] == 270:
-                        i_test = lin
-                        j_test = col - 1
-
-                    elif self.global_vars.direcoes[lin,col] == 315:
-                        i_test = lin - 1
-                        j_test = col - 1
-        
-                    elif self.global_vars.direcoes[lin,col] == 360:
-                        i_test = lin - 1
-                        j_test = col
-                    
-                    # Determinação da declividade do pixel em questão
-                    self.global_vars.decliv_pixel[lin,col] = (self.global_vars.MDE[lin,col] - self.global_vars.MDE[i_test,j_test]) / self.global_vars.comp_pixel[lin,col]
-
-                    if self.global_vars.decliv_pixel[lin,col] <= self.global_vars.Smin:
-                        self.global_vars.decliv_pixel[lin,col] = self.global_vars.Smin
-
-        # Identificação dos pixels da rede de drenagem que INICIAM os trechos com características homogêneas. Nesses pixel a variável Divisao_Trecho = 1
-        # Existem trechos pré definidos onde já existe informação sobre as seções transversais, esses trechos e a informação sobre eles são carregados pelo usuário e permanecem valendo
-        # No entanto, há outras partes da rede de drenagem sem informação sobre a seção transversal. Essas outras partes do rio foram subdividas em trechos homogêneos. O início e o fim desses trechos foram determinados assim:
-        # 1) Um trecho pode possuir no máximo um comprimento igual a "Comprimento_Trecho" 
-        # 2) Se há o encontro com outro rio o trecho termina e a partir do ponto de encontro começa outro trecho
-        # 3) Se há o encontro com uma parte do rio que já possua informação sobre a seção transversal carregada pelo usuário, o trecho termina.
-        
-        # Identificação dos pixels que iniciam a rede de drenagem
-        for lin in range(self.rdc_vars.nlin):
-            for col in range(self.rdc_vars.ncol):
-                if self.global_vars.dren[lin,col] == 1:
-                    k = 0
-                    if self.global_vars.direcoes[lin-1,col-1] == 135 and self.global_vars.dren[lin-1,col-1] == 1:
-                        k+=1
-                    elif self.global_vars.direcoes[lin-1,col] == 180 and self.global_vars.dren[lin-1,col] == 1:
-                        k+=1
-                    elif self.global_vars.direcoes[lin-1,col+1] == 225 and self.global_vars.dren[lin-1,col+1] == 1:
-                        k+=1
-                    elif self.global_vars.direcoes[lin,col+1] == 270 and self.global_vars.dren[lin,col+1] == 1:
-                        k+=1
-                    elif self.global_vars.direcoes[lin+1,col+1] == 315 and self.global_vars.dren[lin+1,col+1] == 1:
-                        k+=1
-                    elif self.global_vars.direcoes[lin+1,col] == 360 and self.global_vars.dren[lin+1,col] == 1:
-                        k+=1
-                    elif self.global_vars.direcoes[lin+1,col-1] == 45 and self.global_vars.dren[lin+1,col-1] == 1:
-                        k+=1
-                    elif self.global_vars.direcoes[lin,col-1] == 90 and self.global_vars.dren[lin,col-1] == 1:
-                        k+=1                  
-
-                    # Se k > 0 significa que aquele pixel da rede drenagem não inicia a rede de drenagem
-                    # Se k = 0 significa que aquele pixel da rede de drenagem inicia a rede de drenagem, ou seja, nenhum outro pixel da rede de drenagem escoa para ele 
-
-                    if k == 0:
-                        # Se um pixel da rede de drenagem inicia a rede de drenagem significa que ele inicia um trecho da rede de drenagem e portanto a variável Divisao_Trecho = 1
-                        self.global_vars.divisao_trecho[lin,col] = 1
-                    
-                        # Agora a rotina vai procurar os pixels a jusante desse pixel de início da rede de drenagem que iniciam um outro trecho homogêneo
-                        i_atual = lin
-                        j_atual = col
-                        
-                        self.global_vars.comp_total[i_atual, j_atual] = self.global_vars.comp_pixel[lin,col]
-
-                        while self.global_vars.bacia[i_atual,j_atual] == 1:
-                            if self.global_vars.direcoes[i_atual, j_atual] == 45:
-                                i_test = i_atual - 1
-                                j_test = j_atual + 1
-
-                            elif self.global_vars.direcoes[i_atual, j_atual] == 90:
-                                i_test = i_atual
-                                j_test = j_atual + 1
-
-                            elif self.global_vars.direcoes[i_atual, j_atual] == 135:
-                                i_test = i_atual + 1
-                                j_test = j_atual + 1
-
-                            elif self.global_vars.direcoes[i_atual, j_atual] == 180:
-                                i_test = i_atual + 1
-                                j_test = j_atual
-
-                            elif self.global_vars.direcoes[i_atual, j_atual] == 225:
-                                i_test = i_atual + 1
-                                j_test = j_atual - 1
-
-                            elif self.global_vars.direcoes[i_atual, j_atual] == 270:
-                                i_test = i_atual
-                                j_test = j_atual - 1
-
-                            elif self.global_vars.direcoes[i_atual, j_atual] == 315:
-                                i_test = i_atual - 1
-                                j_test = j_atual - 1
-                
-                            elif self.global_vars.direcoes[i_atual, j_atual] == 360:
-                                i_test = i_atual - 1
-                                j_test = j_atual     
-
-                            # Quando se chega ao exutório da bacia, a rotina para e é o final do trecho, com Divisao_Trecho = 1
-                            if self.global_vars.bacia[i_test, j_test] == 0:
-                                self.global_vars.divisao_trecho[i_atual, j_atual] = 1
-                            
-                            self.global_vars.comp_total[i_test, j_test] = self.global_vars.comp_total[i_atual, j_atual] + self.global_vars.comp_pixel[i_test, j_test]
-
-                            # Inicia um novo trecho caso o trecho em questão já tenha alcançado seu comprimento máximo definido pelo usuário
-                            if self.global_vars.comp_total[i_test, j_test] > self.global_vars.max_comp_trecho:
-                                self.global_vars.divisao_trecho[i_test, j_test] = 1
-                                self.global_vars.comp_total[i_test, j_test] = 0
-
-                            # Inicia outro trecho caso haja o encontro com outro curso d'água 
-                            k = 0       
-                            if self.global_vars.direcoes[i_test-1,j_test-1] == 135 and self.global_vars.dren[i_test-1,j_test-1] == 1:
-                                k +=1
-                            elif self.global_vars.direcoes[i_test-1,j_test] == 180 and self.global_vars.dren[i_test-1,j_test] == 1:
-                                k+=1
-                            elif self.global_vars.direcoes[i_test-1,j_test+1] == 225 and self.global_vars.dren[i_test-1,j_test+1] == 1:
-                                k+=1
-                            elif self.global_vars.direcoes[i_test,j_test+1] == 270 and self.global_vars.dren[i_test,j_test+1] == 1:
-                                k+=1
-                            elif self.global_vars.direcoes[i_test+1,j_test+1] == 315 and self.global_vars.dren[i_test+1,j_test+1] == 1:
-                                k+=1
-                            elif self.global_vars.direcoes[i_test+1,j_test] == 360 and self.global_vars.dren[i_test+1,j_test] == 1:
-                                k+=1
-                            elif self.global_vars.direcoes[i_test+1,j_test-1] == 45 and self.global_vars.dren[i_test+1,j_test-1] == 1:
-                                k+=1
-                            elif self.global_vars.direcoes[i_test,j_test-1] == 90 and self.global_vars.dren[i_test,j_test-1] == 1:
-                                k+=1   
-
-                            if k>1:
-                                self.global_vars.divisao_trecho[i_test,j_test] = 1
-                                self.global_vars.comp_total[i_test,j_test] = 0
-
-                            # O trecho termina caso haja o encontro com um trecho pré-definido pelo usuário
-                            if self.global_vars.classerio[i_test,j_test] > 0:
-                                self.global_vars.divisao_trecho[i_test,j_test] = 1
-                                i_atual = i_test
-                                j_atual = j_test
-
-                                while self.global_vars.bacia[i_atual,j_atual] == 1 and self.global_vars.classerio[i_atual,j_atual] > 0:
-                                    if self.global_vars.direcoes[i_atual, j_atual] == 45:
-                                        i_test = i_atual - 1
-                                        j_test = j_atual + 1
-
-                                    elif self.global_vars.direcoes[i_atual, j_atual] == 90:
-                                        i_test = i_atual
-                                        j_test = j_atual + 1
-
-                                    elif self.global_vars.direcoes[i_atual, j_atual] == 135:
-                                        i_test = i_atual + 1
-                                        j_test = j_atual + 1
-
-                                    elif self.global_vars.direcoes[i_atual, j_atual] == 180:
-                                        i_test = i_atual + 1
-                                        j_test = j_atual
-
-                                    elif self.global_vars.direcoes[i_atual, j_atual] == 225:
-                                        i_test = i_atual + 1
-                                        j_test = j_atual - 1
-
-                                    elif self.global_vars.direcoes[i_atual, j_atual] == 270:
-                                        i_test = i_atual
-                                        j_test = j_atual - 1
-
-                                    elif self.global_vars.direcoes[i_atual, j_atual] == 315:
-                                        i_test = i_atual - 1
-                                        j_test = j_atual - 1
-                        
-                                    elif self.global_vars.direcoes[i_atual, j_atual] == 360:
-                                        i_test = i_atual - 1
-                                        j_test = j_atual    
-
-                                    # Permanece a divisão entre trechos homogêneos definida pela usuário
-                                    if self.global_vars.classerio[i_test,j_test] != self.global_vars.classerio[i_atual,j_atual]:
-                                        self.global_vars.divisao_trecho[i_test,j_test] = 1
-
-                                    if self.global_vars.bacia[i_test,j_test] == 0:
-                                        self.global_vars.divisao_trecho[i_test,j_test] = 1
-
-                                    if self.global_vars.classerio[i_test,j_test] == 0:
-                                        self.global_vars.divisao_trecho[i_test,j_test] = 1
-
-                                # Fim while 
-                                i_atual = i_test
-                                j_atual = j_test
-
-                                self.global_vars.comp_total[i_test,j_test] = 0
-
-                            # fim if
-                            i_atual = i_test
-                            j_atual = j_test   
-
-        # Cálculo da declividade equivalente e raio hidráulico para os trechos da rede de dreangem que não foram carregados pelo usuário
-        k = self.global_vars.nclasses
-        for lin in range(self.rdc_vars.nlin):
-            for col in range(self.rdc_vars.ncol):
-                if self.global_vars.bacia[lin,col] == 1:
-
-                    # Identifica o pixel que inicia um trecho sem informação sebre a seção transversal
-                    if self.global_vars.divisao_trecho[lin,col] == 1:
-
-                        if self.global_vars.classerio[lin,col] == 0:
-                            k +=1
-                            self.global_vars.comp_total[lin,col] = self.global_vars.comp_pixel[lin,col]
-                            if self.global_vars.direcoes[lin,col] == 45:
-                                i_atual = lin - 1
-                                j_atual = col + 1
-
-                            elif self.global_vars.direcoes[lin,col] == 90:
-                                i_atual = lin
-                                j_atual = col + 1
-
-                            elif self.global_vars.direcoes[lin,col] == 135:
-                                i_atual = lin + 1
-                                j_atual = col + 1
-
-                            elif self.global_vars.direcoes[lin,col] == 180:
-                                i_atual = lin + 1
-                                j_atual = col
-
-                            elif self.global_vars.direcoes[lin,col] == 225:
-                                i_atual = lin + 1
-                                j_atual = col - 1
-
-                            elif self.global_vars.direcoes[lin,col] == 270:
-                                i_atual = lin
-                                j_atual = col - 1
-
-                            elif self.global_vars.direcoes[lin,col] == 315:
-                                i_atual = lin - 1
-                                j_atual = col - 1
-                
-                            elif self.global_vars.direcoes[lin,col] == 360:
-                                i_atual = lin - 1
-                                j_atual = col
-                                                                      
-                            if self.global_vars.divisao_trecho[i_atual,j_atual] == 1 or self.global_vars.bacia[i_atual,j_atual] == 0:
-                                # Definição das características da seção transversal do pixel canal
-                                self.global_vars.Seq[lin,col] = self.global_vars.decliv_pixel[lin,col]
-                                self.global_vars.area_molhada[lin,col] = self.global_vars.coef_c * (self.global_vars.dren_area[lin,col]**self.global_vars.coef_d)
-                                self.global_vars.bankfull_width[lin,col] = self.global_vars.coef_g * (self.global_vars.dren_area[lin,col]**self.global_vars.coef_h)
-                                perimetro_molhado = ((((2 * (10 ** (1 / 2))) - 2) / 3) * ((self.global_vars.bankfull_width[lin,col] - (((self.global_vars.bankfull_width[lin,col] ** 2) - ((4 / 3) * self.global_vars.area_molhada[lin,col])) ** (1 / 2))) / (2 / 3))) + self.global_vars.bankfull_width[lin,col]
-                                raio_hidraulico = self.global_vars.area_molhada[lin,col] / perimetro_molhado
-                                self.global_vars.rh_medio[lin,col] = raio_hidraulico
-                                self.global_vars.classerio[lin,col] = k
-
-                            if self.global_vars.divisao_trecho[i_atual,j_atual] != 1 and self.global_vars.bacia[i_atual,j_atual] == 1:
-                                self.global_vars.comp_total[i_atual,j_atual] = self.global_vars.comp_total[i_atual,j_atual] + self.global_vars.comp_pixel[i_atual,j_atual]
-                                somatorio = (self.global_vars.comp_pixel[lin, col] / (self.global_vars.decliv_pixel[lin, col] ** (1 / 2))) + (self.global_vars.comp_pixel[i_atual,j_atual] / (self.global_vars.decliv_pixel[i_atual,j_atual] ** (1 / 2)))
-                                
-                                # Definição das características da seção transversal do pixel canal
-                                self.global_vars.area_molhada[lin,col] = self.global_vars.coef_c * (self.global_vars.dren_area[lin,col]**self.global_vars.coef_d)
-                                self.global_vars.bankfull_width[lin,col] = self.global_vars.coef_g * (self.global_vars.dren_area[lin,col]**self.global_vars.coef_h)
-                                perimetro_molhado = ((((2 * (10 ** (1 / 2))) - 2) / 3) * ((self.global_vars.bankfull_width[lin,col] - (((self.global_vars.bankfull_width[lin,col] ** 2) - ((4 / 3) * self.global_vars.area_molhada[lin,col])) ** (1 / 2))) / (2 / 3))) + self.global_vars.bankfull_width[lin,col]
-                                raio_hidraulico = self.global_vars.area_molhada[lin,col]/perimetro_molhado
-                                self.global_vars.rh_medio[lin,col] = raio_hidraulico       
-
-                                self.global_vars.area_molhada[i_atual,j_atual] = self.global_vars.coef_c * (self.global_vars.dren_area[i_atual,j_atual]**self.global_vars.coef_d)
-                                self.global_vars.bankfull_width[i_atual,j_atual] = self.global_vars.coef_g * (self.global_vars.dren_area[i_atual,j_atual]**self.global_vars.coef_h)
-                                perimetro_molhado = ((((2 * (10 ** (1 / 2))) - 2) / 3) * ((self.global_vars.bankfull_width[i_atual,j_atual] - (((self.global_vars.bankfull_width[i_atual,j_atual] ** 2) - ((4 / 3) * self.global_vars.area_molhada[i_atual,j_atual])) ** (1 / 2))) / (2 / 3))) + self.global_vars.bankfull_width[i_atual,j_atual]
-                                raio_hidraulico = self.global_vars.area_molhada[i_atual,j_atual]/perimetro_molhado
-                                self.global_vars.rh_medio[i_atual,j_atual] += raio_hidraulico                                  
-                                n = 2
-
-                                # Percorre o caminho de fluxo até encontrar o final do trecho
-                                while self.global_vars.divisao_trecho[i_atual,j_atual] != 1 and self.global_vars.bacia[i_atual,j_atual] == 1:
-                                    if self.global_vars.direcoes[i_atual, j_atual] == 45:
-                                        i_test = i_atual - 1
-                                        j_test = j_atual + 1
-
-                                    elif self.global_vars.direcoes[i_atual, j_atual] == 90:
-                                        i_test = i_atual
-                                        j_test = j_atual + 1
-
-                                    elif self.global_vars.direcoes[i_atual, j_atual] == 135:
-                                        i_test = i_atual + 1
-                                        j_test = j_atual + 1
-
-                                    elif self.global_vars.direcoes[i_atual, j_atual] == 180:
-                                        i_test = i_atual + 1
-                                        j_test = j_atual
-
-                                    elif self.global_vars.direcoes[i_atual, j_atual] == 225:
-                                        i_test = i_atual + 1
-                                        j_test = j_atual - 1
-
-                                    elif self.global_vars.direcoes[i_atual, j_atual] == 270:
-                                        i_test = i_atual
-                                        j_test = j_atual - 1
-
-                                    elif self.global_vars.direcoes[i_atual, j_atual] == 315:
-                                        i_test = i_atual - 1
-                                        j_test = j_atual - 1
-                        
-                                    elif self.global_vars.direcoes[i_atual, j_atual] == 360:
-                                        i_test = i_atual - 1
-                                        j_test = j_atual    
-                                    
-                                    if self.global_vars.divisao_trecho[i_test,j_test] == 0:
-                                        self.global_vars.area_molhada[lin,col] = self.global_vars.coef_c * (self.global_vars.dren_area[lin,col]**self.global_vars.coef_d)
-                                        self.global_vars.bankfull_width[lin,col] = self.global_vars.coef_g * (self.global_vars.dren_area[lin,col]**self.global_vars.coef_h)
-                                        perimetro_molhado = ((((2 * (10 ** (1 / 2))) - 2) / 3) * ((self.global_vars.bankfull_width[lin,col] - (((self.global_vars.bankfull_width[lin,col] ** 2) - ((4 / 3) * self.global_vars.area_molhada[lin,col])) ** (1 / 2))) / (2 / 3))) + self.global_vars.bankfull_width[lin,col]
-                                        raio_hidraulico = self.global_vars.area_molhada[lin,col]/perimetro_molhado
-                                        self.global_vars.rh_medio[lin,col] += raio_hidraulico
-                                        n+=1
-
-                                        self.global_vars.comp_total[i_test,j_test] = self.global_vars.comp_total[i_atual,j_atual] + self.global_vars.comp_pixel[i_test,j_test]
-                                        somatorio += (self.global_vars.comp_pixel[i_test,j_test] / (self.global_vars.decliv_pixel[i_test,j_test]**(1/2)))
-                                    
-                                    if self.global_vars.divisao_trecho[i_test,j_test] == 1:
-                                        self.global_vars.comp_total[i_test,j_test] = self.global_vars.comp_total[i_atual,j_atual] 
-
-                                    i_atual = i_test
-                                    j_atual = j_test
-
-                                # Fim while
-
-                                # A declividade equivalente de cada um desses trechos foi estimada como sendo a média harmônica das declividades obtidas via MDE de cada pixel do trecho 
-                                self.global_vars.Seq[lin,col] = (self.global_vars.comp_total[i_test,j_test]/somatorio)**2
-                                self.global_vars.classerio[lin,col] = k
-
-                                # O raio hidráulico do trecho é a média do Rh dos pixels que pertencem ao trecho em questão
-                                self.global_vars.rh_medio[lin,col] /= n
-
-                                if self.global_vars.direcoes[lin,col] == 45:
-                                    i_atual = lin - 1
-                                    j_atual = col + 1
-
-                                elif self.global_vars.direcoes[lin,col] == 90:
-                                    i_atual = lin
-                                    j_atual = col + 1
-
-                                elif self.global_vars.direcoes[lin,col] == 135:
-                                    i_atual = lin + 1
-                                    j_atual = col + 1
-
-                                elif self.global_vars.direcoes[lin,col] == 180:
-                                    i_atual = lin + 1
-                                    j_atual = col
-
-                                elif self.global_vars.direcoes[lin,col] == 225:
-                                    i_atual = lin + 1
-                                    j_atual = col - 1
-
-                                elif self.global_vars.direcoes[lin,col] == 270:
-                                    i_atual = lin
-                                    j_atual = col - 1
-
-                                elif self.global_vars.direcoes[lin,col] == 315:
-                                    i_atual = lin - 1
-                                    j_atual = col - 1
-                    
-                                elif self.global_vars.direcoes[lin,col] == 360:
-                                    i_atual = lin - 1
-                                    j_atual = col      
-
-                                if self.global_vars.divisao_trecho[i_atual,j_atual] != 1 and self.global_vars.bacia[i_atual,j_atual] == 1:
-                                    self.global_vars.Seq[i_atual,j_atual] = self.global_vars.Seq[lin,col]
-                                    self.global_vars.classerio[i_atual,j_atual] = k
-                                    self.global_vars.rh_medio[i_atual,j_atual] = self.global_vars.rh_medio[lin,col]
-
-                                    while self.global_vars.divisao_trecho[i_atual,j_atual] != 1 and self.global_vars.bacia[i_atual,j_atual] == 1:
-                                        if self.global_vars.direcoes[i_atual, j_atual] == 45:
-                                            i_test = i_atual - 1
-                                            j_test = j_atual + 1
-
-                                        elif self.global_vars.direcoes[i_atual, j_atual] == 90:
-                                            i_test = i_atual
-                                            j_test = j_atual + 1
-
-                                        elif self.global_vars.direcoes[i_atual, j_atual] == 135:
-                                            i_test = i_atual + 1
-                                            j_test = j_atual + 1
-
-                                        elif self.global_vars.direcoes[i_atual, j_atual] == 180:
-                                            i_test = i_atual + 1
-                                            j_test = j_atual
-
-                                        elif self.global_vars.direcoes[i_atual, j_atual] == 225:
-                                            i_test = i_atual + 1
-                                            j_test = j_atual - 1
-
-                                        elif self.global_vars.direcoes[i_atual, j_atual] == 270:
-                                            i_test = i_atual
-                                            j_test = j_atual - 1
-
-                                        elif self.global_vars.direcoes[i_atual, j_atual] == 315:
-                                            i_test = i_atual - 1
-                                            j_test = j_atual - 1
-                            
-                                        elif self.global_vars.direcoes[i_atual, j_atual] == 360:
-                                            i_test = i_atual - 1
-                                            j_test = j_atual    
-
-                                        if self.global_vars.divisao_trecho[i_test,j_test] == 0:
-                                            self.global_vars.Seq[i_test,j_test] = self.global_vars.Seq[lin,col]
-                                            self.global_vars.classerio[i_test,j_test] = k
-                                            self.global_vars.rh_medio[i_test,j_test] = self.global_vars.rh_medio[lin,col]
-                                        
-                                        i_atual = i_test
-                                        j_atual = j_test
-
-        self.global_vars.n_total_trechos = k
-
-        # Definição sobre o tipo de escoamento
-        # Se a variável TipoEscoamento é igual a 2, significa que o escoamento no pixel é do tipo sheet flow, isto é, a partir do pixel inicial onde se iniciou o escoamento a água percorreu no máximo um valor igual a "sheetflow"
-        for lin in range(self.rdc_vars.nlin):
-            for col in range(self.rdc_vars.ncol):
-                if self.global_vars.bacia[lin,col] == 1:
-                    i_atual = lin
-                    j_atual = col
-
-                    self.global_vars.comp_total[i_atual,j_atual] = self.global_vars.comp_pixel[i_atual,j_atual]
-
-                    while self.global_vars.comp_total[i_atual,j_atual] <= self.global_vars.sheet_flow:
-
-                        if self.global_vars.direcoes[i_atual, j_atual] == 45:
-                            i_test = lin - 1
-                            j_test = col + 1
-                            self.global_vars.comp_total[i_test,j_test] = self.global_vars.comp_total[i_atual,j_atual] + self.global_vars.comp_pixel[i_test,j_test]
-
-                        elif self.global_vars.direcoes[i_atual, j_atual] == 90:
-                            i_test = lin
-                            j_test = col + 1
-                            self.global_vars.comp_total[i_test,j_test] = self.global_vars.comp_total[i_atual,j_atual] + self.global_vars.comp_pixel[i_test,j_test]
-
-                        elif self.global_vars.direcoes[i_atual, j_atual] == 135:
-                            i_test = lin + 1
-                            j_test = col + 1
-                            self.global_vars.comp_total[i_test,j_test] = self.global_vars.comp_total[i_atual,j_atual] + self.global_vars.comp_pixel[i_test,j_test]
-
-                        elif self.global_vars.direcoes[i_atual, j_atual] == 180:
-                            i_test = lin + 1
-                            j_test = col
-                            self.global_vars.comp_total[i_test,j_test] = self.global_vars.comp_total[i_atual,j_atual] + self.global_vars.comp_pixel[i_test,j_test]
-
-                        elif self.global_vars.direcoes[i_atual, j_atual] == 225:
-                            i_test = lin + 1
-                            j_test = col - 1
-                            self.global_vars.comp_total[i_test,j_test] = self.global_vars.comp_total[i_atual,j_atual] + self.global_vars.comp_pixel[i_test,j_test]
-
-                        elif self.global_vars.direcoes[i_atual, j_atual] == 270:
-                            i_test = lin
-                            j_test = col - 1
-                            self.global_vars.comp_total[i_test,j_test] = self.global_vars.comp_total[i_atual,j_atual] + self.global_vars.comp_pixel[i_test,j_test]
-
-                        elif self.global_vars.direcoes[i_atual, j_atual] == 315:
-                            i_test = lin - 1
-                            j_test = col - 1
-                            self.global_vars.comp_total[i_test,j_test] = self.global_vars.comp_total[i_atual,j_atual] + self.global_vars.comp_pixel[i_test,j_test]
-            
-                        elif self.global_vars.direcoes[i_atual, j_atual] == 360:
-                            i_test = lin - 1
-                            j_test = col    
-                            self.global_vars.comp_total[i_test,j_test] = self.global_vars.comp_total[i_atual,j_atual] + self.global_vars.comp_pixel[i_test,j_test]
-
-                        i_atual = i_test
-                        j_atual = j_test
-                    
-                    # Definindo variável do tipo de escoamento
-                    self.global_vars.tipo_escoamento[i_atual,j_atual] = 1
-        
-        # Definindo variável do tipo de escoamento
-        self.global_vars.tipo_escoamento[self.global_vars.tipo_escoamento != 1] = 2
-
-        # Cálculo do tempo de viagem
-        self.global_vars.P24 = self.global_vars.P24 * 0.0393701 #mudança de unidade
-        area_molhada_max = 0
-        bank_full_width_max = 0
-        r = 0
-        for lin in range(self.rdc_vars.nlin):
-            for col in range(self.rdc_vars.ncol):
-                if self.global_vars.bacia[lin,col] == 1:
-
-                    # Tempo de viagem em superfície
-                    if self.global_vars.dren[lin,col] == 0:
-                        # Sheet flow
-                        if self.global_vars.tipo_escoamento[lin,col] == 2:
-                            self.global_vars.tempo_viagem[lin,col] = ((0.007 * ((self.global_vars.nSolo[lin,col] * (self.global_vars.comp_pixel[lin,col] * 3.28084)) ** 0.8)) / ((self.global_vars.P24 ** 0.5) * (self.global_vars.decliv_pixel[lin,col] ** 0.4))) * 60
-                        # Shallow flow
-                        if self.global_vars.tipo_escoamento[lin,col] == 1:
-                            self.global_vars.tempo_viagem[lin,col] = (self.global_vars.comp_pixel[lin,col] / ((self.global_vars.coef_k_pixel[lin,col] * (self.global_vars.decliv_pixel[lin,col] ** 0.5)) * 0.3048)) * (1 / 60)
-
-                    # Tempo de viagem em canal
-                    if self.global_vars.dren[lin,col] == 1:
-
-                        # Trechos enviados pelo usuário
-                        if self.global_vars.classerio[lin,col] <= self.global_vars.n_total_trechos:
-                            for k in range(self.global_vars.n_total_trechos):
-                                if self.global_vars.classerio[lin,col] == self.global_vars.id_trechos[k]:
-                                    vel_dren = ((self.global_vars.Rhclasse[k] ** (2/3)) * (self.global_vars.Sclasse[k]**(1/2))) / self.global_vars.Mannclasse[k]
-                                    self.global_vars.Seq[lin,col] = self.global_vars.Sclasse[k]
-                                    self.global_vars.tempo_viagem[lin,col] = (self.global_vars.comp_pixel[lin,col] / vel_dren) / 60
-
-                        # Trechos determinados pela rotina 
-                        if self.global_vars.classerio[lin,col] > self.global_vars.n_total_trechos:
-                            self.global_vars.area_molhada[lin,col] = self.global_vars.coef_c * (self.global_vars.dren_area[lin,col]**self.global_vars.coef_d)
-                            self.global_vars.bankfull_width[lin,col] = self.global_vars.coef_g * (self.global_vars.dren_area[lin,col]**self.global_vars.coef_h)
-                            perimetro_molhado = ((((2 * (10 ** (1 / 2))) - 2) / 3) * ((self.global_vars.bankfull_width[lin,col] - (((self.global_vars.bankfull_width[lin,col] ** 2) - ((4 / 3) * self.global_vars.area_molhada[lin,col])) ** (1 / 2))) / (2 / 3))) + self.global_vars.bankfull_width[lin,col]
-                            raio_hidraulico = self.global_vars.area_molhada[lin,col] / perimetro_molhado
-                            vel_dren = ((raio_hidraulico ** (2/3)) * (self.global_vars.Seq[lin,col] ** (1/2))) / self.global_vars.n_canal
-                            self.global_vars.tempo_viagem[lin,col] = (self.global_vars.comp_pixel[lin,col] / vel_dren) / 60
-                            if self.global_vars.divisao_trecho[lin,col] == 1:
-                                k = self.global_vars.classerio[lin,col]
-                                self.global_vars.Rhclasse[k] = self.global_vars.rh_medio[lin,col]
-                                self.global_vars.Sclasse[k] = self.global_vars.Seq[lin,col]
-                                self.global_vars.Mannclasse[k] = self.global_vars.n_canal
-
-                            if self.global_vars.area_molhada[lin,col] > area_molhada_max:
-                                area_molhada_max = self.global_vars.area_molhada[lin,col]
-
-                            if self.global_vars.bankfull_width[lin,col] > bank_full_width_max:
-                                bank_full_width_max = self.global_vars.bankfull_width[lin,col]
-
-                    # Tempo de viagem no reservatório
-                    if self.global_vars.reservoir[lin,col] == 1:
-                        vel_reservatorio = (9.81 * self.global_vars.profundidade_resers)**(1/2)
-                        self.global_vars.tempo_viagem[lin,col] = (self.global_vars.comp_pixel[lin,col] / vel_reservatorio) / 60
-
-                    r+=1
-
-        # Determinação da declividade máxima
-        decliv_max_rio = np.amax(self.global_vars.Seq[self.global_vars.dren==1])
-        decliv_max_sup = np.amax(self.global_vars.decliv_pixel[self.global_vars.dren==0])
-        if decliv_max_rio > decliv_max_sup:
-            decliv_max = decliv_max_rio
-        else:
-            decliv_max = decliv_max_sup
-        
-        # Determiação do tempo máximo em que a água leva para escoar em um pixel
-        num_r = r
-        Tdmax = np.amax(self.global_vars.tempo_viagem_pixel)
-
-        # Determinação do tempo em que a água leva para ir do pixel até o exutório
-        for lin in range(self.rdc_vars.nlin):
-            for col in range(self.rdc_vars.ncol):
-                if self.global_vars.bacia[lin,col] == 1:
-                    i_atual = lin
-                    j_atual = col
-
-                    self.global_vars.ttotal[i_atual,j_atual] = self.global_vars.tempo_viagem[i_atual,j_atual]
-
-                    while self.global_vars.bacia[i_atual, j_atual]  == 1:
-                        if self.global_vars.direcoes[i_atual, j_atual] == 45:
-                            i_test = lin - 1
-                            j_test = col + 1
-                            self.global_vars.ttotal[i_test,j_test] = self.global_vars.ttotal[i_atual,j_atual] + self.global_vars.tempo_viagem[i_test,j_test]
-
-                        elif self.global_vars.direcoes[i_atual, j_atual] == 90:
-                            i_test = lin
-                            j_test = col + 1
-                            self.global_vars.ttotal[i_test,j_test] = self.global_vars.ttotal[i_atual,j_atual] + self.global_vars.tempo_viagem[i_test,j_test]
-
-                        elif self.global_vars.direcoes[i_atual, j_atual] == 135:
-                            i_test = lin + 1
-                            j_test = col + 1
-                            self.global_vars.ttotal[i_test,j_test] = self.global_vars.ttotal[i_atual,j_atual] + self.global_vars.tempo_viagem[i_test,j_test]
-
-                        elif self.global_vars.direcoes[i_atual, j_atual] == 180:
-                            i_test = lin + 1
-                            j_test = col
-                            self.global_vars.ttotal[i_test,j_test] = self.global_vars.ttotal[i_atual,j_atual] + self.global_vars.tempo_viagem[i_test,j_test]
-
-                        elif self.global_vars.direcoes[i_atual, j_atual] == 225:
-                            i_test = lin + 1
-                            j_test = col - 1
-                            self.global_vars.ttotal[i_test,j_test] = self.global_vars.ttotal[i_atual,j_atual] + self.global_vars.tempo_viagem[i_test,j_test]
-
-                        elif self.global_vars.direcoes[i_atual, j_atual] == 270:
-                            i_test = lin
-                            j_test = col - 1
-                            self.global_vars.ttotal[i_test,j_test] = self.global_vars.ttotal[i_atual,j_atual] + self.global_vars.tempo_viagem[i_test,j_test]
-
-                        elif self.global_vars.direcoes[i_atual, j_atual] == 315:
-                            i_test = lin - 1
-                            j_test = col - 1
-                            self.global_vars.ttotal[i_test,j_test] = self.global_vars.ttotal[i_atual,j_atual] + self.global_vars.tempo_viagem[i_test,j_test]
-            
-                        elif self.global_vars.direcoes[i_atual, j_atual] == 360:
-                            i_test = lin - 1
-                            j_test = col    
-                            self.global_vars.ttotal[i_test,j_test] = self.global_vars.ttotal[i_atual,j_atual] + self.global_vars.tempo_viagem[i_test,j_test]
-                            
-                        i_atual = i_test
-                        j_atual = j_test
-
-                    self.global_vars.tempo_viagem_tot[lin,col] = self.global_vars.ttotal[i_atual,j_atual]
-
-        # Determinação do tempo de concentração máximo 
-        self.global_vars.tc_max = np.amax(self.global_vars.tempo_viagem_tot)
-
-    def numera_pix_bacia(self):
-        '''Esta função enumera e quantifica os píxels presentes na bacia hidrográfica, além de atualizar variáveis inerente ao programa'''
-        # Dimensionamento das variáveis
-        numero_pixel = 0
-        self.numb_pix_bacia = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
-        # Enumera os pixels presentes na bacia hidrográfica
-        for lin in range(self.rdc_vars.nlin):
-            for col in range(self.rdc_vars.ncol):
-                if self.global_vars.bacia[lin][col] == 1:
-                    numero_pixel += 1
-                    self.numb_pix_bacia[lin][col] = numero_pixel
-
-        # Computa o número total de pixels que são bacia hidrográfica
-        self.numero_total_pix = numero_pixel
-        numero_pixel = None
-
-    def leh_CN(self):
-        '''Esta função lê o arquivo enviado pelo usuário contendo os valores do parametro CURVE-NUMBER (CN) para os diferentes pixels da bacia hidrográfica'''
-        # Define variáveis
-        self.CN = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
-        arquivo = self.dlg_exc_rain.le_2_pg2.text() 
-        # Tratamento de erros: verifica se o arquivo foi corretamente enviado
-        if arquivo:
-            # Realizando a abertura do arquivo raster e coletando as informações referentes as dimensões do mesmo
-            rst_file_CN = gdal.Open(arquivo)
-            
-            # Lendo os dados raste como um array 
-            dados_lidos_raster_CN = rst_file_CN.GetRasterBand(1).ReadAsArray()
-
-            #  Tratamento de erros: verifica se o arquivo raster foi aberto corretamente
-            if rst_file_CN is not None:
-                # Reorganizando os dados lidos em uma nova matriz, essa possui as informações sobre as classes dos rios
-                self.CN = dados_lidos_raster_CN
-                # Fechando o dataset GDAL referente ao arquivo raster
-                rst_file_CN = None
-            else:
-                # Caso o arquivo raster apresente erros durante a abertura, ocorrerá um erro
-                resulte = f"Failde to open the raster file: {arquivo}"
-                QMessageBox.warning(None, "ERROR!", resulte)
-                
-        else:
-            # Exibe uma mensagem de erro
-            result ="Nenhum arquivo foi selecionado!"
-            QMessageBox.warning(None, "ERROR!", result)
-        return self.CN 
-
-    
-    def leh_tempo_viagem(self):
-        '''Esta função lê o arquivo contendo o tempo de concentração de cada pixel presente na bacia hidrográfica e o armazena'''
-
-        arquivo = self.dlg_flow_rout.le_3_pg2.text()
-        # Tratamento de erros: verifica se o arquivo foi corretamente enviado
-        if arquivo:
-            # Realizando a abertura do arquivo raster e coletando as informações referentes as dimensões do mesmo
-            rst_file_Tempo_total = gdal.Open(arquivo)
-            
-            # Lendo os dados raste como um array 
-            dados_lidos_raster_Tempo_total = rst_file_Tempo_total.GetRasterBand(1).ReadAsArray()
-
-            #  Tratamento de erros: verifica se o arquivo raster foi aberto corretamente
-            if rst_file_Tempo_total is not None:
-                # Reorganizando os dados lidos em uma nova matriz, essa possui as informações sobre as classes dos rios
-                Tempo_total = dados_lidos_raster_Tempo_total
-                # Fechando o dataset GDAL referente ao arquivo raster
-                rst_file_Tempo_total = None
-            else:
-                # Caso o arquivo raster apresente erros durante a abertura, ocorrerá um erro
-                resulte = f"Failde to open the raster file: {arquivo}"
-                QMessageBox.warning(None, "ERROR!", resulte)
-                
-        else:
-            # Exibe uma mensagem de erro
-            result ="Nenhum arquivo foi selecionado!"
-            QMessageBox.warning(None, "ERROR!", result)
-
-        return Tempo_total       
-
-    def leh_parametros(self, alfa, d_t, criterio_parada,function):
-        '''Esta função lê os valores enviados pelo usuário contento os parâmetros do modelo: abstração inicial, time step, tempo critério de parada e o beta'''
-        # Armazena as informações enviadas
-        self.alfa = float(alfa)
-        self.delta_t = float(d_t)
-        self.criterio_parada = float(criterio_parada)
-
-        if function ==2:
-            self.beta = float(self.dlg_flow_rout.le_5_pg1.text())
-
-    def leh_precip_distribuida(self, file_):
-        '''Esta função lê o arquivo enviado pelo usuário contento os valores da precipitação destribuidos ao longo dos pixels pertencentes a baica hidrográfica'''
-        self.quantidade_blocos_chuva = 0
-        # Lê os dados enviados e os armaneza
-        arquivo = file_
-        with open(arquivo, 'r', encoding = 'utf-8') as arquivo_txt:
-            # armazena o cabeçalho (primeira linha)
-            lines = arquivo_txt.readline().strip()
-
-            # Sepera as linhas por vígula
-            split_lines = lines.split(',')
-
-        self.quantidade_blocos_chuva = len(split_lines) - 1 
-
-    def leh_posto_pluv(self):
-        '''Esta função é responsável por ler e armazenar as informações dos postos pluviométricos'''
-        # Definição das variáveis
-        id_postos = []
-        latitude = []
-        longitude = []
-        numero_posto = []
-        dict_numero_posto = {}
-        w = 0
-        arquivo_posto = self.dlg_exc_rain.le_2_pg_ri.text()
-        with open(arquivo_posto, 'r', encoding = 'utf-8') as arquivo_txt:
-            # Armazena cabeçalho
-            cabecalho = arquivo_txt.readline().strip()
-            # Lê as linhas do arquivo enviado
-            for line in arquivo_txt:
-                split_lines = line.split(',')
-                id_postos.append(int(split_lines[0]))
-                latitude.append(float(split_lines[1]))
-                longitude.append(float(split_lines[2]))
-                dict_numero_posto[w] = id_postos[w]
-                w+=1
-                numero_posto.append(w)
-
-        # Redimensiona as variáveis globais
-        self.quantidade_postos = len(numero_posto)
-        self.id_postos = np.array(id_postos)
-        self.latitude = np.array(latitude)
-        self.longitude = np.array(longitude)
-        self.numero_posto = dict_numero_posto
-
-    def leh_arquivo_precipitacao(self):
-        '''Esta função lê e armazena os valores de precipitação de cada posto ao longo do tempo'''
-        # Definição das variáveis
-        w = 0
-        # Recebe e lê o arquivo
-        arquivo_precipitacao = self.dlg_exc_rain.le_3_pg_ri.text()
-        with open(arquivo_precipitacao, 'r', encoding = 'utf-8') as arquivo_txt:
-            # Armazena cabeçalho
-            cabecalho = arquivo_txt.readline().strip()
-
-            # Redimenciona variáveis
-            linhas = arquivo_txt.readlines()
-            self.blocos_chuva = len(linhas)
-            self.tempo = np.zeros(self.blocos_chuva)
-            self.chuva = np.zeros((self.blocos_chuva,(self.quantidade_postos)))
-
-            # Retira informações do arquivo
-            w = 0
-            for line in linhas:
-                split_line = line.split(',')
-
-                # Armazena tempo
-                self.tempo[w] = split_line[0]
-
-                # Armazena chuva
-                for c in range(self.quantidade_postos):
-                    self.chuva[w][c] = split_line[c+1]
-                w +=1
-
-    def precipitacao_acumulada(self):
-        '''Esta função lê o arquivo contendo o tempo de concentração de cada pixel presente na bacia hidrográfica e o armazena'''
-
-        arquivo = self.dlg_flow_rout.le_5_pg2.text()
-        # Tratamento de erros: verifica se o arquivo foi corretamente enviado
-        if arquivo:
-            # Realizando a abertura do arquivo raster e coletando as informações referentes as dimensões do mesmo
-            rst_file_chuva_acumulada = gdal.Open(arquivo)
-            
-            # Lendo os dados raste como um array 
-            dados_lidos_raster_chuva_acumulada = rst_file_chuva_acumulada.GetRasterBand(1).ReadAsArray()
-
-            #  Tratamento de erros: verifica se o arquivo raster foi aberto corretamente
-            if rst_file_chuva_acumulada is not None:
-                # Reorganizando os dados lidos em uma nova matriz, essa possui as informações sobre as classes dos rios
-                chuva_acumulada = dados_lidos_raster_chuva_acumulada
-                # Fechando o dataset GDAL referente ao arquivo raster
-                rst_file_chuva_acumulada = None
-            else:
-                # Caso o arquivo raster apresente erros durante a abertura, ocorrerá um erro
-                resulte = f"Failde to open the raster file: {arquivo}"
-                QMessageBox.warning(None, "ERROR!", resulte)
-                
-        else:
-            # Exibe uma mensagem de erro
-            result ="Nenhum arquivo foi selecionado!"
-            QMessageBox.warning(None, "ERROR!", result)
-
-        return chuva_acumulada 
-           
-    def rainfall_interpolation(self):
-        '''Esta função gera o arquivo com a precipitação por pixel por meio da interpolação dos valores das estações pluviométricas enviadas pelo usuário'''
-        # Definição de variáveis
-        numero_pixel = 0
-        numerador = 0
-        denominador = 0
-        distancia_y = 0
-        distancia_x = 0
-        rainfall = 0
-
-        # Gera o arquivo com precipitação interpolada por pixel
-        arquivo = self.dlg_exc_rain.le_4_pg_ri.text()
-        with open(arquivo, 'w', encoding = 'utf-8') as arquivo_txt:
-            # JVD:optimize: Escreve cabeçalho
-            arquivo_txt.write('Pixel,')
-            arquivo_txt.write(','.join(map(str, self.tempo)) + '\n')
-
-            # JVDoptimize: interpolação da precipitação
-            for lin in range(self.rdc_vars.nlin):
-                for col in range(self.rdc_vars.ncol):
-                    if self.global_vars.bacia[lin][col] == 1:
-                        numero_pixel += 1
-                        linha = str(numero_pixel)
-                        x_pixel = self.X_minimo + (col * self.d_x) + (self.d_x / 2)
-                        y_pixel = self.Y_minimo - (lin * self.d_y) + (self.d_y / 2)
-
-                        # Aplicação da fórmula de interpolação
-                        for w in range(self.blocos_chuva):
-                            numerador = 0
-                            denominador = 0
-                            for k in range(self.quantidade_postos):
-                                for q in range(self.quantidade_postos):
-                                    if self.numero_posto[q] == self.id_postos[k]:
-                                        distancia_y = self.latitude[k] - y_pixel
-                                        distancia_x = self.longitude[k] - x_pixel                                
-                                        distancia = np.sqrt((distancia_x ** 2) + (distancia_y ** 2))
-                                        numerador += (float(self.chuva[w][q]) / (distancia**2))
-                                        denominador += (1/(distancia**2))
-                            rainfall = numerador / denominador
-                            linha = linha + ',' + f'{rainfall}'
-
-                        # Escreve informação no arquivo
-                        arquivo_txt.write(linha+'\n')
-
-    
-    def rainfall_interpolation_map(self):
-        '''Se o botão save maps for clicado: gera os arquivos raster com precipitação interpolada por pixel por duração do evento'''
-        # Cria variáveis
-        self.chuva_pixel = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
-        numero_pixel = 0
-        numerador = 0
-        denonimador = 0
-        # Gera um arquivo por evento de precipitação
-        for w in range(self.blocos_chuva):
-            # Pasta enviada pelo user
-            path = self.dlg_exc_rain.le_5_pg_ri.text()
-            arquivo = path + f'\{str(self.tempo[w])}.RST'
-
-            # interpolação da pricipitação para o evento em questão
-            for lin in range(self.rdc_vars.nlin):
-                for col in range(self.rdc_vars.ncol):
-                    if self.global_vars.bacia[lin][col] == 1:
-                        numero_pixel += 1
-                        numerador = 0
-                        denominador = 0
-                        for k in range(self.quantidade_postos):
-                            for q in range(self.quantidade_postos):
-                                if self.numero_posto[q] == self.id_postos[k]:
-                                    x_pixel = self.X_minimo + (col * self.d_x) + (self.d_x / 2)
-                                    y_pixel = self.Y_minimo - (lin * self.d_y) + (self.d_y / 2)
-                                    distancia_y = self.latitude[k] - y_pixel
-                                    distancia_x = self.longitude[k] - x_pixel
-                                    distancia = ((distancia_x ** 2) + (distancia_y ** 2))**(1/2)
-                                    numerador += (self.chuva[w][q] / (distancia**2))
-                                    denominador += (1/(distancia**2))
-                        
-                        # Armazena o valor da pricipitação do pixel
-                        rainfall_pix = numerador / denominador
-                        self.chuva_pixel[lin][col] = rainfall_pix
-
-            num_pix_max = np.amax(self.chuva_pixel)
-            # Escreve arquivo raster (.RST) com a precipitação por pixel em toda bacia para o evento em questão
-            dados_chuva_pixel = np.array([[float(self.chuva_pixel[lin][col]) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)])
-            tipo_dados = gdalconst.GDT_Float32
-
-            # Obtendo o driver o para escrita do arquivo em GeoTiff
-            driver = gdal.GetDriverByName('RST')
-            dataset.SetGeoTransform(self.rdc_vars.geotransform)
-            dataset.SetProjection(self.rdc_vars.projection)
-            # Cria arquivo final
-            dataset = driver.Create(arquivo, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
-
-            # Escreve os dados na banda do arquivo
-            banda = dataset.GetRasterBand(1)
-            banda.WriteArray(dados_chuva_pixel)
-
-            # Fechando o arquivo
-            dataset = None
-            banda = None
-            driver = None
-            tipo_dados = None
-
-            # Alocando as variáveis para escrita da documentação do arquivo rdc para o comprimento da rede de drenagem
-            self.rdc_vars.nlin3 = self.rdc_vars.nlin
-            self.rdc_vars.ncol3 = self.rdc_vars.ncol
-            self.rdc_vars.tipo_dado = 2
-            self.rdc_vars.tipoMM = 2
-            self.rdc_vars.VarMM2 = self.chuva_pixel
-            self.rdc_vars.i3 = 0 
-            self.rdc_vars.Xmin3 = self.X_minimo
-            self.rdc_vars.Xmax3 = self.X_maximo
-            self.rdc_vars.Ymin3 = self.Y_minimo
-            self.rdc_vars.Ymax3 = self.Y_maximo
-            self.rdc_vars.Varmax = num_pix_max
-            self.rdc_vars.Varmin = 0
-            nomeRST = arquivo
-            self.global_vars.metrordc = self.global_vars.metro
-            self.escreve_RDC(nomeRST)          
-
-    def excess_rainfall(self):
-        '''Esta função determina gera os arquivos associados a precipitação excedente de cada pixel presente na baica hidrográfica, fumentando-se no método do SCS-CN'''
-
-        # JVD: estrutura dos arrays
-        self.time = np.zeros(50000)
-        self.hacum = np.zeros(50000)
-        self.perdas_iniciais = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
-        self.pe_acumulada_pixel = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
-        self.chuva_total_pixel = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
-        self.Spotencial = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
-        pixel_atual = 0
-        self.hexc_pix = np.zeros((self.numero_total_pix, self.quantidade_blocos_chuva))
-        
-        arquivo_precipitacao = self.dlg_exc_rain.le_4_pg2.text()
-        with open(arquivo_precipitacao, 'r', encoding = 'utf-8') as arquivo_txt:
-            # Armazena cabeçalho do arquivo
-            cabecalho = arquivo_txt.readline().strip()
-            for lin in range(self.rdc_vars.nlin):
-                for col in range(self.rdc_vars.ncol):
-                    if self.global_vars.bacia[lin][col]==1:
-                        # Cálculo do potencial de armazenamento do solo por pixel presente na bacia
-                        self.Spotencial[lin][col] = (25400/self.CN[lin][col])-254
-
-                        # Cálculo das perdas iniciais por pixel presente na bacia
-                        self.perdas_iniciais[lin][col] = self.alfa * self.Spotencial[lin][col]
-
-                        Pacum = 0
-                        self.time[0] = 0
-
-                        # Armazena as linha do arquivo de precipitação
-                        line = arquivo_txt.readline().strip()
-                        split_line = line.split(',')
-
-                        for w in range(1, self.quantidade_blocos_chuva+1):
-                            chuva_distribuida = float(split_line[w])
-                            self.time[w] = self.time[w-1] + self.delta_t
-
-                            Pacum += chuva_distribuida 
-
-                            # Cálculo da chuva excedente
-                            if Pacum <= self.perdas_iniciais[lin][col]:
-                                self.hacum[w] = 0
-                            else:
-                                self.hacum[w] = ((Pacum - self.perdas_iniciais[lin][col])**2) / (Pacum - self.perdas_iniciais[lin][col] + self.Spotencial[lin][col])
-
-                            # precipitação efetiva desacumulada por pixel
-                            self.hexc_pix[pixel_atual][w-1] = self.hacum[w] - self.hacum[w-1]
-
-                        # Chuva excedente acumulada do pixel
-                        self.pe_acumulada_pixel[lin][col] = self.hacum[self.quantidade_blocos_chuva]
-
-                        # Chuva total no pixel
-                        self.chuva_total_pixel[lin][col] = Pacum
-                        
-                        # Atualiza pixel em questão
-                        pixel_atual+=1
-           
-    def hidrograma_dlr(self):
-        '''Esta função gera o hidrograma-DLR da bacia hidrográfica conforme os dados de precipitação enviados'''
-        # Definição das variáveis
-        Tmax = 0
-        self.tempo_total = self.leh_tempo_viagem()
-        self.Spotencial = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
-        self.volume_total_pix = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
-        self.vazao_pico = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
-        self.tempo_pico = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
-        self.TempoTotal_reclass = np.zeros((self.rdc_vars.nlin, self.rdc_vars.ncol))
-        self.vazao_pixel = np.zeros(self.rdc_vars.nlin* self.rdc_vars.ncol)
-        self.tempo_intervalo = np.zeros(self.rdc_vars.nlin* self.rdc_vars.ncol)
-        time = np.zeros(self.rdc_vars.nlin* self.rdc_vars.ncol)
-        pe_acumulada_pixel = self.precipitacao_acumulada()
-        self.tempo_vazao_pixel = np.zeros(self.rdc_vars.nlin* self.rdc_vars.ncol)
-        self.vazao_amortecida_pixel = np.zeros(self.rdc_vars.nlin* self.rdc_vars.ncol)
-        self.vazao = np.zeros(self.rdc_vars.nlin* self.rdc_vars.ncol)
-
-        # JVDoptmize: máximo tempo de viagem ao exutório
-        tempo_total_bacia = self.tempo_total[self.global_vars.bacia == 1]
-        Tmax = np.amax(tempo_total_bacia)
-        
-        # Reclassificação do tempo de viagem ao exutório para multiplos de delta_t
-        w = 0
-        self.tempo_intervalo[w] = 0
-        while self.tempo_intervalo[w] <= Tmax + self.delta_t:
-            self.tempo_intervalo[w + 1] = self.tempo_intervalo[w] + self.delta_t
-            w += 1
-
-        # JVD: correção sintaxe de vb to py
-        # self.num_intervalos = w - 1
-        self.num_intervalos = w
-        diferenca = 0
-        for lin in range(self.rdc_vars.nlin):
-            for col in range(self.rdc_vars.ncol):
-                diferenca_minima = 100000000
-                if self.global_vars.bacia[lin][col] == 1:
-                    for g in range(self.num_intervalos):
-                        if self.tempo_intervalo[g] >= self.tempo_total[lin][col]:
-                            diferenca = -(self.tempo_total[lin][col] - self.tempo_intervalo[g])
-
-                        else:
-                            diferenca = (self.tempo_total[lin][col] - self.tempo_intervalo[g])
-
-                        if diferenca < diferenca_minima:
-                            diferenca_minima = diferenca
-                            self.TempoTotal_reclass[lin][col] = float(self.tempo_intervalo[g])
-
-        # Determinação do hidrograma
-        # Dados do arquivo de precipitação enviado
-        tempo_exutorio = 0
-        k = 0
-        storage_coefficient = 0
-        c_1 = 0
-        c_2 = 0
-        area_bacia = 0
-
-        # lê hietograma 
-        arquivo_precipitacao = self.dlg_flow_rout.le_4_pg2.text()
-        with open(arquivo_precipitacao, 'r', encoding = 'utf-8') as arquivo_txt:
-            # Armazena cabecalho do arquivo com a precipitação efetiva por pixel
-            cabecalho = arquivo_txt.readline().strip()
-
-            for lin in range(self.rdc_vars.nlin):
-                for col in range(self.rdc_vars.ncol):
-                    if self.global_vars.bacia[lin][col] == 1:
-                        time[0] = 0
-                        
-                        # Armazena as linha do arquivo de precipitação efetiva
-                        line = arquivo_txt.readline().strip()
-                        split_line = line.split(',')
-
-                        for h in range(1, self.quantidade_blocos_chuva + 1):
-                            self.Pexc = float(split_line[h])
-                            time[h] = time[h-1] + self.delta_t
-
-                            if self.Pexc > 0:
-                                # Vazão correspondente no exutório
-                                self.Pexc = (((self.Pexc/1000) * (self.global_vars.dx ** 2)) / self.delta_t) * (1 / 60)  # Vazão em m³/s
-
-                                # Representação da vazão no exutório (translação)
-                                tempo_exutorio = time[h-1] + self.TempoTotal_reclass[lin][col]
-
-                                k = int(tempo_exutorio / self.delta_t)
-                                self.vazao_pixel[k] = self.Pexc
-
-                        # Volume de água gerado por pixel
-                        self.volume_total_pix[lin][col] = (pe_acumulada_pixel[lin][col] / (10 ** 3)) * (self.global_vars.dx ** 2)  # em m³
-
-                        # Volume total de água gerada em todo evento
-                        self.volume_total += self.volume_total_pix[lin][col]
-
-                        # Parâmetro para estimativa do armazenamento
-                        storage_coefficient = self.tempo_total[lin][col] / ((1 / self.beta) - 1)  # em minutos
-
-                        c_1 = self.delta_t / ((2 * storage_coefficient) + self.delta_t)
-                        c_2 = 1 - (2 * c_1)
-
-                        # Amortecimento do hidrograma do pixel
-                        k = 0
-                        blocos_vazao = 0
-                        self.tempo_vazao_pixel[k] = 0
-                        self.vazao_amortecida_pixel[k] = c_1 * self.vazao_pixel[k]
-                        self.vazao[k] = self.vazao[k] + self.vazao_amortecida_pixel[k]
-                        while self.tempo_vazao_pixel[k] <= self.criterio_parada:
-                            self.vazao_amortecida_pixel[k+1] = (c_1 * self.vazao_pixel[k+1]) + (c_1 * self.vazao_pixel[k]) + (c_2 * self.vazao_amortecida_pixel[k])
-                            self.tempo_vazao_pixel[k+1] = self.tempo_vazao_pixel[k] + self.delta_t
-                            k += 1
-                            blocos_vazao += 1
-                            self.vazao[k] = self.vazao[k] + self.vazao_amortecida_pixel[k]
-
-                        # Determinação da vazão e do tempo de pico do hidrograma-DLR por pixel
-                        self.vazao_pico[lin][col] = np.amax(self.vazao)
-                        self.blocos_vazao = blocos_vazao
-
-                        # Zera vazão no pixel
-                        self.vazao_pixel.fill(0)
-                        self.vazao_amortecida_pixel.fill(0)
-
-            # Cálculo da área da bacia
-            area_bacia = self.numero_total_pix * (self.global_vars.dx **2) # em m²
-
-            # Chuva excedente calculada
-            self.chuva_excedente_calc = (self.volume_total / area_bacia) * (10**3) #em mm
-
-    def tamanho_numero(self, varaux, num):
-        '''
-        Esta função a dimensão dos números que serão usados na padronização do documento
-        '''
-        negativo, nzeros, pp, varaux2, limsup = None, None, None, None, None
-        
-        if varaux < 0:
-            negativo = 1
-        else:
-            negativo = 0
-        
-        varaux2 = np.abs(varaux)
-        
-        for pp in range(11):
-            limsup = 10.0**pp
-            if varaux2 < limsup:
-                nzeros = pp
-                break
-
-        # Se o valor for inteiro
-        if num == 1:
-            if nzeros == 0:
-                self.global_vars.tamnum = 1 + negativo
-            else:
-                self.global_vars.tamnum = nzeros + negativo
-        # Se o valor for real
-        else:
-            if nzeros == 0:
-                self.global_vars.tamnum = 8 + 1 + negativo
-            else:
-                self.global_vars.tamnum = 8 + nzeros + negativo   
-
-        return self.global_vars.tamnum
-
-    def aux_RDC(self, textoaux, varaux, tamnum):
-        """
-        Esta função é responsável por formatar as informações dos arquivos de saida do programa
-        """
-        if tamnum == 1:
-            formated_phrase = f'{textoaux:14s}{varaux:1d}\n'
-            formated_phrase = str(formated_phrase)
-            return formated_phrase
-        elif tamnum == 2:
-            formated_phrase = f'{textoaux:14s}{varaux:2d}\n'
-            formated_phrase = str(formated_phrase)
-            return formated_phrase
-        elif tamnum == 3:
-            formated_phrase = f'{textoaux:14s}{varaux:3d}\n'
-            formated_phrase = str(formated_phrase)
-            return formated_phrase
-        elif tamnum == 4:
-            formated_phrase = f'{textoaux:14s}{varaux:4d}\n'
-            formated_phrase = str(formated_phrase)
-            return formated_phrase
-        elif tamnum == 5:
-            formated_phrase = f'{textoaux:14s}{varaux:5d}\n'
-            formated_phrase = str(formated_phrase)
-            return formated_phrase
-        elif tamnum == 6:
-            formated_phrase = f'{textoaux:14s}{varaux:7d}\n'
-            formated_phrase = str(formated_phrase)
-            return formated_phrase
-        elif tamnum == 8:
-            formated_phrase = f'{textoaux:14s}{varaux:8d}\n'
-            formated_phrase = str(formated_phrase)
-            return formated_phrase
-        elif tamnum == 9:
-            formated_phrase = f'{textoaux:14s}{varaux:9.7f}\n'
-            formated_phrase = str(formated_phrase)
-            return formated_phrase
-        elif tamnum == 10:
-            formated_phrase = f'{textoaux:14s}{varaux:10.7f}\n'
-            formated_phrase = str(formated_phrase)
-            return formated_phrase
-        elif tamnum == 11:
-            formated_phrase = f'{textoaux:14s}{varaux:11.7f}\n'
-            formated_phrase = str(formated_phrase)
-            return formated_phrase
-        elif tamnum == 12:
-            formated_phrase = f'{textoaux:14s}{varaux:12.7f}\n'
-            formated_phrase = str(formated_phrase)
-            return formated_phrase
-        elif tamnum == 13:
-            formated_phrase = f'{textoaux:14s}{varaux:13.7f}\n'
-            formated_phrase = str(formated_phrase)
-            return formated_phrase
-        elif tamnum == 14:
-            formated_phrase = f'{textoaux:14s}{varaux:14.7f}\n'
-            formated_phrase = str(formated_phrase)
-            return formated_phrase
-        elif tamnum == 15:
-            formated_phrase = f'{textoaux:14s}{varaux:15.7f}\n'
-            formated_phrase = str(formated_phrase)
-            return formated_phrase
-        elif tamnum == 16:
-            formated_phrase = f'{textoaux:14s}{varaux:16.7f}\n'
-            formated_phrase = str(formated_phrase)
-            return formated_phrase
-        elif tamnum == 17:
-            formated_phrase = f'{textoaux:14s}{varaux:17.7f}\n'
-            formated_phrase = str(formated_phrase)
-            return formated_phrase
-        elif tamnum == 18:
-            formated_phrase = f'{textoaux:14s}{varaux:18.7f}\n'
-            formated_phrase = str(formated_phrase)
-            return formated_phrase
-        elif tamnum == 19:
-            formated_phrase = f'{textoaux:14s}{varaux:19.7f}\n'
-            formated_phrase = str(formated_phrase)
-            return formated_phrase
-         
-    def escreve_RDC(self, nome_RST):
-        """
-        Esta função constrói os arquivos de saída das diferentes funcionalidades do programa
-        """
-        # Identifica a posição da extensão no arquivo .rst
-        pos_ext = nome_RST.find('.rst')
-
-        # Atribui o nome do arquivo .rst ao novo arquivo .rdc
-        nome_rdc = nome_RST[:pos_ext] + '.rdc'
-
-        # Abrindo o arquivo 
-        with open(nome_rdc, 'w', encoding = 'utf-8') as rdc_file:
-            # Escreve linha com formato do arquivo
-            rdc_file.write('file format : IDRISI Raster A.1\n')
-            # Escreve linha com o título do arquivo
-            rdc_file.write('File title  : \n')
-
-            # Escreve linha com tipo de dado
-            if self.rdc_vars.tipo_dado == 1:
-                rdc_file.write('data type   : integer\n')
-            elif self.rdc_vars.tipo_dado == 2:
-                rdc_file.write('data type   : real\n')
-
-            # Escreve a linha com o tipo de arquivo
-            rdc_file.write('file type   : binary\n')
-
-            # Escreve a linha com o número de colunas
-            self.global_vars.varaux = self.rdc_vars.ncol3
-            self.rdc_vars.num = 1
-            textoaux = 'columns     : ' 
-            tamnum = self.tamanho_numero(self.global_vars.varaux, self.rdc_vars.num)
-            phrase = self.aux_RDC(textoaux, self.global_vars.varaux, tamnum)
-            rdc_file.write(phrase)
-
-            # Escreve a linha com o número de linhas
-            self.global_vars.varaux = self.rdc_vars.nlin3
-            self.rdc_vars.num = 1 # num = 1 : integer
-            textoaux = 'rows        : ' 
-            tamnum = self.tamanho_numero(self.global_vars.varaux, self.rdc_vars.num)
-            phrase = self.aux_RDC(textoaux, self.global_vars.varaux, tamnum)
-            rdc_file.write(phrase)
-            # Escreve a linha com o sistema de referência
-            rdc_file.write(f'ref. system : {self.rdc_vars.sistemaref}\n')
-
-            # Escreve a linha com a unidade de referência
-            if self.global_vars.metro == 1:
-                rdc_file.write('ref. units  : m\n')
-            else:
-                rdc_file.write('ref. units  : deg\n')
-            
-            # Escreve linha com distância unitária de referência
-            rdc_file.write(f'unit dist.  : {1.0:<9.7f}\n')
-
-
-            # Escreve linha com coordenada xmin
-            self.global_vars.varaux = self.rdc_vars.Xmin3
-            self.rdc_vars.num = 2 # num = 2 : real
-            textoaux = 'min. X      : '
-            tamnum = self.tamanho_numero(self.global_vars.varaux, self.rdc_vars.num)
-            phrase = self.aux_RDC(textoaux, self.global_vars.varaux, tamnum)
-            rdc_file.write(phrase)
-
-            # Escreve linha com coordenada xmax
-            self.global_vars.varaux = self.rdc_vars.Xmax3
-            self.rdc_vars.num = 2 # num = 2 : real
-            textoaux = 'max. X      : '
-            tamnum = self.tamanho_numero(self.global_vars.varaux, self.rdc_vars.num)
-            phrase = self.aux_RDC(textoaux, self.global_vars.varaux, tamnum)
-            rdc_file.write(phrase)
-            
-            # Escreve linha com coordenada ymin
-            self.global_vars.varaux = self.rdc_vars.Ymin3
-            self.rdc_vars.num = 2 # num = 2 : real
-            textoaux = 'min. Y      : '
-            tamnum = self.tamanho_numero(self.global_vars.varaux, self.rdc_vars.num)
-            phrase = self.aux_RDC(textoaux, self.global_vars.varaux, tamnum)
-            rdc_file.write(phrase)
-
-            # Escreve linha com coordenada ymax
-            self.global_vars.varaux = self.rdc_vars.Ymax3
-            self.rdc_vars.num = 2 # num = 2 : real
-            textoaux = 'max. Y      : '
-            tamnum = self.tamanho_numero(self.global_vars.varaux, self.rdc_vars.num)
-            phrase = self.aux_RDC(textoaux, self.global_vars.varaux, tamnum)
-            rdc_file.write(phrase)
-
-            # Escreve a linha com o valor do erro dos dados
-            rdc_file.write(f"pos'n error : unknown\n")
-
-            # Escreve linha com resolução
-            self.global_vars.varaux = self.global_vars.dx
-            self.rdc_vars.num = 2 # num = 2 : real
-            textoaux = 'resolution  : '
-            tamnum = self.tamanho_numero(self.global_vars.varaux, self.rdc_vars.num)
-            phrase = self.aux_RDC(textoaux, self.global_vars.varaux, tamnum)
-            rdc_file.write(phrase)
-
-            # Escreve a linha com o valor mínimo dos dados 
-            self.global_vars.varaux = self.rdc_vars.Varmin
-            self.rdc_vars.num = 2 # num = 2 : real
-            textoaux = 'min. value  : '
-            tamnum = self.tamanho_numero(self.global_vars.varaux, self.rdc_vars.num)
-            phrase = self.aux_RDC(textoaux, self.global_vars.varaux, tamnum)
-            rdc_file.write(phrase)
-
-            # Escreve a linha com o valor máximo dos dados 
-            self.global_vars.varaux = self.rdc_vars.Varmax
-            self.rdc_vars.num = 2 # num = 2 : real
-            textoaux = 'max. value  : '
-            tamnum = self.tamanho_numero(self.global_vars.varaux, self.rdc_vars.num)
-            phrase = self.aux_RDC(textoaux, self.global_vars.varaux, tamnum)
-            rdc_file.write(phrase)
-
-            # Escreve a linha com o valor mínimo de exebição 
-            self.global_vars.varaux = self.rdc_vars.Varmin
-            self.rdc_vars.num = 2 # num = 2 : real
-            textoaux = 'display min : '
-            tamnum = self.tamanho_numero(self.global_vars.varaux, self.rdc_vars.num)
-            phrase = self.aux_RDC(textoaux, self.global_vars.varaux, tamnum)
-            rdc_file.write(phrase)
-
-            #  Escreve a linha com o valor máximo para exibição 
-            self.global_vars.varaux = self.rdc_vars.Varmax
-            self.rdc_vars.num = 2 # num = 2 : real
-            textoaux = 'display max : '
-            tamnum = self.tamanho_numero(self.global_vars.varaux, self.rdc_vars.num)
-            phrase = self.aux_RDC(textoaux, self.global_vars.varaux, tamnum)
-            rdc_file.write(phrase)
-
-            # Escreve a linha com a unidade dos dados
-            rdc_file.write('value units : unspecified\n')
-
-            # Escreve a linha com o valor do erro dos dados
-            rdc_file.write(f'value error : unknown\n')
-
-            # Escreve linha com sinalizador
-            rdc_file.write(f'flag value  : {0:1d}\n')
-            
-            # Escreve a linha com a definição do sinalizador
-            rdc_file.write("flag def'n  : none\n")
-
-            # Escreve a linha com o número de categorias da legenda
-            rdc_file.write(f'legend cats : {0:1d}\n')
-
-            # Escreve a linha sobre a criação da imagem
-            rdc_file.write('lineage     : This file was created automatically by Hidropixel')
-        
-    def escreve_num_pix_drenagem(self):
-        '''Esta função gera o mapa de numeração dos píxels da rede de drenagem'''
-
-        # Abrindo o arquivo(fn : file name) para escrita dos resultados
-        self.fn_num_pix_dren = self.dlg_flow_tt.le_1_pg4.text()
-        
-        # Definição da numeração máxima
-        num_pix_max = np.amax(self.contadren)
-
-        # Define os dados a serem escritos
-        dados_num_pix_dren = np.array([[float(self.contadren[lin][col]) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)])
-        tipo_dados = gdalconst.GDT_Float32
-
-        # Obtendo o driver RST do GDAL
-        driver = gdal.GetDriverByName('RST')
-
-        # Cria arquivo final
-        dataset = driver.Create(self.fn_num_pix_dren, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
-        dataset.SetGeoTransform(self.rdc_vars.geotransform)
-        dataset.SetProjection(self.rdc_vars.projection)
-
-        # Escreve os dados na banda do arquivo
-        banda = dataset.GetRasterBand(1)
-        banda.WriteArray(dados_num_pix_dren)
-
-        # Fechando o arquivo
-        dataset = None
-        banda = None
-        driver = None
-       
-        # Alocando as variáveis para escrita da documentação do arquivo rdc para o comprimento da rede de drenagem
-        self.rdc_vars.nlin3 = self.rdc_vars.nlin
-        self.rdc_vars.ncol3 = self.rdc_vars.ncol
-        self.rdc_vars.tipo_dado = 1
-        self.rdc_vars.tipoMM = 2
-        self.rdc_vars.VarMM2 = self.contadren
-        self.rdc_vars.i3 = 0 
-        self.rdc_vars.Xmin3 = self.rdc_vars.xmin
-        self.rdc_vars.Xmax3 = self.rdc_vars.xmax
-        self.rdc_vars.Ymin3 = self.rdc_vars.ymin
-        self.rdc_vars.Ymax3 = self.rdc_vars.ymax
-        self.rdc_vars.Varmax = num_pix_max
-        self.rdc_vars.Varmin = 0
-        nomeRST = self.fn_num_pix_dren
-        self.global_vars.metrordc = self.global_vars.metro
-        self.escreve_RDC(nomeRST)
-
-    def escreve_conectividade(self):
-        """
-        Esta função é responsável por formular os arquivos de saída (tanto o raster (.RST), quanto sua documentação (.rdc))
-        para os dados referentes ao mapa de conectividade das cabeceiras da bacia hidrográfica
-        """
-        # Escrevendo o resultado do mapa de conectividade dos pixels da superficie a rede de drenagem
-        fn_n_conect_dren = self.dlg_flow_tt.le_2_pg4.text()
-
-        # Valor máximo
-        var_max = np.amax(self.global_vars.pixeldren) 
-
-        # Define os dados a serem escritos
-        dados_n_conect_dren = np.array([[float(self.global_vars.pixeldren[lin][col]) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)])
-
-        # Os arquivos terão formato RST
-        driver = gdal.GetDriverByName('RST')
-        tipo_dados = gdalconst.GDT_Float32
-
-        # Cria arquivo final
-        dataset = driver.Create(fn_n_conect_dren, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
-
-        # Escreve os dados na banda do arquivo
-        banda = dataset.GetRasterBand(1)
-        banda.WriteArray(dados_n_conect_dren)
-
-        # Escreve os dados na banda do arquivo
-        banda = dataset.GetRasterBand(1)
-        banda.WriteArray(dados_n_conect_dren)
-
-        # Fechando o arquivo
-        dataset = None
-        banda = None
-        driver = None
-        tipo_dados = None
-
-        # Aloca as variáveis para escrita da documentação do arquivo rdc para o comprimento da foz da bacia hidrográfica
-        self.rdc_vars.nlin3 = self.rdc_vars.nlin
-        self.rdc_vars.ncol3 = self.rdc_vars.ncol
-        self.rdc_vars.tipo_dado = 2
-        self.rdc_vars.tipoMM = 2
-        self.rdc_vars.VarMM2 = self.global_vars.pixeldren
-        self.rdc_vars.i3 = 0 
-        self.rdc_vars.Xmin3 = self.rdc_vars.xmin
-        self.rdc_vars.Xmax3 = self.rdc_vars.xmax
-        self.rdc_vars.Ymin3 = self.rdc_vars.ymin
-        self.rdc_vars.Ymax3 = self.rdc_vars.ymax
-        self.rdc_vars.Varmax = var_max
-        self.rdc_vars.Varmin = 0    
-        self.global_vars.metrordc = self.global_vars.metro
-        nomeRST = fn_n_conect_dren
-        self.escreve_RDC(nomeRST)
-
-    def escreve_comprimento_acumulado(self):
-        """
-        Esta função é responsável por formular os arquivos de saída (tanto o raster (.rst), quanto sua documentação (.rdc))
-        para os dados referentes aos comprimentos da rede de drenagem da bacia hidrográfica
-        """
-
-        # Abrindo o arquivo(fn : file name) para escrita dos resultados
-        self.fn_comp_acum = self.dlg_flow_tt.le_3_pg4.text()
-
-        # Determina comprimento máximo
-        compri_max = np.amax(self.global_vars.Lac)
-
-        # Define os dados a serem escritos
-        dados_comp_acum = np.array([[float(self.global_vars.Lac[lin][col]) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)]) #lac n existe
-        tipo_dados = gdalconst.GDT_Float32
-
-        # Os arquivos terão formato rst
-        driver = gdal.GetDriverByName('RST')
-
-        # Cria arquivo final
-        dataset = driver.Create(self.fn_comp_acum, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
-        dataset.SetGeoTransform(self.rdc_vars.geotransform)
-        dataset.SetProjection(self.rdc_vars.projection)
-        
-        # Escreve os dados na banda do arquivo
-        banda = dataset.GetRasterBand(1)
-        banda.WriteArray(dados_comp_acum)
-
-        # Fechando o arquivo
-        dataset = None
-        banda = None
-        driver = None
-        tipo_dados = None
-
-        # Alocando as variáveis para escrita da documentação do arquivo rdc para o comprimento da rede de drenagem
-        self.rdc_vars.nlin3 = self.rdc_vars.nlin
-        self.rdc_vars.ncol3 = self.rdc_vars.ncol
-        self.rdc_vars.tipo_dado = 2
-        self.rdc_vars.tipoMM = 2
-        self.global_vars.VarMM2 = self.global_vars.Lac
-        self.rdc_vars.i3 = 0 
-        self.rdc_vars.Xmin3 = self.rdc_vars.xmin
-        self.rdc_vars.Xmax3 = self.rdc_vars.xmax
-        self.rdc_vars.Ymin3 = self.rdc_vars.ymin
-        self.rdc_vars.Ymax3 = self.rdc_vars.ymax
-        self.rdc_vars.Varmax = compri_max
-        self.rdc_vars.Varmin = 0
-        nomeRST = self.fn_comp_acum
-        self.global_vars.metrordc = self.global_vars.metro
-        self.escreve_RDC(nomeRST)
-
-    def escreve_comprimento_acumulado_foz(self):
-        """
-        Esta função é responsável por formular os arquivos de saída (tanto o raster (.rst), quanto sua documentação (.rdc))
-        para os dados referentes aos comprimentos da rede de drenagem da bacia hidrográfica
-        """
-        # Escrevendo o resultado do comprimento da rede de drenagem
-        self.fn_comp_foz = self.dlg_flow_tt.le_4_pg4.text()
-            
-        # Define os dados a serem escritos
-        dados_comp_foz = np.array([[float(self.global_vars.Lfoz[lin][col]) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)])
-        tipo_dados = gdalconst.GDT_Float32
-
-        # Os arquivos terão formato rst
-        driver = gdal.GetDriverByName('RST')
-
-        # Cria arquivo final
-        dataset = driver.Create(self.fn_comp_foz, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
-        dataset.SetGeoTransform(self.rdc_vars.geotransform)
-        dataset.SetProjection(self.rdc_vars.projection)
-        # Escreve os dados na banda do arquivo
-        banda = dataset.GetRasterBand(1)
-        banda.WriteArray(dados_comp_foz)
-
-        # Fechando o arquivo
-        dataset = None
-        banda = None
-        driver = None
-        tipo_dados = None
-
-        # Alocando as variáveis para escrita da documentação do arquivo rdc para o comprimento da foz da bacia hidrográfica
-        self.rdc_vars.nlin3 = self.rdc_vars.nlin
-        self.rdc_vars.ncol3 = self.rdc_vars.ncol
-        self.rdc_vars.tipo_dado = 2
-        self.rdc_vars.tipoMM = 2
-        self.global_vars.VarMM2 = self.global_vars.Lfoz
-        self.rdc_vars.i3 = 0 
-        self.rdc_vars.Xmin3 = self.rdc_vars.xmin
-        self.rdc_vars.Xmax3 = self.rdc_vars.xmax
-        self.rdc_vars.Ymin3 = self.rdc_vars.ymin
-        self.rdc_vars.Ymax3 = self.rdc_vars.ymax
-        nomeRST = self.fn_comp_foz
-        self.global_vars.metrordc = self.global_vars.metro
-        self.min_max()
-        self.escreve_RDC(nomeRST)
-
-    def escreve_decliv_pixel(self):
-        '''Esta função gera o mapa de numeração dos pixels da rede de drenagem'''
-
-        # Abrindo o arquivo(fn : file name) para escrita dos resultados
-        self.fn_decli_pix = self.dlg_flow_tt.le_5_pg4.text()
-
-        # Determinação da declividade máxima
-        decliv_max = np.amax(self.global_vars.decliv_pixel)
-
-        # Define os dados a serem escritos
-        dados_decli_pix = np.array([[float(self.global_vars.decliv_pixel[lin][col]) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)])
-        tipo_dados = gdalconst.GDT_Float32
-
-        # Obtendo o driver RST do GDAL
-        driver = gdal.GetDriverByName('RST')
-
-        # Cria arquivo final
-        dataset = driver.Create(self.fn_decli_pix, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
-        dataset.SetGeoTransform(self.rdc_vars.geotransform)
-        dataset.SetProjection(self.rdc_vars.projection)
-
-        # Escreve os dados na banda do arquivo
-        banda = dataset.GetRasterBand(1)
-        banda.WriteArray(dados_decli_pix)
-
-        # Fechando o arquivo
-        dataset = None
-        banda = None
-        driver = None
-        tipo_dados = None
-
-        # Alocando as variáveis para escrita da documentação do arquivo rdc para o comprimento da rede de drenagem
-        self.rdc_vars.nlin3 = self.rdc_vars.nlin
-        self.rdc_vars.ncol3 = self.rdc_vars.ncol
-        self.rdc_vars.tipo_dado = 2
-        self.rdc_vars.tipoMM = 2
-        self.global_vars.VarMM2 = self.global_vars.decliv_pixel
-        self.rdc_vars.i3 = 0 
-        self.rdc_vars.Xmin3 = self.rdc_vars.xmin
-        self.rdc_vars.Xmax3 = self.rdc_vars.xmax
-        self.rdc_vars.Ymin3 = self.rdc_vars.ymin
-        self.rdc_vars.Ymax3 = self.rdc_vars.ymax
-        self.rdc_vars.Varmax = decliv_max
-        self.rdc_vars.Varmin = 0        
-        nomeRST = self.fn_decli_pix
-        self.global_vars.metrordc = self.global_vars.metro
-        self.escreve_RDC(nomeRST)
-
-    def escreve_decliv_pixel_jus(self):
-        '''Esta função gera o mapa de numeração dos pixels jusantes da rede de drenagem'''
-
-        # Abrindo o arquivo(fn : file name) para escrita dos resultados
-        self.fn_decli_pix_jus = self.dlg_flow_tt.le_6_pg4.text()
-        
-        # Determinação da declividade máxima
-        decliv_jus_max = np.amax(self.global_vars.decliv_pixel_jus)
-
-        # Define os dados a serem escritos
-        dados_decli_pix_jus = np.array([[float(self.global_vars.decliv_pixel_jus[lin][col]) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)])
-        tipo_dados = gdalconst.GDT_Float32
-
-        # Obtendo o driver RST do GDAL
-        driver = gdal.GetDriverByName('RST')
-
-        # Cria arquivo final
-        dataset = driver.Create(self.fn_decli_pix_jus, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
-
-        # Escreve os dados na banda do arquivo
-        banda = dataset.GetRasterBand(1)
-        banda.WriteArray(dados_decli_pix_jus)
-        dataset.SetGeoTransform(self.rdc_vars.geotransform)
-        dataset.SetProjection(self.rdc_vars.projection)
-
-        # Fechando o arquivo
-        dataset = None
-        banda = None
-        driver = None
-        tipo_dados = None
-
-        # Alocando as variáveis para escrita da documentação do arquivo rdc para o comprimento da rede de drenagem
-        self.rdc_vars.nlin3 = self.rdc_vars.nlin
-        self.rdc_vars.ncol3 = self.rdc_vars.ncol
-        self.rdc_vars.tipo_dado = 2
-        self.rdc_vars.tipoMM = 2
-        self.global_vars.VarMM2 = self.global_vars.decliv_pixel_jus
-        self.rdc_vars.i3 = 0 
-        self.rdc_vars.Xmin3 = self.rdc_vars.xmin
-        self.rdc_vars.Xmax3 = self.rdc_vars.xmax
-        self.rdc_vars.Ymin3 = self.rdc_vars.ymin
-        self.rdc_vars.Ymax3 = self.rdc_vars.ymax
-        self.rdc_vars.Varmax = decliv_jus_max
-        self.rdc_vars.Varmin = 0
-        nomeRST = self.fn_decli_pix_jus
-        self.global_vars.metrordc = self.global_vars.metro
-        self.escreve_RDC(nomeRST)
-    
-    # Escreve funções de escrita da versão Hidropixel - DLR
-    # Travel time functions
-    def escreve_travel_time_map(self):
-        '''Esta função gera o mapa contendo o tempo de concentração para os pixels presentes na baica hidrográfica'''
-
-        # Abrindo o arquivo(fn : file name) para escrita dos resultados
-        self.fn_travel_time_map = self.dlg_flow_tt.le_11_pg4.text()
-
-        # Define os dados a serem escritos
-        dados_numb_pix = np.array([[float(self.global_vars.tempo_viagem_tot[lin][col]) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)])
-        tipo_dados = gdalconst.GDT_Float32
-
-        # Obtendo o driver para escrita do arquivo em GeoTiff
-        driver = gdal.GetDriverByName('RST')
-
-        # Cria arquivo final
-        dataset = driver.Create(self.fn_travel_time_map, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
-        dataset.SetGeoTransform(self.rdc_vars.geotransform)
-        dataset.SetProjection(self.rdc_vars.projection)
-
-        # Escreve os dados na banda do arquivo
-        banda = dataset.GetRasterBand(1)
-        banda.WriteArray(dados_numb_pix)
-
-        # Fechando o arquivo
-        dataset = None
-        banda = None
-        driver = None
-        tipo_dados = None
-
-        # Alocando as variáveis para escrita da documentação do arquivo rdc para o comprimento da rede de drenagem
-        self.rdc_vars.nlin3 = self.rdc_vars.nlin
-        self.rdc_vars.ncol3 = self.rdc_vars.ncol
-        self.rdc_vars.tipo_dado = 2
-        self.rdc_vars.tipoMM = 2
-        self.rdc_vars.VarMM2 = self.global_vars.tempo_viagem_tot
-        self.rdc_vars.i3 = 0 
-        self.rdc_vars.Xmin3 = self.X_minimo
-        self.rdc_vars.Xmax3 = self.X_maximo
-        self.rdc_vars.Ymin3 = self.Y_minimo
-        self.rdc_vars.Ymax3 = self.Y_maximo
-        self.rdc_vars.Varmax =  self.global_vars.tc_max
-        self.rdc_vars.Varmin = 0
-        nomeRST = self.fn_travel_time_map
-        self.global_vars.metrordc = self.global_vars.metro
-        self.escreve_RDC(nomeRST)
-
-    def escreve_mapa_trechos(self):
-        '''Esta função gera o mapa contendo os diferentes trechos (enviados e calculados) para a rede hidrográfica da bacia hidrografíca'''
-
-        # Abrindo o arquivo(fn : file name) para escrita dos resultados
-        self.fn_mapa_trecho = self.dlg_flow_tt.le_7_pg4.text()
-
-        # Define os dados a serem escritos
-        dados_numb_pix = np.array([[float(self.global_vars.classerio[lin][col]) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)])
-        tipo_dados = gdalconst.GDT_Float32
-
-        # Obtendo o driver para escrita do arquivo em GeoTiff
-        driver = gdal.GetDriverByName('RST')
-
-        # Cria arquivo final
-        dataset = driver.Create(self.fn_mapa_trecho, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
-        dataset.SetGeoTransform(self.rdc_vars.geotransform)
-        dataset.SetProjection(self.rdc_vars.projection)
-
-        # Escreve os dados na banda do arquivo
-        banda = dataset.GetRasterBand(1)
-        banda.WriteArray(dados_numb_pix)
-
-        # Fechando o arquivo
-        dataset = None
-        banda = None
-        driver = None
-        tipo_dados = None
-
-        # Alocando as variáveis para escrita da documentação do arquivo rdc para o comprimento da rede de drenagem
-        self.rdc_vars.nlin3 = self.rdc_vars.nlin
-        self.rdc_vars.ncol3 = self.rdc_vars.ncol
-        self.rdc_vars.tipo_dado = 2
-        self.rdc_vars.tipoMM = 2
-        self.rdc_vars.VarMM2 = self.global_vars.classerio
-        self.rdc_vars.i3 = 0 
-        self.rdc_vars.Xmin3 = self.X_minimo
-        self.rdc_vars.Xmax3 = self.X_maximo
-        self.rdc_vars.Ymin3 = self.Y_minimo
-        self.rdc_vars.Ymax3 = self.Y_maximo
-        self.rdc_vars.Varmax =  np.amax(dados_numb_pix)
-        self.rdc_vars.Varmin = 0
-        nomeRST = self.fn_mapa_trecho
-        self.global_vars.metrordc = self.global_vars.metro
-        self.escreve_RDC(nomeRST)
-
-    def escreve_dados_trecho(self):
-        '''Esta função gera o arquivo as informações hidráulicas sobre os trechos homogeneos da bacia hidrográfica'''
-        self.fn_hidrograma = self.dlg_flow_rout.le_8_pg4.text()
-        with open(self.fn_hidrograma, 'w', encoding = 'utf-8') as arquivo_txt:
-            arquivo_txt.write(f'numero de classes: {self.global_vars.n_total_trechos}')
-            arquivo_txt.write('id,S(m/m),Mann(-),Rh(m)\n')
-            for k in range(1,self.global_vars.n_total_trechos):
-                arquivo_txt.write(f'{k}, {self.global_vars.Sclasse[k-1]}, {self.global_vars.Mannclasse[k-1]}, {self.global_vars.Rhclasse[k-1]}\n')
-
-    def escreve_mapa_area_molhada(self):
-        '''Esta função gera o arquivo contento a área molhadada - calculada por meio do método da curva chave - para os pixels da rede de drenagem presentes na bacia hidrografíca'''
-
-        # Abrindo o arquivo(fn : file name) para escrita dos resultados
-        self.fn_mapa_area_molhada = self.dlg_flow_tt.le_9_pg4.text()
-
-        # Define os dados a serem escritos
-        dados_numb_pix = np.array([[float(self.global_vars.area_molhada[lin][col]) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)])
-        tipo_dados = gdalconst.GDT_Float32
-
-        # Obtendo o driver para escrita do arquivo em GeoTiff
-        driver = gdal.GetDriverByName('RST')
-
-        # Cria arquivo final
-        dataset = driver.Create(self.fn_mapa_area_molhada, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
-        dataset.SetGeoTransform(self.rdc_vars.geotransform)
-        dataset.SetProjection(self.rdc_vars.projection)
-
-        # Escreve os dados na banda do arquivo
-        banda = dataset.GetRasterBand(1)
-        banda.WriteArray(dados_numb_pix)
-
-        # Fechando o arquivo
-        dataset = None
-        banda = None
-        driver = None
-        tipo_dados = None
-
-        # Alocando as variáveis para escrita da documentação do arquivo rdc para o comprimento da rede de drenagem
-        self.rdc_vars.nlin3 = self.rdc_vars.nlin
-        self.rdc_vars.ncol3 = self.rdc_vars.ncol
-        self.rdc_vars.tipo_dado = 2
-        self.rdc_vars.tipoMM = 2
-        self.rdc_vars.VarMM2 = self.global_vars.area_molhada
-        self.rdc_vars.i3 = 0 
-        self.rdc_vars.Xmin3 = self.X_minimo
-        self.rdc_vars.Xmax3 = self.X_maximo
-        self.rdc_vars.Ymin3 = self.Y_minimo
-        self.rdc_vars.Ymax3 = self.Y_maximo
-        self.rdc_vars.Varmax =  np.amax(dados_numb_pix)
-        self.rdc_vars.Varmin = 0
-        nomeRST = self.fn_mapa_area_molhada
-        self.global_vars.metrordc = self.global_vars.metro
-        self.escreve_RDC(nomeRST)
-
-    def escreve_mapa_largura_canal(self):
-        '''Esta função gera o arquivo contento a largura do canal - calculada por meio do método da curva chave - para os pixels da rede de drenagem presentes na bacia hidrografíca'''
-
-        # Abrindo o arquivo(fn : file name) para escrita dos resultados
-        self.fn_mapa_largura_rio = self.dlg_flow_tt.le_10_pg4.text()
-
-        # Define os dados a serem escritos
-        dados_numb_pix = np.array([[float(self.global_vars.bankfull_width[lin][col]) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)])
-        tipo_dados = gdalconst.GDT_Float32
-
-        # Obtendo o driver para escrita do arquivo em GeoTiff
-        driver = gdal.GetDriverByName('RST')
-
-        # Cria arquivo final
-        dataset = driver.Create(self.fn_mapa_largura_rio, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
-        dataset.SetGeoTransform(self.rdc_vars.geotransform)
-        dataset.SetProjection(self.rdc_vars.projection)
-
-        # Escreve os dados na banda do arquivo
-        banda = dataset.GetRasterBand(1)
-        banda.WriteArray(dados_numb_pix)
-
-        # Fechando o arquivo
-        dataset = None
-        banda = None
-        driver = None
-        tipo_dados = None
-
-        # Alocando as variáveis para escrita da documentação do arquivo rdc para o comprimento da rede de drenagem
-        self.rdc_vars.nlin3 = self.rdc_vars.nlin
-        self.rdc_vars.ncol3 = self.rdc_vars.ncol
-        self.rdc_vars.tipo_dado = 2
-        self.rdc_vars.tipoMM = 2
-        self.rdc_vars.VarMM2 = self.global_vars.bankfull_width
-        self.rdc_vars.i3 = 0 
-        self.rdc_vars.Xmin3 = self.X_minimo
-        self.rdc_vars.Xmax3 = self.X_maximo
-        self.rdc_vars.Ymin3 = self.Y_minimo
-        self.rdc_vars.Ymax3 = self.Y_maximo
-        self.rdc_vars.Varmax =  np.amax(dados_numb_pix)
-        self.rdc_vars.Varmin = 0
-        nomeRST = self.fn_mapa_largura_rio
-        self.global_vars.metrordc = self.global_vars.metro
-        self.escreve_RDC(nomeRST)
-
-    # Excess Rainfall and Hydrograph functions
-    def escreve_hidrograma_dlr(self):
-        '''Esta função gera o hidrograma total da bacia hidrográfica estudada'''
-        self.fn_hidrograma = self.dlg_flow_rout.le_6_pg4.text()
-        with open(self.fn_hidrograma, 'w', encoding = 'utf-8') as arquivo_txt:
-            arquivo_txt.write('tempo(min), vazão calculada(m³/s)\n')
-            for k in range(self.blocos_vazao):
-                arquivo_txt.write(f'{self.tempo_vazao_pixel[k]}, {self.vazao[k]}\n')
-
-    def escreve_hietograma_pe(self):
-        '''Esta função gera o arquivo contento o valor da precipitação efetiva por pixel durante os blocos de chuva'''
-
-        # Recebe diretório e nome do arquivo do usurário      
-        arquivo = self.dlg_exc_rain.le_6_pg4.text()
-        with open(arquivo, 'w', encoding = 'utf-8') as arquivo_txt:
-            # JVD:optimize: Escreve cabeçalho
-            arquivo_txt.write('Pixel,')
-            for k in range(1,self.quantidade_blocos_chuva+1):
-                arquivo_txt.write(f'{self.time[k]},')
-            arquivo_txt.write('\n')
-
-            # Escreve linhas com dados de precipitação efetiva por pixel
-            for k in range(1,self.numero_total_pix+1):
-                for w in range(self.quantidade_blocos_chuva):
-                    if w <  self.quantidade_blocos_chuva-1:
-                        arquivo_txt.write(f'{k},{self.hexc_pix[k-1][w]}')
-                    else:
-                        arquivo_txt.write(f',{self.hexc_pix[k-1][w]}'+'\n')
-
-    def escreve_numb_pix_bacia(self):
-        '''Esta função gera o mapa contendo a numeração dos pixels presentes na bacia hidrografíca'''
-        # JVDopmize: determinação do valor máximo
-        numb_pix_max = np.amax(self.numb_pix_bacia)
-
-        # Abrindo o arquivo(fn : file name) para escrita dos resultados
-        self.fn_numb_pix = self.dlg_exc_rain.le_1_pg4.text()
-
-        # Define os dados a serem escritos
-        dados_numb_pix = np.array([[float(self.numb_pix_bacia[lin][col]) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)])
-        tipo_dados = gdalconst.GDT_Float32
-
-        # Obtendo o driver para escrita do arquivo em GeoTiff
-        driver = gdal.GetDriverByName('RST')
-
-        # Cria arquivo final
-        dataset = driver.Create(self.fn_numb_pix, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
-        dataset.SetGeoTransform(self.rdc_vars.geotransform)
-        dataset.SetProjection(self.rdc_vars.projection)
-
-        # Escreve os dados na banda do arquivo
-        banda = dataset.GetRasterBand(1)
-        banda.WriteArray(dados_numb_pix)
-
-        # Fechando o arquivo
-        dataset = None
-        banda = None
-        driver = None
-        tipo_dados = None
-
-        # Alocando as variáveis para escrita da documentação do arquivo rdc para o comprimento da rede de drenagem
-        self.rdc_vars.nlin3 = self.rdc_vars.nlin
-        self.rdc_vars.ncol3 = self.rdc_vars.ncol
-        self.rdc_vars.tipo_dado = 2
-        self.rdc_vars.tipoMM = 2
-        self.rdc_vars.VarMM2 = self.numb_pix_bacia
-        self.rdc_vars.i3 = 0 
-        self.rdc_vars.Xmin3 = self.X_minimo
-        self.rdc_vars.Xmax3 = self.X_maximo
-        self.rdc_vars.Ymin3 = self.Y_minimo
-        self.rdc_vars.Ymax3 = self.Y_maximo
-        self.rdc_vars.Varmax = numb_pix_max
-        self.rdc_vars.Varmin = 0
-        nomeRST = self.fn_numb_pix
-        self.global_vars.metrordc = self.global_vars.metro
-        self.escreve_RDC(nomeRST)    
-
-    def escreve_perdas_ini(self):
-        '''Esta função gera o mapa contendo os valores das perdas iniciais dos pixels presentes na bacia hidrografíca'''
-        # JVDopmize: determinação da perda inicial máxima
-        perda_ini_max = np.amax(self.perdas_iniciais)
-
-        # Abrindo o arquivo(fn : file name) para escrita dos resultados
-        self.fn_perda_ini = self.dlg_exc_rain.le_3_pg4.text()
-        
-        # Define os dados a serem escritos
-        dados_perda_ini = np.array([[float(self.perdas_iniciais[lin][col]) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)])
-        tipo_dados = gdalconst.GDT_Float32
-
-        # Obtendo o driver para escrita do arquivo em GeoTiff
-        driver = gdal.GetDriverByName('RST')
-
-        # Cria arquivo final
-        dataset = driver.Create(self.fn_perda_ini, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
-        dataset.SetGeoTransform(self.rdc_vars.geotransform)
-        dataset.SetProjection(self.rdc_vars.projection)
-
-        # Escreve os dados na banda do arquivo
-        banda = dataset.GetRasterBand(1)
-        banda.WriteArray(dados_perda_ini)
-
-        # Fechando o arquivo
-        dataset = None
-        banda = None
-        driver = None
-        tipo_dados = None
-
-        # Alocando as variáveis para escrita da documentação do arquivo rdc para o comprimento da rede de drenagem
-        self.rdc_vars.nlin3 = self.rdc_vars.nlin
-        self.rdc_vars.ncol3 = self.rdc_vars.ncol
-        self.rdc_vars.tipo_dado = 2
-        self.rdc_vars.tipoMM = 2
-        self.rdc_vars.VarMM2 = self.perdas_iniciais
-        self.rdc_vars.i3 = 0 
-        self.rdc_vars.Xmin3 = self.X_minimo
-        self.rdc_vars.Xmax3 = self.X_maximo
-        self.rdc_vars.Ymin3 = self.Y_minimo
-        self.rdc_vars.Ymax3 = self.Y_maximo
-        self.rdc_vars.Varmax = perda_ini_max
-        self.rdc_vars.Varmin = 0
-        nomeRST = self.fn_perda_ini
-        self.global_vars.metrordc = self.global_vars.metro
-        self.escreve_RDC(nomeRST)      
-
-    def escreve_S_potencial(self):
-        '''Esta função gera o arquivo raster contendo os valores da retenção máxima (S) por pixel presente na bacia hidrográfica'''
-        # JVDoptmize: calcula a retenção máxima
-        max_retencao = np.amax(self.Spotencial)
-
-        # Abrindo o arquivo(fn : file name) para escrita dos resultados
-        self.fn_Spotencial = self.dlg_exc_rain.le_2_pg4.text()
-        
-        # Define os dados a serem escritos
-        dados_Spotencial = np.array([[float(self.Spotencial[lin][col]) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)])
-        tipo_dados = gdalconst.GDT_Float32
-
-        # Obtendo o driver para escrita do arquivo em GeoTiff
-        driver = gdal.GetDriverByName('RST')
-
-        # Cria arquivo final
-        dataset = driver.Create(self.fn_Spotencial, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
-        dataset.SetGeoTransform(self.rdc_vars.geotransform)
-        dataset.SetProjection(self.rdc_vars.projection)
-
-        # Escreve os dados na banda do arquivo
-        banda = dataset.GetRasterBand(1)
-        banda.WriteArray(dados_Spotencial)
-
-        # Fechando o arquivo
-        dataset = None
-        banda = None
-        driver = None
-        tipo_dados = None
-
-        # Alocando as variáveis para escrita da documentação do arquivo rdc para o comprimento da rede de drenagem
-        self.rdc_vars.nlin3 = self.rdc_vars.nlin
-        self.rdc_vars.ncol3 = self.rdc_vars.ncol
-        self.rdc_vars.tipo_dado = 2
-        self.rdc_vars.tipoMM = 2
-        self.rdc_vars.VarMM2 = self.Spotencial
-        self.rdc_vars.i3 = 0
-        self.rdc_vars.Xmin3 = self.X_minimo
-        self.rdc_vars.Xmax3 = self.X_maximo
-        self.rdc_vars.Ymin3 = self.Y_minimo
-        self.rdc_vars.Ymax3 = self.Y_maximo
-        self.rdc_vars.Varmax = max_retencao
-        self.rdc_vars.Varmin = 0
-        nomeRST = self.fn_Spotencial
-        self.global_vars.metrordc = self.global_vars.metro
-        self.escreve_RDC(nomeRST)       
-
-    def escreve_precipitacao_excedente(self):
-        '''Esta função é responsável por gerar o arquivo raster contendo os valores da precipitação excedente por pixel presente na baica hidrográfica'''
-        # JVDoptmize: determina precipitação excedente máxima
-        pe_maxima = np.amax(self.pe_acumulada_pixel)
-
-        # Abrindo o arquivo(fn : file name) para escrita dos resultados
-        self.fn_pe_acum = self.dlg_exc_rain.le_5_pg4.text()
-        
-        # Define os dados a serem escritos
-        dados_pe_acum = np.array([[float(self.pe_acumulada_pixel[lin][col]) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)])
-        tipo_dados = gdalconst.GDT_Float32
-
-        # Obtendo o driver para escrita do arquivo em GeoTiff
-        driver = gdal.GetDriverByName('RST')
-
-        # Cria arquivo final
-        dataset = driver.Create(self.fn_pe_acum, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
-        dataset.SetGeoTransform(self.rdc_vars.geotransform)
-        dataset.SetProjection(self.rdc_vars.projection)
-
-        # Escreve os dados na banda do arquivo
-        banda = dataset.GetRasterBand(1)
-        banda.WriteArray(dados_pe_acum)
-
-        # Fechando o arquivo
-        dataset = None
-        banda = None
-        driver = None
-        tipo_dados = None
-
-        # Alocando as variáveis para escrita da documentação do arquivo rdc para o comprimento da rede de drenagem
-        self.rdc_vars.nlin3 = self.rdc_vars.nlin
-        self.rdc_vars.ncol3 = self.rdc_vars.ncol
-        self.rdc_vars.tipo_dado = 2
-        self.rdc_vars.tipoMM = 2
-        self.rdc_vars.VarMM2 = self.pe_acumulada_pixel
-        self.rdc_vars.i3 = 0 
-        self.rdc_vars.Xmin3 = self.X_minimo
-        self.rdc_vars.Xmax3 = self.X_maximo
-        self.rdc_vars.Ymin3 = self.Y_minimo
-        self.rdc_vars.Ymax3 = self.Y_maximo
-        self.rdc_vars.Varmax = pe_maxima
-        self.rdc_vars.Varmin = 0
-        nomeRST = self.fn_pe_acum
-        self.global_vars.metrordc = self.global_vars.metro
-        self.escreve_RDC(nomeRST)  
-
-    def escreve_precipitacao_total_acum(self):
-        '''Esta função gera o arquivo raster contendo a precipitação total acumulada por pixel presente na bacia hidrográfica'''
-        # JVDoptmize: determina precipitação máxima acumulada
-        p_acum_max = np.amax(self.chuva_total_pixel)
-
-        # Abrindo o arquivo(fn : file name) para escrita dos resultados
-        self.fn_p_acum = self.dlg_exc_rain.le_4_pg4()
-        
-        # Define os dados a serem escritos
-        dados_p_acum = np.array([[float(self.chuva_total_pixel[lin][col]) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)])
-        tipo_dados = gdalconst.GDT_Float32
-
-        # Obtendo o driver para escrita do arquivo em GeoTiff
-        driver = gdal.GetDriverByName('RST')
-
-        # Cria arquivo final
-        dataset = driver.Create(self.fn_p_acum, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
-        dataset.SetGeoTransform(self.rdc_vars.geotransform)
-        dataset.SetProjection(self.rdc_vars.projection)
-
-        # Escreve os dados na banda do arquivo
-        banda = dataset.GetRasterBand(1)
-        banda.WriteArray(dados_p_acum)
-
-        # Fechando o arquivo
-        dataset = None
-        banda = None
-        driver = None
-        tipo_dados = None
-
-        # Alocando as variáveis para escrita da documentação do arquivo rdc para o comprimento da rede de drenagem
-        self.rdc_vars.nlin3 = self.rdc_vars.nlin
-        self.rdc_vars.ncol3 = self.rdc_vars.ncol
-        self.rdc_vars.tipo_dado = 2
-        self.rdc_vars.tipoMM = 2
-        self.rdc_vars.VarMM2 = self.chuva_total_pixel
-        self.rdc_vars.i3 = 0 
-        self.rdc_vars.Xmin3 = self.X_minimo
-        self.rdc_vars.Xmax3 = self.X_maximo
-        self.rdc_vars.Ymin3 = self.Y_minimo
-        self.rdc_vars.Ymax3 = self.Y_maximo
-        self.rdc_vars.Varmax = p_acum_max
-        self.rdc_vars.Varmin = 0
-        nomeRST = self.fn_p_acum
-        self.global_vars.metrordc = self.global_vars.metro
-        self.escreve_RDC(nomeRST)  
-
-    def escreve_volume_gerado_pixel(self):
-        '''Esta função gera o arquivo raster contendo o volume gerado por pixel presente na bacia hidrográfica'''
-        # JVDoptmize: determina precipitação máxima acumulada
-        vol_max = np.amax(self.volume_total_pix)
-
-        # Abrindo o arquivo(fn : file name) para escrita dos resultados
-        self.fn_vol = self.dlg_flow_rout.le_5_pg4.text()
-        
-        # Define os dados a serem escritos
-        dados_vol = np.array([[float(self.volume_total_pix[lin][col]) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)])
-        tipo_dados = gdalconst.GDT_Float32
-
-        # Obtendo o driver para escrita do arquivo em GeoTiff
-        driver = gdal.GetDriverByName('RST')
-
-        # Cria arquivo final
-        dataset = driver.Create(self.fn_vol, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
-        dataset.SetGeoTransform(self.rdc_vars.geotransform)
-        dataset.SetProjection(self.rdc_vars.projection)
-
-        # Escreve os dados na banda do arquivo
-        banda = dataset.GetRasterBand(1)
-        banda.WriteArray(dados_vol)
-
-        # Fechando o arquivo
-        dataset = None
-        banda = None
-        driver = None
-        tipo_dados = None
-
-        # Alocando as variáveis para escrita da documentação do arquivo rdc para o comprimento da rede de drenagem
-        self.rdc_vars.nlin3 = self.rdc_vars.nlin
-        self.rdc_vars.ncol3 = self.rdc_vars.ncol
-        self.rdc_vars.tipo_dado = 2
-        self.rdc_vars.tipoMM = 2
-        self.rdc_vars.VarMM2 = self.volume_total_pix
-        self.rdc_vars.i3 = 0 
-        self.rdc_vars.Xmin3 = self.X_minimo
-        self.rdc_vars.Xmax3 = self.X_maximo
-        self.rdc_vars.Ymin3 = self.Y_minimo
-        self.rdc_vars.Ymax3 = self.Y_maximo
-        self.rdc_vars.Varmax = vol_max
-        self.rdc_vars.Varmin = 0
-        nomeRST = self.fn_vol
-        self.global_vars.metrordc = self.global_vars.metro
-        self.escreve_RDC(nomeRST)  
-
-    def escreve_vazao_pico_pixel(self, unit):
-        '''Esta função gera o arquivo raster contendo o volume gerado por pixel presente na bacia hidrográfica
-           unit: identifica a unidade da vazão escolhida pelo usuário;
-                - unit == 1: m³/s
-                - unit != 1: L/s'''
-        # JVDoptmize: determina precipitação máxima acumulada
-        vazao_pixo_max = np.amax(self.vazao_pico)
-
-        # Abrindo o arquivo(fn : file name) para escrita dos resultados
-        self.fn_vazao_pico = self.dlg_flow_rout.le_4_pg4.text()
-
-        # Define os dados a serem escritos
-        if unit == 1:
-            dados_vazao_pico = np.array([[float(self.vazao_pico[lin][col]) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)])
-            tipo_dados = gdalconst.GDT_Float32
-        else:
-            dados_vazao_pico = np.array([[float(self.vazao_pico[lin][col]/1000) for col in range(self.rdc_vars.ncol)] for lin in range(self.rdc_vars.nlin)])
-            tipo_dados = gdalconst.GDT_Float32            
-        # Obtendo o driver para escrita do arquivo em GeoTiff
-        driver = gdal.GetDriverByName('RST')
-
-        # Cria arquivo final
-        dataset = driver.Create(self.fn_vazao_pico, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
-        dataset.SetGeoTransform(self.rdc_vars.geotransform)
-        dataset.SetProjection(self.rdc_vars.projection)
-
-        # Escreve os dados na banda do arquivo
-        banda = dataset.GetRasterBand(1)
-        banda.WriteArray(dados_vazao_pico)
-
-        # Fechando o arquivo
-        dataset = None
-        banda = None
-        driver = None
-        tipo_dados = None
-
-        # Alocando as variáveis para escrita da documentação do arquivo rdc para o comprimento da rede de drenagem
-        self.rdc_vars.nlin3 = self.rdc_vars.nlin
-        self.rdc_vars.ncol3 = self.rdc_vars.ncol
-        self.rdc_vars.tipo_dado = 2
-        self.rdc_vars.tipoMM = 2
-        self.rdc_vars.VarMM2 = self.vazao_pico
-        self.rdc_vars.i3 = 0 
-        self.rdc_vars.Xmin3 = self.X_minimo
-        self.rdc_vars.Xmax3 = self.X_maximo
-        self.rdc_vars.Ymin3 = self.Y_minimo
-        self.rdc_vars.Ymax3 = self.Y_maximo
-        self.rdc_vars.Varmax = vazao_pixo_max
-        self.rdc_vars.Varmin = 0
-        nomeRST = self.fn_vazao_pico
-        self.global_vars.metrordc = self.global_vars.metro
-        self.escreve_RDC(nomeRST) 
-
     def save_buttons(self, line_edit,file_type = 'raster'):
         '''Esta função configura os botões da salvar (criar arquivo)'''
         # Seleciona o arquivo enviado pelo usuário
         while True:
             # Obtendo o caminho do arquivo a ser salvo usando um diálogo de arquivo
             if file_type == 'raster':
-                file_name, _ = QFileDialog.getSaveFileName(None, "Save the file",'',"Raster Files (*.rst)")
+                file_name, _ = QFileDialog.getSaveFileName(None, "Save the file",'',"GeoTIFF(*.tif)")
                 if file_name:
                     line_edit.setText(file_name)
                     break
@@ -3797,26 +439,24 @@ class HidroPixel:
                                 arquivo_txt.write(f'={self.dlg_flow_tt.le_1_pg2.text()}\n')
                                 arquivo_txt.write('\nDigital elevation model:\n')
                                 arquivo_txt.write(f'={self.dlg_flow_tt.le_2_pg2.text()}\n')
-                                arquivo_txt.write('\nFlow direction (RDC and RST):\n')
-                                linhas_text_edit = self.dlg_flow_tt.te_1_pg2.toPlainText()
-                                linhas = linhas_text_edit.split('\n')
-                                arquivo_txt.write(f'={linhas[0]}\n={linhas[1]}\n')
-                                arquivo_txt.write('\nRiver drainage newtwork (RDN):\n')
+                                arquivo_txt.write('\nFlow direction:\n')
                                 arquivo_txt.write(f'={self.dlg_flow_tt.le_3_pg2.text()}\n')
-                                arquivo_txt.write('\nRDN segmentation into classes:\n')
+                                arquivo_txt.write('\nRiver drainage newtwork (RDN):\n')
                                 arquivo_txt.write(f'={self.dlg_flow_tt.le_4_pg2.text()}\n')
-                                arquivo_txt.write('\nDrainage area (km²):\n')
-                                arquivo_txt.write(f'={self.dlg_flow_tt.le_9_pg2.text()}\n')
-                                arquivo_txt.write('\nReservoir:\n')
-                                arquivo_txt.write(f'={self.dlg_flow_tt.le_10_pg2.text()}\n')
-                                arquivo_txt.write('\nCharacteristics of RDN classes:\n')
-                                arquivo_txt.write(f'={self.dlg_flow_tt.le_7_pg2.text()}\n')
-                                arquivo_txt.write('\nLand use or land corver (LULC) map:\n')
+                                arquivo_txt.write('\nRDN segmentation into classes:\n')
                                 arquivo_txt.write(f'={self.dlg_flow_tt.le_5_pg2.text()}\n')
-                                arquivo_txt.write('\nManning roughness coeficient for each LULC:\n')
-                                arquivo_txt.write(f'={self.dlg_flow_tt.le_8_pg2.text()}\n')
-                                arquivo_txt.write('\nRainfall depth for 24-h duration (mm):\n')
+                                arquivo_txt.write('\nDrainage area (km²):\n')
                                 arquivo_txt.write(f'={self.dlg_flow_tt.le_6_pg2.text()}\n')
+                                arquivo_txt.write('\nReservoir:\n')
+                                arquivo_txt.write(f'={self.dlg_flow_tt.le_7_pg2.text()}\n')
+                                arquivo_txt.write('\nCharacteristics of RDN classes:\n')
+                                arquivo_txt.write(f'={self.dlg_flow_tt.le_8_pg2.text()}\n')
+                                arquivo_txt.write('\nLand use or land corver (LULC) map:\n')
+                                arquivo_txt.write(f'={self.dlg_flow_tt.le_9_pg2.text()}\n')
+                                arquivo_txt.write('\nManning roughness coeficient for each LULC:\n')
+                                arquivo_txt.write(f'={self.dlg_flow_tt.le_10_pg2.text()}\n')
+                                arquivo_txt.write('\nRainfall depth for 24-h duration (mm):\n')
+                                arquivo_txt.write(f'={self.dlg_flow_tt.le_11_pg2.text()}\n')
                     else:
                         # Caso o usuário não selecione um arquivo
                         result = "Wait! You did not select any file."
@@ -4368,14 +1008,14 @@ class HidroPixel:
                 if reply == QMessageBox.Cancel:
                     break 
 
-    def save_table_to_file(self, table):
-        '''Esta função lê as informações adicionadas às tabelas e as armazena em um arquivo
+    def save_table_to_file_btn(self, table):
+        '''Esta função lê as informações adicionadas às tabelas e as armazena em um arquivo após o usuário clicar no botão de salvar
             table == 1: a tabela de referência é a tabelea das caracteristicas da rede de drenagem
             table == 2 referencia a tabela das classes e coeficientes de manning.'''
         while True:
             if table == 1:
                 # Solicita um local de salvamento para o usuário
-                file_name, _ = QFileDialog.getSaveFileName(None, "Save the file", "RDN_classes", "Text or CSV Files (*.txt *.csv)")
+                file_name, _ = QFileDialog.getSaveFileName(None, "Save the file", "RDN_classes", "Text (*.txt)")
                 if file_name:
                     self.dlg_flow_tt.le_7_pg2.setText(file_name)
                     # seleciona as dimensões da tabela
@@ -4384,7 +1024,7 @@ class HidroPixel:
 
                     # Escreve o arquivo de saída
                     with open(file_name, 'w', encoding='utf-8') as arquivo_txt_csv:
-                        arquivo_txt_csv.write(f'Num_classes:{nlin_tb1}\nClass ID; Slope(m/m); Manning Coef;Hydraulic radius\n')
+                        arquivo_txt_csv.write(f'Trecho,Rh (m),n,S (m/m)\n')
                         # Adicionando as informações das linhas e colunas ao arquivo de saída
                         for lin in range(nlin_tb1):
                             for col in range(ncol_tb1):
@@ -4392,7 +1032,7 @@ class HidroPixel:
                                 # Verifica se o item existe
                                 if item is not None and item != '':  
                                     arquivo_txt_csv.write(f'{item.text()}')
-                                    arquivo_txt_csv.write(';')
+                                    arquivo_txt_csv.write(',')
                             arquivo_txt_csv.write('\n')
                     break
                 else:
@@ -4402,7 +1042,7 @@ class HidroPixel:
                         break 
 
             elif table ==2:
-                file_name, _ = QFileDialog.getSaveFileName(None, "Save the file", "Manning_roughness_coef_for_each_LULC", "Text or CSV Files (*.txt *.csv)")
+                file_name, _ = QFileDialog.getSaveFileName(None, "Save the file", "Manning_roughness_coef_for_each_LULC", "Text (*.txt)")
                 if file_name:
                     self.dlg_flow_tt.le_8_pg2.setText(file_name)
                     # seleciona as dimensões da tabela
@@ -4411,7 +1051,7 @@ class HidroPixel:
 
                     # Escreve o arquivo de saída
                     with open(file_name, 'w', encoding='utf-8') as arquivo_txt_csv:
-                        arquivo_txt_csv.write('Class ID;Class Name;Manning Coef;Coefficient K\n')
+                        arquivo_txt_csv.write('Land Cover Type Code,Manning (Sheet Flow),Land Cover Type Name,Coefficient k (Shallow concentrated flow)\n')
                         # Adicionando as informações das linhas e colunas ao arquivo de saída
                         for lin in range(nlin_tb1):
                             for col in range(ncol_tb1):
@@ -4419,7 +1059,7 @@ class HidroPixel:
                                 # Verifica se o item existe
                                 if item is not None and item != '':
                                     arquivo_txt_csv.write(f'{item.text()}')
-                                    arquivo_txt_csv.write(';')
+                                    arquivo_txt_csv.write(',')
                             arquivo_txt_csv.write('\n')
                     break
                 else:
@@ -4427,6 +1067,52 @@ class HidroPixel:
                     reply = QMessageBox.warning(None, "No files selected", result, QMessageBox.Ok | QMessageBox.Cancel)
                     if reply == QMessageBox.Cancel:
                         break 
+
+    def save_table_to_file(self, table):
+        '''Esta função lê as informações adicionadas às tabelas e as armazena em um arquivo, sendo essas para leitura do visual basic
+            table == 1: a tabela de referência é a tabelea das caracteristicas da rede de drenagem
+            table == 2 referencia a tabela das classes e coeficientes de manning.'''
+
+        if table == 1:
+            # Solicita um local de salvamento para o usuário
+            self.file_name_tb1 = self.diretorio_atual + r'\temp' + r'\segment_characteristics.txt'
+            if file_name:
+                # seleciona as dimensões da tabela
+                nlin_tb1 = self.dlg_flow_tt.tbw_1_pg2.rowCount()
+                ncol_tb1 = self.dlg_flow_tt.tbw_1_pg2.columnCount()
+
+                # Escreve o arquivo de saída
+                with open(file_name, 'w', encoding='utf-8') as arquivo_txt_csv:
+                    arquivo_txt_csv.write(f'Trecho,Rh (m),n,S (m/m)\n')
+                    # Adicionando as informações das linhas e colunas ao arquivo de saída
+                    for lin in range(nlin_tb1):
+                        for col in range(ncol_tb1):
+                            item = self.dlg_flow_tt.tbw_1_pg2.item(lin, col)
+                            # Verifica se o item existe
+                            if item is not None and item != '':  
+                                arquivo_txt_csv.write(f'{item.text()}')
+                                arquivo_txt_csv.write(',')
+                        arquivo_txt_csv.write('\n')
+                
+        elif table ==2:
+            self.file_name_tb2 = self.diretorio_atual + r'\temp' + r'\surface_roughness.txt'
+            if file_name:
+                # seleciona as dimensões da tabela
+                nlin_tb1 = self.dlg_flow_tt.tbw_2_pg2.rowCount()
+                ncol_tb1 = self.dlg_flow_tt.tbw_2_pg2.columnCount()
+
+                # Escreve o arquivo de saída
+                with open(file_name, 'w', encoding='utf-8') as arquivo_txt_csv:
+                    arquivo_txt_csv.write('Land Cover Type Code,Manning (Sheet Flow),Land Cover Type Name,Coefficient k (Shallow concentrated flow)\n')
+                    # Adicionando as informações das linhas e colunas ao arquivo de saída
+                    for lin in range(nlin_tb1):
+                        for col in range(ncol_tb1):
+                            item = self.dlg_flow_tt.tbw_2_pg2.item(lin, col)
+                            # Verifica se o item existe
+                            if item is not None and item != '':
+                                arquivo_txt_csv.write(f'{item.text()}')
+                                arquivo_txt_csv.write(',')
+                        arquivo_txt_csv.write('\n')
 
     def read_tb_from_file(self,table, lineEdit,table_ordem):
         '''Esta função adiciona os valores do arquivo enviado pelo usuário à respectiva tabela
@@ -4723,7 +1409,98 @@ class HidroPixel:
                     elif col == 3:
                         # Adiciona a coluna do coef K (shallow concentreted flow) 
                         item = QTableWidgetItem(str(coef_K_val[lin]))
-                        table.setItem(lin, col, item)                                
+                        table.setItem(lin, col, item)
+
+    def leh_geotiff_escreve_ascii(self, arquivo, arquivo2, int_float):
+        '''Esta função realiza a leitura do arquivo .tif enviado pelo user e o converte em .rst tipo ascii para leitura no visual basic
+            arquivo1 = diretório do arquivo arquivo raster tiff
+            arquivo2 = arquivo raster tipo rst ascii (será criado)''' 
+
+        # Lê o arquivo .tiff enviado
+        raster_enviado = gdal.Open(arquivo)
+
+        # Lendo os dados raster como um array 
+        dados_lidos = raster_enviado.GetRasterBand(1).ReadAsArray()
+
+        # Tratamento de erro: verifica se o arquivo foi aberto corretamente
+        if raster_enviado is not None:
+            # Obtenção da dimensão da imagem raster
+            self.rdc_vars.nlin = dados_lidos.RasterYSize           
+            self.rdc_vars.ncol = dados_lidos.RasterXSize
+            self.rdc_vars.geotransform = dados_lidos.GetGeoTransform()
+            self.rdc_vars.resolucao = dados_lidos.GetProjection()[1]
+
+        # Leitura do arquivo ascii
+        if int_float == 'int':
+            with open(arquivo2, 'w') as arquivo_ascii:
+                for lin in range(self.rdc_vars.nlin):
+                    for col in range(self.rdc_vars.ncol):
+                        if ((lin*col)-1) != ((lin*col)-1):
+                            arquivo_ascii.write(f'{int(dados_lidos[self.rdc_vars.nlin,self.rdc_vars.ncol])}')
+                        else:
+                            arquivo_ascii.write(int(dados_lidos[self.rdc_vars.nlin,self.rdc_vars.ncol]))
+
+        elif int_float == 'float':
+            with open(arquivo2, 'w') as arquivo_ascii:
+                for lin in range(self.rdc_vars.nlin):
+                    for col in range(self.rdc_vars.ncol):
+                        if ((lin*col)-1) != ((lin*col)-1):
+                            arquivo_ascii.write(f'{float(dados_lidos[self.rdc_vars.nlin,self.rdc_vars.ncol])}\n')  
+                        else:
+                            arquivo_ascii.write(f'{float(dados_lidos[self.rdc_vars.nlin,self.rdc_vars.ncol])}')
+
+        arquivo2_doc = arquivo2.replace('.rst','.RDC')
+        arquivo2_doc = arquivo2.replace('.RST','.RDC')
+        with open(arquivo2_doc, 'w', encoding = 'utf-8') as arquivo_rdc:
+            arquivo_rdc.write(f'Rows,{self.rdc_vars.nlin}')
+            arquivo_rdc.write(f'Columns,{self.rdc_vars.ncol}')
+            arquivo_rdc.write(f'resolution,{self.rdc_vars.resolucao}')
+
+    def leh_rst_escreve_geotiff(self, arquivo1, arquivo2, file_type):
+        '''Esta função lê os arquivos processados nas rotinas em visual basic, no formato .rst(ascii) e os escreve em geotiff (no diretório informado)
+            arquivo1 = diretório do arquivo raster tipo rst ascii
+            arquivo2 = arquivo raster tiff (será criado)'''
+
+        # Convertendo arquivo ascii para geotiff
+        rst_to_raster = np.zeros((self.rdc_vars.nlin,self.rdc_vars.ncol))
+
+        # Leitura do arquivo ascii
+        if int_float == 'int':
+            with open(arquivo1, 'r') as arquivo_ascii:
+                for lin in range(self.rdc_vars.nlin):
+                    for col in range(self.rdc_vars.ncol):
+                        raster_lido[lin,col] = int(arquivo_ascii.readline())
+
+        elif int_float == 'float':
+            with open(arquivo1, 'r') as arquivo_ascii:
+                for lin in range(self.rdc_vars.nlin):
+                    for col in range(self.rdc_vars.ncol):
+                        raster_lido[lin,col] = float(arquivo_ascii.readline())
+
+        # Define os dados a serem escritos
+        if file_type == 'int':
+            tipo_dados = gdalconst.GDT_Int16
+        else:
+            tipo_dados = gdalconst.GDT_Float32
+
+        # Obtendo o driver para escrita do arquivo em GeoTiff
+        fn_geotiff = arquivo_2
+        driver = gdal.GetDriverByName('GTiff')
+
+        # Cria arquivo final
+        dataset = driver.Create(fn_geotiff, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
+        dataset.SetGeoTransform(self.rdc_vars.geotransform)
+        dataset.SetProjection(self.rdc_vars.projection)
+
+        # Escreve os dados na banda do arquivo
+        banda = dataset.GetRasterBand(1)
+        banda.WriteArray(raster_lido)
+
+        # Fechando o arquivo
+        dataset = None
+        banda = None
+        driver = None
+        tipo_dados = None
 
     def add_new_row(self,table):
         '''Está função adiciona uma linha a uma tabela relecionada'''
@@ -5118,10 +1895,21 @@ class HidroPixel:
         self.dlg_rain_interpl_run.te_rain_int('BREAKING THE RAINFALL INTERPOLATION PROCESSING...')
         self.dlg_rain_interpl_run.close()
 
-    def sheet_flow_status(self, checked):
-        '''Esta funçao atualiza libera ou bloqueia o campo de adição do comprimento a ser considerado para o sheet flow'''
-        self.dlg_flow_tt.le_13_pg1.setEnabled(checked)
-        self.dlg_flow_tt.label_7.setEnabled(checked)
+    def apaga_arquivos_temp(self):
+        '''Esta função exclui os arquivos temporários criados durante a execução do plugin'''
+        # Muda para o diretório especificado
+        os.chdir(self.diretorio_atual)
+
+        # Obtém todos os arquivos com a extensão .txt
+        arquivos_txt = glob.glob('*.txt')
+        arquivos_rst = glob.glob('*.rst')
+        arquivos_rdc = glob.glob('*.rdc')
+
+        # Apaga todos os arquivos .txt
+        for txt, rst, rdc in zip(arquivos_txt,arquivo_rst,arquivo_rdc):
+            os.remove(txt)
+            os.remove(rst)
+            os.remove(rdc)
 
     def run_flow_tt(self):
         '''Está função ativa a página de log e configura a ordem de execução das funções para o cálculo do tempo de viagem'''
@@ -5136,562 +1924,239 @@ class HidroPixel:
         self.dlg_flow_tt.progressBar.setValue(0)
 
         # Adiciona avisa acerca do tempo de processamento
-        reply = QMessageBox.information(None, "Information", "This will take a few minutes (maybe hours)...", QMessageBox.Ok | QMessageBox.Cancel)
+        # reply = QMessageBox.information(None, "Information", "This will take a few minutes", QMessageBox.Ok | QMessageBox.Cancel)
         
         # Apenas inicia o prpocessamento se o usuário estiver de acordo com o tempo de processamento
-        if reply == QMessageBox.Ok:
+        # if reply == QMessageBox.Ok:
 
-            # Configura as informações do textEdit da referida página
-            font = QFont()
-            font.setPointSize(11)
-            version_info = {
-                "QGIS Version": '3.34.0-Prizren',
-                "Qt Version": '5.15.3',
-                "Python Version": '3.9.5',
-                "GDAL Version": '3.8.0'}
-            
-            datatime_started = datetime.now().isoformat()
-            mensagem_log1 = "The plugin was developed with:\n"
-            mensagem_log1 += f"QGIS Version: {version_info['QGIS Version']}\n"
-            mensagem_log1 += f"Qt Version: {version_info['Qt Version']}\n"
-            mensagem_log1 += f"Python Version: {version_info['Python Version']}\n"
-            mensagem_log1 += f"GDAL Version: {version_info['GDAL Version']}\n"
-            mensagem_log1 += "--------------------------------------------------------\n"
-            mensagem_log1 += f"Algorithm started at: {datatime_started}\n"
-            mensagem_log1 += "--------------------------------------------------------\n"
+        # Configura as informações do textEdit da referida página
+        font = QFont()
+        font.setPointSize(11)
+        version_info = {
+            "QGIS Version": '3.34.0-Prizren',
+            "Qt Version": '5.15.3',
+            "Python Version": '3.9.5',
+            "GDAL Version": '3.8.0'}
+        
+        datatime_started = datetime.now().isoformat()
+        mensagem_log1 = "The plugin was developed with:\n"
+        mensagem_log1 += f"QGIS Version: {version_info['QGIS Version']}\n"
+        mensagem_log1 += f"Qt Version: {version_info['Qt Version']}\n"
+        mensagem_log1 += f"Python Version: {version_info['Python Version']}\n"
+        mensagem_log1 += f"GDAL Version: {version_info['GDAL Version']}\n"
+        mensagem_log1 += "--------------------------------------------------------\n"
+        mensagem_log1 += f"Algorithm started at: {datatime_started}\n"
+        mensagem_log1 += "--------------------------------------------------------\n"
 
-            # Cria condição de parada da execução: se o usuário clicar no botão cancel da página de log
-            while True:
-                # Método usado para permitir a iteração do usuário enquanto o programa está em execução
-                QApplication.processEvents()
-                self.dlg_flow_tt.btn_cancel_log.clicked.connect(lambda: self.cancel_log_page(self.dlg_flow_tt.te_logg,self.dlg_flow_tt.pg_par_ftt, self.dlg_flow_tt.pg_log_ftt))
+        # Cria condição de parada da execução: se o usuário clicar no botão cancel da página de log
+        while True:
+            # Método usado para permitir a iteração do usuário enquanto o programa está em execução
+            QApplication.processEvents()
+            self.dlg_flow_tt.btn_cancel_log.clicked.connect(lambda: self.cancel_log_page(self.dlg_flow_tt.te_logg,self.dlg_flow_tt.pg_par_ftt, self.dlg_flow_tt.pg_log_ftt))
 
-                # Verifica a existência de incoerências nas informações (direções de fluxo) fornecidas pelo usuário
-                list_line_edit_value_pg1 = [self.dlg_flow_tt.le_5_pg1.text(),
-                                            self.dlg_flow_tt.le_6_pg1.text(),
-                                            self.dlg_flow_tt.le_7_pg1.text(),
-                                            self.dlg_flow_tt.le_8_pg1.text(),
-                                            self.dlg_flow_tt.le_9_pg1.text(),
-                                            self.dlg_flow_tt.le_10_pg1.text(),
-                                            self.dlg_flow_tt.le_11_pg1.text(),
-                                            self.dlg_flow_tt.le_12_pg1.text()
-                                        ]
-                duplicate = []
-                # Verifica se há duplicatas no código
-                for i in range(len(list_line_edit_value_pg1)):
-                    for j in range(i+1,len(list_line_edit_value_pg1)):
-                        if list_line_edit_value_pg1[i] == list_line_edit_value_pg1[j]:
-                            # Para os elementos iguais, armazena eles em uma lista
-                            duplicate.append(list_line_edit_value_pg1[i])
+            # Verifica a existência de incoerências nas informações (direções de fluxo) fornecidas pelo usuário
+            list_line_edit_value_pg1 = [self.dlg_flow_tt.le_5_pg1.text(),
+                                        self.dlg_flow_tt.le_6_pg1.text(),
+                                        self.dlg_flow_tt.le_7_pg1.text(),
+                                        self.dlg_flow_tt.le_8_pg1.text(),
+                                        self.dlg_flow_tt.le_9_pg1.text(),
+                                        self.dlg_flow_tt.le_10_pg1.text(),
+                                        self.dlg_flow_tt.le_11_pg1.text(),
+                                        self.dlg_flow_tt.le_12_pg1.text()
+                                    ]
+            duplicate = []
+            # Verifica se há duplicatas no código
+            for i in range(len(list_line_edit_value_pg1)):
+                for j in range(i+1,len(list_line_edit_value_pg1)):
+                    if list_line_edit_value_pg1[i] == list_line_edit_value_pg1[j]:
+                        # Para os elementos iguais, armazena eles em uma lista
+                        duplicate.append(list_line_edit_value_pg1[i])
 
-                if any(item == '' for item in duplicate):
-                    self.dlg_flow_tt.pages_flow_tt.setCurrentIndex(0)
-                    # Vefica se os códigos das diferções de drenagem foram corretamente enviados
-                    QMessageBox.warning(self.dlg_flow_tt, 'Warning', "Direction codes might not None.")
-                    return
+            if any(item == '' for item in duplicate):
+                self.dlg_flow_tt.pages_flow_tt.setCurrentIndex(0)
+                # Vefica se os códigos das diferções de drenagem foram corretamente enviados
+                QMessageBox.warning(self.dlg_flow_tt, 'Warning', "Direction codes might not None.")
+                return
 
-                elif duplicate and all(item != '' for item in duplicate):
-                    self.dlg_flow_tt.pages_flow_tt.setCurrentIndex(0)
-                    # O usuário enviou 2 valores semelhantes, será mostrado uma mensagem de erro
-                    QMessageBox.warning(self.dlg_flow_tt, 'Warning', f"The value(s) '{duplicate}' is(are) (a) duplicate(s)! Direction codes do not accept duplicates.")
-                    return
+            elif duplicate and all(item != '' for item in duplicate):
+                self.dlg_flow_tt.pages_flow_tt.setCurrentIndex(0)
+                # O usuário enviou 2 valores semelhantes, será mostrado uma mensagem de erro
+                QMessageBox.warning(self.dlg_flow_tt, 'Warning', f"The value(s) '{duplicate}' is(are) (a) duplicate(s)! Direction codes do not accept duplicates.")
+                return
+                
+            else:
+                # Se não existir erros nas informações enviadas, será mostrada a página de log e o programa será executado
+                self.dlg_flow_tt.pg_par_ftt.setEnabled(False)
                     
-                else:
-                    # Se não existir erros nas informações enviadas, será mostrada a página de log e o programa será executado
-                    self.dlg_flow_tt.pg_par_ftt.setEnabled(False)
+                # Adiciona as mensagem de log ao text edit e configura a função run
+                self.dlg_flow_tt.te_logg.append(mensagem_log1)
+                self.dlg_flow_tt.progressBar.setValue(40)
+                self.run_process_flow_tt()
 
-                    # Adiciona as mensagem de log ao text edit e configura a função run
-                    self.dlg_flow_tt.te_logg.append(mensagem_log1)
+                # Chama executável vb para iniciar o processamento
+                travel_time_vb =  self.diretorio_atual + r'\temp\Travel Time.exe'
+                flow_tt_exe = subprocess.Popen([travel_time_vb])
+                flow_tt_exe.wait()              
 
-                    # ---Entradas---
-
-                    # Atribuição das variáveis
-                    self.global_vars.coef_c = float(self.dlg_flow_tt.le_16_pg1.text())
-                    self.global_vars.coef_d = float(self.dlg_flow_tt.le_17_pg1.text())
-                    self.global_vars.coef_g = float(self.dlg_flow_tt.le_18_pg1.text())
-                    self.global_vars.coef_h = float(self.dlg_flow_tt.le_19_pg1.text())
-                    self.global_vars.n_canal = float(self.dlg_flow_tt.le_14_pg1.text())
-                    self.global_vars.max_comp_trecho = float(self.dlg_flow_tt.le_15_pg1.text())
-                    self.global_vars.sheet_flow = float(self.dlg_flow_tt.le_13_pg1.text())
-                    self.global_vars.profundidade_resers = float(self.dlg_flow_tt.le_20_pg1.text())
-
-                    mensagem_log1 = "READING INPUT FILES...\n"
-                    arquivo_bacia = self.dlg_flow_tt.le_1_pg2.text()
-                    self.leh_bacia(arquivo_bacia,1)
-                    self.leh_direcoes_de_fluxo()
-                    self.leh_modelo_numerico_dTerreno()
-                    self.leh_drenagem()
-                    self.leh_uso_do_solo()
-                    self.dlg_flow_tt.te_logg.append(mensagem_log1)
-
-                    if self.flag == 0:
-                        # O usuário digitou as informações
-                        self.leh_valores_table_1()
-                    
-                    if self.flag_1 == 0:
-                        # O usuário digitou as informações
-                        self.leh_valores_table_2()
-
-                    self.leh_precipitacao_24h()
-
-                    # Atualiza a progress bar
-                    self.dlg_flow_tt.progressBar.setValue(self.dlg_flow_tt.progressBar.value() + 10)
-
-                    # ---Cálculos---
-                    mensagem_log1 = 'PROCESSING...\n'
-                    self.dlg_flow_tt.te_logg.append(mensagem_log1)
-
-                    if self.dlg_flow_tt.ch_1_pg4.isChecked():
-                        self.numera_pixel()
-
-                    if self.dlg_flow_tt.ch_2_pg4.isChecked() or self.dlg_flow_tt.ch_5_pg4.isChecked() or self.dlg_flow_tt.ch_6_pg4.isChecked():
-                        self.dist_drenagem()
-
-                    if self.dlg_flow_tt.ch_3_pg4.isChecked() or self.dlg_flow_tt.ch_4_pg4.isChecked():
-                        self.comprimento_acumulado()
-
-                    if self.dlg_flow_tt.ch_7_pg4.isChecked() or self.dlg_flow_tt.ch_8_pg4.isChecked() \
-                        or self.dlg_flow_tt.ch_9_pg4.isChecked() or self.dlg_flow_tt.ch_10_pg4.isChecked()\
-                        or self.dlg_flow_tt.ch_11_pg4.isChecked():
-                        self.tempo_concentracao()
-
-                    # Atualiza progress bar
+                if flow_tt_exe.returncode == 0:
                     self.dlg_flow_tt.progressBar.setValue(60)
+                    # Encerra o processo aberto (GUI vb)
+                    flow_tt_exe.terminate()
 
-                    mensagem_log1 = 'WRITING OUTPUT FILES...\n'
-                    self.dlg_flow_tt.te_logg.append(mensagem_log1)
-                    # Configura condições para execução das funções de escrita dos resultados
-                    if self.dlg_flow_tt.ch_1_pg4.isChecked() and self.dlg_flow_tt.le_1_pg4.text() != '':
-                        self.escreve_num_pix_drenagem()
+                    # Define parâmetros da função que transforma .rst(ascii) para geotiff: Cria arquivos de saída no diretório fornecido pelo user
 
-                    if self.dlg_flow_tt.ch_2_pg4.isChecked() and self.dlg_flow_tt.le_2_pg4.text() != '':
-                        self.escreve_conectividade()
-
-                    if self.dlg_flow_tt.ch_3_pg4.isChecked() and self.dlg_flow_tt.le_3_pg4.text() != '':
-                        self.escreve_comprimento_acumulado()
+                    # slope
+                    self.leh_rst_escreve_geotiff(output1,self.dlg_flow_tt.le_6_pg4.text(), 'float')
+                    # river_segments
+                    self.leh_rst_escreve_geotiff(output2,self.dlg_flow_tt.le_7_pg4.text(), 'float')
+                    # River_cross-sectional_area
+                    self.leh_rst_escreve_geotiff(output4,self.dlg_flow_tt.le_9_pg4.text(), 'float')
+                    # River_bankfull_width
+                    self.leh_rst_escreve_geotiff(output5,self.dlg_flow_tt.le_10_pg4.text(), 'float')
+                    # Flow_travel_time
+                    self.leh_rst_escreve_geotiff(output6,self.dlg_flow_tt.le_11_pg4.text(), 'float')
                     
-                    if self.dlg_flow_tt.ch_4_pg4.isChecked() and self.dlg_flow_tt.le_4_pg4.text() != '':
-                        self.escreve_comprimento_acumulado_foz()
+                    # Atualiza progressBar
+                    self.dlg_flow_tt.progressBar.setValue(80)
 
-                    if self.dlg_flow_tt.ch_5_pg4.isChecked() and self.dlg_flow_tt.le_5_pg4.text() != '':
-                        self.escreve_decliv_pixel()
-                    
-                    if self.dlg_flow_tt.ch_6_pg4.isChecked() and self.dlg_flow_tt.le_6_pg4.text() != '':
-                        self.escreve_decliv_pixel_jus()
-                    
-                    if self.dlg_flow_tt.ch_7_pg4.isChecked() and self.dlg_flow_tt.le_7_pg4.text() != '':
-                        self.escreve_mapa_trechos()
-
-                    if self.dlg_flow_tt.ch_8_pg4.isChecked() and self.dlg_flow_tt.le_8_pg4.text() != '':
-                        self.escreve_dados_trecho()
-                    
-                    if self.dlg_flow_tt.ch_9_pg4.isChecked() and self.dlg_flow_tt.le_9_pg4.text() != '':
-                        self.escreve_mapa_area_molhada()
-
-                    if self.dlg_flow_tt.ch_10_pg4.isChecked() and self.dlg_flow_tt.le_10_pg4.text() != '':
-                        self.escreve_mapa_largura_canal()
-
-                    if self.dlg_flow_tt.ch_11_pg4.isChecked() and self.dlg_flow_tt.le_11_pg4.text() != '':
-                        self.escreve_mapa_largura_canal()
-
-                    # Atualiza progress bar
-                    self.dlg_flow_tt.progressBar.setValue(90)
-                    
-                    mensagem_log1 = 'ADDING FILES SELECTED TO PROJECT LAYERS TO QGIS...\n'
-                    self.dlg_flow_tt.te_logg.append(mensagem_log1)
-                    # Configura lógica para adição dos arquivos ao QGIS
-                    if self.dlg_flow_tt.ch_12_pg4.isChecked() and self.dlg_flow_tt.le_1_pg4.text() != '':
-                        self.adiciona_layer(self.dlg_flow_tt.le_3_pg4.text())
-
-                    if self.dlg_flow_tt.ch_13_pg4.isChecked() and self.dlg_flow_tt.le_2_pg4.text() != '':
-                        self.adiciona_layer(self.dlg_flow_tt.le_2_pg4.text())
-
-                    if self.dlg_flow_tt.ch_14_pg4.isChecked() and self.dlg_flow_tt.le_3_pg4.text() != '':
-                        self.adiciona_layer(self.dlg_flow_tt.le_3_pg4.text())
-                    
-                    if self.dlg_flow_tt.ch_15_pg4.isChecked() and self.dlg_flow_tt.le_4_pg4.text() != '':
-                        self.adiciona_layer(self.dlg_flow_tt.le_4_pg4.text())
-                    
-                    if self.dlg_flow_tt.ch_16_pg4.isChecked() and self.dlg_flow_tt.le_5_pg4.text() != '':
-                        self.adiciona_layer(self.dlg_flow_tt.le_5_pg4.text())
-                    
-                    if self.dlg_flow_tt.ch_17_pg4.isChecked() and self.dlg_flow_tt.le_6_pg4.text() != '':
+                    # Adição dos arquivos gerados ao QGIS
+                    if self.dlg_flow_tt.ch_17_pg4.isChecked() == True:
+                        # Adiciona ao QGIS o output: slope
                         self.adiciona_layer(self.dlg_flow_tt.le_6_pg4.text())
-                    
-                    if self.dlg_flow_tt.ch_18_pg4.isChecked() and self.dlg_flow_tt.le_7_pg4.text() != '':
+
+                    if self.dlg_flow_tt.ch_18_pg4.isChecked() == True:
+                        # Adiciona ao QGIS o output: river_segments
                         self.adiciona_layer(self.dlg_flow_tt.le_7_pg4.text())
 
-                    if self.dlg_flow_tt.ch_19_pg4.isChecked() and self.dlg_flow_tt.le_8_pg4.text() != '':
-                        self.adiciona_layer(self.dlg_flow_tt.le_8_pg4.text())
-
-                    if self.dlg_flow_tt.ch_20_pg4.isChecked() and self.dlg_flow_tt.le_9_pg4.text() != '':
+                    if self.dlg_flow_tt.ch_20_pg4.isChecked() == True:
+                        # Adiciona ao QGIS o output: River_cross-sectional_area
                         self.adiciona_layer(self.dlg_flow_tt.le_9_pg4.text())
 
-                    if self.dlg_flow_tt.ch_21_pg4.isChecked() and self.dlg_flow_tt.le_10_pg4.text() != '':
+                    if self.dlg_flow_tt.ch_21_pg4.isChecked() == True:
+                        # Adiciona ao QGIS o output: River_bankfull_width
                         self.adiciona_layer(self.dlg_flow_tt.le_10_pg4.text())
 
-                    if self.dlg_flow_tt.ch_22_pg4.isChecked() and self.dlg_flow_tt.le_11_pg4.text() != '':
+                    if self.dlg_flow_tt.ch_22_pg4.isChecked() == True:
+                        # Adiciona ao QGIS o output: flow travel time 
                         self.adiciona_layer(self.dlg_flow_tt.le_11_pg4.text())
 
-                    # Atualiza progress bar
-                    self.dlg_flow_tt.progressBar.setValue(100)
-
                     # Adiciona as informação ao text edit
+                    self.dlg_flow_tt.te_logg.append('Operation completed successfully!')
                     QMessageBox.information(None, "Information", "Operation completed successfully!", )
 
-                    # Finaliza execução do programa
-                    break
-        else:
-            # O usuário selecionou a opção para cancelar
-            self.dlg_flow_tt.tabWidget.setCurrentIndex(0)
+                self.dlg_flow_tt.progressBar.setValue(100)
 
-    def run_exc_rain(self):
-        '''Está função ativa a página de log e configura a ordem de execução das funções da rotina excess rainfall'''
-        # Ativiva a página de log e limpa as informações passadas no text_edit 
-        mensagem_log1 = None
-        self.dlg_exc_rain.tabWidget.setCurrentIndex(1)
-        self.dlg_exc_rain.pg_log_exc_rain.setEnabled(True)
-        self.dlg_exc_rain.te_logg.clear()
+                # Finaliza execução do programa
+                break
 
-        # Configura a progressbar
-        self.dlg_exc_rain.progressBar.setRange(0, 100)
-        self.dlg_exc_rain.progressBar.setValue(0)
+    def replace_tif_rst(self, arquivo1):
+        '''Esta função modifica a extensão do parâmetro de .tif para .rst'''
+        arquivo2 = arquivo1.replace('.tif','.rst')
+        return arquivo2
 
-        # Adiciona avisa acerca do tempo de processamento
-        reply = QMessageBox.information(None, "Information", "This will take a few minutes (maybe hours)...", QMessageBox.Ok | QMessageBox.Cancel)
+    def run_process_flow_tt(self):
+        """Esta função configa a escrita dos arquivos txt para integração com a linguagem visual basic"""
         
-        # Apenas inicia o prpocessamento se o usuário estiver de acordo com o tempo de processamento
-        if reply == QMessageBox.Ok:
+        # Captura diretório dos arquivo txt (pasta temp)
+        direct_temp = self.diretorio_atual + r'\temp'
 
-            # Configura as informações do textEdit da referida página
-            font = QFont()
-            font.setPointSize(11)
-            version_info = {
-                "QGIS Version": '3.34.0-Prizren',
-                "Qt Version": '5.15.3',
-                "Python Version": '3.9.5',
-                "GDAL Version": '3.8.0'}
-            
-            datatime_started = datetime.now().isoformat()
-            mensagem_log1 = "The plugin was developed with:\n"
-            mensagem_log1 += f"QGIS Version: {version_info['QGIS Version']}\n"
-            mensagem_log1 += f"Qt Version: {version_info['Qt Version']}\n"
-            mensagem_log1 += f"Python Version: {version_info['Python Version']}\n"
-            mensagem_log1 += f"GDAL Version: {version_info['GDAL Version']}\n"
-            mensagem_log1 += "--------------------------------------------------------\n"
-            mensagem_log1 += f"Algorithm started at: {datatime_started}\n"
-            mensagem_log1 += "--------------------------------------------------------\n"
-            self.dlg_exc_rain.te_logg.append(mensagem_log1)
+        # Escreve txt contendo código de direções de fluxo
+        flow_directions_code = direct_temp + r'\flow_directions_code.txt'
+        with open(flow_directions_code, 'w', enconding = 'utf-8') as arquivo_txt:
+            # Escreve cabeçalho
+            arquivo_txt.write('Flow Directions Code')
+            arquivo_txt.write(f'A,{self.dlg_flow_tt.le_5_pg1.text()}\n')
+            arquivo_txt.write(f'B,{self.dlg_flow_tt.le_6_pg1.text()}\n')
+            arquivo_txt.write(f'C,{self.dlg_flow_tt.le_7_pg1.text()}\n')
+            arquivo_txt.write(f'D,{self.dlg_flow_tt.le_8_pg1.text()}\n')
+            arquivo_txt.write(f'E,{self.dlg_flow_tt.le_9_pg1.text()}\n')
+            arquivo_txt.write(f'F,{self.dlg_flow_tt.le_10_pg1.text()}\n')
+            arquivo_txt.write(f'G,{self.dlg_flow_tt.le_11_pg1.text()}\n')
+            arquivo_txt.write(f'H,{self.dlg_flow_tt.le_12_pg1.text()}')
 
-            # Cria condição de parada da execução: se o usuário clicar no botão cancel da página de log
-            while True:
-                # Método usado para permitir a iteração do usuário enquanto o programa está em execução
-                QApplication.processEvents()
-                self.dlg_exc_rain.btn_cancel_log.clicked.connect(lambda: self.cancel_log_page(self.dlg_exc_rain.te_logg, self.dlg_exc_rain.pg_par_exc_rain, self.dlg_exc_rain.pg_log_exc_rain))
-                
-                # Initial configuration
-                if self.rdc_vars.unidaderef =='deg':
-                    # Sistema está em graus, assumindo lat e long: será feita a projeção para metros
-                    self.global_vars.metro = 0
-                else:
-                    # Sistema está em metros, não é preciso fazer a projeção para metros
-                    self.global_vars.metro = 1
+        # Escreve arquivo txt contento os parâmetros do modelo
+        parameters_file = direct_temp + r'\parameters.txt'
+        with open(parameters_file,'w', encoding = 'utf-8') as arquivo_txt:
+            arquivo_txt.write(f'Manning coefficient for river segments without cross-section information,{self.dlg_flow_tt.le_14_pg1.text()}')
+            arquivo_txt.write(f'Sheet flow lenght (m),{self.dlg_flow_tt.le_13_pg1.text()}')
+            arquivo_txt.write(f'P24 - Rainfall depth for 24-hour duration and 2-year return period (mm),{self.dlg_flow_tt.le_6_pg2.text()}')
+            arquivo_txt.write(f'Mean depth of lake or reservoir (m),{self.dlg_flow_tt.le_20_pg1.text()}')
+            arquivo_txt.write(f'Regional curve coefficient c,{self.dlg_flow_tt.le_16_pg1.text()}')
+            arquivo_txt.write(f'Regional curve coefficient d,{self.dlg_flow_tt.le_17_pg1.text()}')
+            arquivo_txt.write(f'Regional curve coefficient g,{self.dlg_flow_tt.le_18_pg1.text()}')
+            arquivo_txt.write(f'Regional curve coefficient h,{self.dlg_flow_tt.le_19_pg1.text()}')
+            arquivo_txt.write(f'Maximum river segment lenght for river segments without cross-section information (m),{self.dlg_flow_tt.le_15_pg1.text()}')
+            arquivo_txt.write(f'Minimum slope,{self.dlg_flow_tt.le_1_pg1.text()}')
 
-                # Reading input files
-                mensagem_log1 = 'READING INPUT FILES...\n'
-                self.dlg_exc_rain.te_logg.append(mensagem_log1)
-                # Lê arquivo da bacia hidrográfica
-                arquivo_bacia = self.dlg_exc_rain.le_1_pg2.text()
-                self.leh_bacia(arquivo_bacia, 2)
-                
-                # Lê arquico contendo o valor do Curve Number para cada pixel da bacia hidrográfica 
-                self.leh_CN()
-                self.leh_parametros(self.dlg_exc_rain.le_1_pg1.text(),self.dlg_exc_rain.le_2_pg1.text(),self.dlg_exc_rain.le_4_pg1.text() ,1)
-                self.leh_precip_distribuida(self.dlg_exc_rain.le_4_pg2.text())
+        # Escreve arquivos contendo as informações das tabelas referentes aos segmentos homogêneos da rede de drenagem e das características do uso e cobertura do solo
+        self.save_table_to_file(1)
+        self.save_table_to_file(2)
 
-                # Atualiza a progressbar
-                self.dlg_exc_rain.progressBar.setValue(self.dlg_exc_rain.progressBar.value() + 10)
-                
-                # Processing and wrinting output files
-                mensagem_log1 = 'PROCESSING...\n'
-                self.dlg_exc_rain.te_logg.append(mensagem_log1)                
-                self.numera_pix_bacia()
-                self.excess_rainfall()
+        # Chama funções para tranformação do raster em geotiff para rst tipo ascii
+        bacia_file = direct_temp + r'\Watershed.rst'
+        self.leh_geotiff_escreve_ascii(self.dlg_flow_tt.le_1_pg2.text(),bacia_file, 'int')
 
-                # Atualiza a progressbar
-                self.dlg_exc_rain.progressBar.setValue(self.dlg_exc_rain.progressBar.value() + 50)  
-          
-                # Saídas
-                mensagem_log1 = 'WRITING OUTPUT FILES...\n'
-                self.dlg_exc_rain.te_logg.append(mensagem_log1)
-                if self.dlg_exc_rain.ch_1_pg4.isChecked():
-                    # Cria o arquivo selecionado
-                    self.escreve_numb_pix_bacia()
+        dem_file = direct_temp + r'\DEM.rst'
+        self.leh_geotiff_escreve_ascii(self.dlg_flow_tt.le_2_pg2.text(),dem_file, 'float')
 
-                if self.dlg_exc_rain.ch_2_pg4.isChecked():
-                    # Cria o arquivo selecionado
-                    self.escreve_S_potencial()
+        Flow_Dir_file = direct_temp + r'\Flow_dir.rst'
+        self.leh_geotiff_escreve_ascii(self.dlg_flow_tt.le_3_pg2.text(),Flow_Dir_file, 'int')
 
-                if self.dlg_exc_rain.ch_3_pg4.isChecked():
-                    # Cria o arquivo selecionado
-                    self.escreve_perdas_ini()
-
-                if self.dlg_exc_rain.ch_4_pg4.isChecked():
-                    # Cria o arquivo selecionado
-                    self.escreve_precipitacao_total_acum()
-
-                if self.dlg_exc_rain.ch_5_pg4.isChecked():
-                    # Cria o arquivo selecionado
-                    self.escreve_precipitacao_excedente()
-
-                if self.dlg_exc_rain.ch_6_pg4.isChecked():
-                    # Cria o arquivo selecionado
-                    self.escreve_hietograma_pe()
-
-                # Atualiza a progressbar
-                self.dlg_exc_rain.progressBar.setValue(self.dlg_exc_rain.progressBar.value() + 20)
-
-                mensagem_log1 = 'ADDING FILES SELECTED TO PROJECT LAYERS TO QGIS...\n'
-                self.dlg_exc_rain.te_logg.append(mensagem_log1)
-
-                if self.dlg_exc_rain.ch_7_pg4.isChecked() and self.fn_numb_pix != '':
-                    # Adiciona o arquivo selecionado: numbering pixel_basin
-                    self.adiciona_layer(self.fn_numb_pix)
-
-                if self.dlg_exc_rain.ch_8_pg4.isChecked() and self.fn_Spotencial != '':
-                    # Adiciona o arquivo selecionado: maximum potencial retention
-                    self.adiciona_layer(self.fn_Spotencial)
-
-                if self.dlg_exc_rain.ch_9_pg4.isChecked() and self.fn_perda_ini != '':
-                    # Adiciona o arquivo selecionado: inital abstraction
-                    self.adiciona_layer(self.fn_perda_ini)
-
-                if self.dlg_exc_rain.ch_10_pg4.isChecked() and self.fn_p_acum != '':
-                    # Adiciona o arquivo selecionado: total rainfall
-                    self.adiciona_layer(self.fn_p_acum)
-
-                if self.dlg_exc_rain.ch_11_pg4.isChecked() and self.fn_pe_acum != '':
-                    # Adiciona o arquivo selecionado: total excess rainfall
-                    self.adiciona_layer(self.fn_pe_acum)
-
-                # Atualiza a progressbar
-                self.dlg_exc_rain.progressBar.setValue(self.dlg_exc_rain.progressBar.value() + 20)
-                if self.dlg_exc_rain.progressBar.value() != 100:
-                    self.dlg_exc_rain.progressBar.setValue(100)
-                # Finaliza operação do programa
-                QMessageBox.information(None, "Information", "Operation completed successfully!", )
-                break
-        else:
-            # O usuário selecionou a opção para cancelar
-            self.dlg_exc_rain.tabWidget.setCurrentIndex(0)
-
-    def run_rainfall_interpolation(self, interpol_map):
-        '''Esta função ordena a execução dos métodos para realizar a interpolação da precipitação para toda a bacia hidrográfica
-           interpol_map == 0: gera apenas o arquivo txt com a precipitação por pixel ao longo dos eventos
-           interpol_map == 1: gera um arquivo raster contento a precipitação por pixel para cada um dos eventos de precipitação'''
-        # Ativiva a página de log e limpa as informações passadas no text_edit 
-        # Verifica se algum elemento da lista de line_edits foi modificado
-        while True:
-            mensagem_log1 = None
-            line_edit_list = [
-                self.dlg_exc_rain.le_1_pg_ri.text(),
-                self.dlg_exc_rain.le_2_pg_ri.text(),
-                self.dlg_exc_rain.le_3_pg_ri.text(),
-                self.dlg_exc_rain.le_4_pg_ri.text(),
-                self.dlg_exc_rain.le_5_pg_ri.text()
-                ]
-            if False:
-                result = "Wait! The input files are empty! You need to provide them."
-                reply = QMessageBox.warning(None, "No input files", result, QMessageBox.Ok)
-                if reply == QMessageBox.Ok:
-                    break
-
-            else:
-
-                self.dlg_rain_interpl_run.show()
-                self.dlg_rain_interpl_run.te_rain_int.clear()
-
-                # Configura a progressbar
-                self.dlg_rain_interpl_run.progressBar.setRange(0, 100)
-                self.dlg_rain_interpl_run.progressBar.setValue(0)
-
-                # Adiciona avisa acerca do tempo de processamento
-                reply = QMessageBox.information(None, "Information", "This will take a few minutes (maybe hours)...", QMessageBox.Ok | QMessageBox.Cancel)
-                
-                # Apenas inicia o prpocessamento se o usuário estiver de acordo com o tempo de processamento
-                if reply == QMessageBox.Ok:
-
-                    # Configura as informações do textEdit da referida página
-                    font = QFont()
-                    datatime_started = datetime.now().isoformat()
-                    mensagem_log1 = f"Algorithm started at: {datatime_started}\n"
-                    mensagem_log1 += "--------------------------------------------------------\n"
-                    self.dlg_rain_interpl_run.te_rain_int.append(mensagem_log1)
-                    # Cria condição de parada da execução: se o usuário clicar no botão cancel da página de log
-                    while True:
-                        # Método usado para permitir a iteração do usuário enquanto o programa está em execução
-                        QApplication.processEvents()
-                        self.dlg_rain_interpl_run.btn_cancel_rain_int.clicked.connect(lambda: self.cancel_rainfall_interpol())
-                        
-                        # Initial configuration
-                        if self.rdc_vars.unidaderef =='deg':
-                            # Sistema está em graus, assumindo lat e long: será feita a projeção para metros
-                            self.global_vars.metro = 0
-                        else:
-                            # Sistema está em metros, não é preciso fazer a projeção para metros
-                            self.global_vars.metro = 1
-
-                        # Reading input files
-                        mensagem_log1 = 'READING INPUT FILES...\n'
-                        self.dlg_rain_interpl_run.te_rain_int.append(mensagem_log1)
-                        arquivo_bacia = self.dlg_exc_rain.le_1_pg_ri.text()
-                        self.leh_bacia(arquivo_bacia, 2)
-                        self.leh_posto_pluv()
-                        self.leh_arquivo_precipitacao()
-
-                        # Atualiza progressbar
-                        self.dlg_rain_interpl_run.progressBar.setValue(40)
-
-                        # Processing and wrinting output files
-                        mensagem_log1 = 'PROCESSING...\n'
-                        self.dlg_rain_interpl_run.te_rain_int.append(mensagem_log1)
-                        if interpol_map == 1:
-                            self.rainfall_interpolation_map()
-                            mensagem_log1 = 'WRITING OUTPUT FILES...\n'
-                            self.dlg_rain_interpl_run.te_rain_int.append(mensagem_log1)
-                            self.dlg_rain_interpl_run.progressBar.setValue(self.dlg_exc_rain.progressBar.value()+60)
-                        else:    
-                            self.rainfall_interpolation()
-                            mensagem_log1 = 'WRITING OUTPUT FILES...\n'
-                            self.dlg_rain_interpl_run.te_rain_int.append(mensagem_log1)
-                            self.dlg_rain_interpl_run.progressBar.setValue(self.dlg_exc_rain.progressBar.value()+60)
-
-                        # Finaliza execução do programa
-                        self.dlg_rain_interpl_run.btn_ok_rain_int.clicked.connect(lambda: self.dlg_rain_interpl_run.close())
-                        break
-
-                else:
-                    # O usuário selecionou a opção para cancelar
-                    self.dlg_rain_interpl_run.close()
-                break
-
-    def run_flow_routing(self):
-        '''Está função ativa a página de log e configura a ordem de execução das funções da rotina flow rounting'''
-        # Ativiva a página de log e limpa as informações passadas no text_edit 
-        mensagem_log1 = None
-        self.dlg_flow_rout.tabWidget.setCurrentIndex(1)
-        self.dlg_flow_rout.pg_log_f_rout.setEnabled(True)
-        self.dlg_flow_rout.te_logg.clear()
-
-        # Configura a progressbar
-        self.dlg_flow_rout.progressBar.setRange(0, 100)
-        self.dlg_flow_rout.progressBar.setValue(0)
-
-        # Adiciona avisa acerca do tempo de processamento
-        reply = QMessageBox.information(None, "Information", "This will take a few minutes (maybe hours)...", QMessageBox.Ok | QMessageBox.Cancel)
+        DA_km2_file = direct_temp + r'\DA_km2.rst'
+        self.leh_geotiff_escreve_ascii(self.dlg_flow_tt.le_4_pg2.text(),DA_km2_file, 'float')
         
-        # Apenas inicia o prpocessamento se o usuário estiver de acordo com o tempo de processamento
-        if reply == QMessageBox.Ok:
+        drainage_file = direct_temp + r'\drainage.rst'
+        self.leh_geotiff_escreve_ascii(self.dlg_flow_tt.le_5_pg2.text(),drainage_file, 'int')
 
-            # Configura as informações do textEdit da referida página
-            font = QFont()
-            font.setPointSize(11)
-            version_info = {
-                "QGIS Version": '3.34.0-Prizren',
-                "Qt Version": '5.15.3',
-                "Python Version": '3.9.5',
-                "GDAL Version": '3.8.0'}
-            
-            datatime_started = datetime.now().isoformat()
-            mensagem_log1 = "The plugin was developed with:\n"
-            mensagem_log1 += f"QGIS Version: {version_info['QGIS Version']}\n"
-            mensagem_log1 += f"Qt Version: {version_info['Qt Version']}\n"
-            mensagem_log1 += f"Python Version: {version_info['Python Version']}\n"
-            mensagem_log1 += f"GDAL Version: {version_info['GDAL Version']}\n"
-            mensagem_log1 += "--------------------------------------------------------\n"
-            mensagem_log1 += f"Algorithm started at: {datatime_started}\n"
-            mensagem_log1 += "--------------------------------------------------------\n"
-            self.dlg_flow_rout.te_logg.append(mensagem_log1)
-            # Cria condição de parada da execução: se o usuário clicar no botão cancel da página de log
-            while True:
-                # Método usado para permitir a iteração do usuário enquanto o programa está em execução
-                QApplication.processEvents()
-                self.dlg_flow_rout.btn_cancel_log.clicked.connect(lambda: self.cancel_log_page(self.dlg_flow_rout.te_logg,self.dlg_flow_rout.pg_par_f_rout, self.dlg_flow_rout.pg_log_f_rout))
-                
-                # Initial configuration
-                if self.rdc_vars.unidaderef =='deg':
-                    # Sistema está em graus, assumindo lat e long: será feita a projeção para metros
-                    self.global_vars.metro = 0
-                else:
-                    # Sistema está em metros, não é preciso fazer a projeção para metros
-                    self.global_vars.metro = 1
+        river_segments_file = direct_temp + r'\river_segments.rst'
+        self.leh_geotiff_escreve_ascii(self.dlg_flow_tt.le_6_pg2.text(),river_segments_file, 'int')
 
-                # Reading input files
-                mensagem_log1 = 'READING INPUT FILES...\n'
-                self.dlg_flow_rout.te_logg.append(mensagem_log1)
+        LULC_file = direct_temp + r'\LULC.rst'
+        self.leh_geotiff_escreve_ascii(self.dlg_flow_tt.le_7_pg2.text(),LULC_file, 'int')
 
-                # Lê bacia hidrográfica
-                arquivo_bacia = self.dlg_flow_rout.le_2_pg2.text()
-                self.leh_bacia(arquivo_bacia, 3)
-                self.numera_pix_bacia()
-                arquivo_precipitacao = self.dlg_flow_rout.le_4_pg2.text()
-                self.leh_precip_distribuida(arquivo_precipitacao)
-                alfa = self.dlg_flow_rout.le_1_pg1.text()
-                time_step = self.dlg_flow_rout.le_2_pg1.text()
-                criterio_parada = self.dlg_flow_rout.le_4_pg1.text()
-                self.leh_parametros(alfa, time_step,criterio_parada,2)
-                
-                # Atualiza progressbar
-                self.dlg_flow_rout.progressBar.setValue(10)
-
-                # Processing and wrinting output files
-                mensagem_log1 ='PROCESSING...'
-                self.dlg_flow_rout.te_logg.append(mensagem_log1)
-                self.hidrograma_dlr()
-
-                # Atualiza progressbar
-                self.dlg_flow_rout.progressBar.setValue(self.dlg_flow_rout.progressBar.value() + 40)
-
-                mensagem_log1 = 'WRITING OUTPUT FILES...'
-                self.dlg_flow_rout.te_logg.append(mensagem_log1)
-
-                # Codição para unidade da vazão de pico
-                if self.dlg_flow_rout.ch_4_pg4.isChecked():
-                    if self.dlg_flow_rout.rb_3_pg4.isChecked():
-                        self.escreve_vazao_pico_pixel(1)
-                        self.dlg_flow_rout.progressBar.setValue(self.dlg_flow_rout.progressBar.value() + 10)
-                    elif self.dlg_flow_rout.rb_4_pg4.isChecked():
-                        self.escreve_vazao_pico_pixel(0)
-                        self.dlg_flow_rout.progressBar.setValue(self.dlg_flow_rout.progressBar.value() + 10)
-
-                # Escolha dos arquivos de saída volume por píxel
-                if self.dlg_flow_rout.ch_4_pg4.isChecked():
-                    self.escreve_volume_gerado_pixel()
-                if self.dlg_flow_rout.ch_6_pg4.isChecked():
-                    self.escreve_hidrograma_dlr()
-                self.dlg_flow_rout.progressBar.setValue(self.dlg_flow_rout.progressBar.value() + 20)
-
-                mensagem_log1 = 'ADDING FILES SELECTED TO PROJECT LAYERS TO QGIS...\n'
-                self.dlg_flow_rout.te_logg.append(mensagem_log1)
-                # Configura lógica para adição dos arquivos selecionados
-                if self.dlg_flow_rout.ch_10_pg4.isChecked() and self.fn_vazao_pico != '':
-                    # Adiciona o arquivo selecionado: total excess rainfall
-                    self.adiciona_layer(self.fn_vazao_pico)
-
-                if self.dlg_flow_rout.ch_11_pg4.isChecked() and self.fn_vol != '':
-                    # Adiciona o arquivo selecionado: total excess rainfall
-                    self.adiciona_layer(self.fn_vol)
-                self.dlg_flow_rout.progressBar.setValue(self.dlg_flow_rout.progressBar.value() + 20)
-
-                if self.dlg_flow_rout.progressBar.value() != 100:
-                    self.dlg_flow_rout.progressBar.setValue(100)
-                # Finaliza operação do programa
-                QMessageBox.information(None, "Information", "Operation completed successfully!", )
-                break
+        
+        if self.dlg_flow_tt.le_6_pg2.text() is not None:
+            reservoirs_file = direct_temp + r'\reservoirs.rst'
+            self.leh_geotiff_escreve_ascii(self.dlg_flow_tt.le_7_pg2.text(),reservoirs_file, 'float')
         else:
-            # O usuário selecionou a opção para cancelar
-            self.dlg_flow_rout.tabWidget.setCurrentIndex(0)
+            reservoirs_file = ''
 
+        # Escreve arquivo txt com os diretórios e nome dos inputs enviados pelo user
+        direct_in_files = direct_temp + r'\input_files_configuration.txt'
+        with open(direct_in_files, 'w', enconding = 'utf-8') as arquivo_txt:
+            # Escreve cabeçalho
+            arquivo_txt.write("Selected input file directory")
+            arquivo_txt.write(f'{1 if self.dlg_flow_tt.le_1_pg2.text() is not None else 0},watershed,{bacia_file}')
+            arquivo_txt.write(f'{1 if self.dlg_flow_tt.le_2_pg2.text() is not None else 0},DEM,{dem_file}')
+            arquivo_txt.write(f'{1 if self.dlg_flow_tt.le_3_pg2.text() is not None else 0},Flow_Dir,{Flow_Dir_file}')
+            arquivo_txt.write(f'{1 if self.dlg_flow_tt.le_4_pg2.text() is not None else 0},DA_km2,{DA_km2_file}')
+            arquivo_txt.write(f'{1 if self.dlg_flow_tt.le_5_pg2.text() is not None else 0},drainage,{drainage_file}')
+            arquivo_txt.write(f'{1 if self.dlg_flow_tt.le_6_pg2.text() is not None else 0},river_segments,{river_segments_file}')
+            arquivo_txt.write(f'{1 if self.dlg_flow_tt.le_1_pg2.text() is not None else 0},segment_characteristics,{self.file_name_tb1}') # Arquivo obrigatório, condição apenas para manter o padrão e controle
+            arquivo_txt.write(f'{1 if self.dlg_flow_tt.le_9_pg2.text() is not None else 0},LULC,{LULC_file}')
+            arquivo_txt.write(f'{1 if self.dlg_flow_tt.le_1_pg2.text() is not None else 0},surface_roughness,{self.file_name_tb2}') # Arquivo obrigatório, condição apenas para manter o padrão e controle
+            arquivo_txt.write(f'{1 if self.dlg_flow_tt.le_7_pg2.text() is not None else 0},reservoirs,{reservoirs_file}')
+            arquivo_txt.write(f'{1 if self.dlg_flow_tt.le_1_pg2.text() is not None else 0},parameters,{parameters_file}') # Arquivo obrigatório, condição apenas para manter o padrão e controle
+        
+        # Organiza os caminhos dos arquivos de saída enviados pelo user: modifica a extensão de .tif para .rst
+        output1 = replace_tif_rst(self.dlg_flow_tt.le_6_pg4.text())
+        output2 = replace_tif_rst(self.dlg_flow_tt.le_7_pg4.text())
+        output3 = self.dlg_flow_tt.le_8_pg4.text()
+        output4 = replace_tif_rst(self.dlg_flow_tt.le_9_pg4.text())
+        output5 = replace_tif_rst(self.dlg_flow_tt.le_10_pg4.text()) 
+        output6 = replace_tif_rst(self.dlg_flow_tt.le_11_pg4.text())
+
+        # Escreve aquivo txt contendo o diretório informado pelo user: será fornecido para a rotina em visual basic
+        direct_out_files = direct_temp + r'\output_files_configuration.txt'
+        with open(direct_out_files, 'w', encoding = 'utf-8') as arquivo_txt:
+            arquivo_txt.write("Select output file directory")
+            arquivo_txt.write(f'{1 if self.dlg_flow_tt.ch_6_pg4.isChecked() == True else 0},Slope,{output1}') #rst
+            arquivo_txt.write(f'{1 if self.dlg_flow_tt.ch_7_pg4.isChecked() == True else 0},river_segments,{output2}') #rst
+            arquivo_txt.write(f'{1 if self.dlg_flow_tt.ch_8_pg4.isChecked() == True else 0},Hydraulic_radius-roughness_and_slope,{output3}') #txt: gerado diretamente nas rotinas vb
+            arquivo_txt.write(f'{1 if self.dlg_flow_tt.ch_9_pg4.isChecked() == True else 0},River_cross-sectional_area,{output4}') #rst
+            arquivo_txt.write(f'{1 if self.dlg_flow_tt.ch_10_pg4.isChecked() == True else 0},River_bankfull_width,{output5}') #rst
+            arquivo_txt.write(f'{1 if self.dlg_flow_tt.ch_11_pg4.isChecked() == True else 0},Flow_travel_time,{output6}') #rst
+  
     def run(self):
         """Esta é a função principal do plugin, todas as funcionalidades propostas anteriormente serão efetivadas na função run"""
         
@@ -5724,7 +2189,7 @@ class HidroPixel:
             # Configura os botões da página configuration: flow travel time
             self.dlg_flow_tt.tbtn_pg1_1.clicked.connect(lambda: self.carrega_work_folder(self.dlg_flow_tt.le_21_pg1))
             
-            self.dlg_flow_tt.cb_1_pg1.toggled.connect(lambda: self.sheet_flow_status(self.dlg_flow_tt.cb_1_pg1.isChecked()))
+            # self.dlg_flow_tt.cb_1_pg1.toggled.connect(lambda: self.sheet_flow_status(self.dlg_flow_tt.cb_1_pg1.isChecked()))
 
             # Configura os botões da página input data : flow travel time
             self.dlg_flow_tt.tbtn_pg2_1.clicked.connect(lambda: self.carrega_arquivos(self.dlg_flow_tt.le_1_pg2))
@@ -5762,8 +2227,8 @@ class HidroPixel:
             # Configura botões das tabelas : flow travel time
             self.dlg_flow_tt.btn_read_t1.clicked.connect(lambda: self.read_tb_from_file(self.dlg_flow_tt.tbw_1_pg2,self.dlg_flow_tt.le_7_pg2, 1))
             self.dlg_flow_tt.btn_read_t2.clicked.connect(lambda: self.read_tb_from_file(self.dlg_flow_tt.tbw_2_pg2,self.dlg_flow_tt.le_8_pg2,2))
-            self.dlg_flow_tt.btn_save_file_t1.clicked.connect(lambda: self.save_table_to_file(1))
-            self.dlg_flow_tt.btn_save_file_t2.clicked.connect(lambda: self.save_table_to_file(2))
+            self.dlg_flow_tt.btn_save_file_t1.clicked.connect(lambda: self.save_table_to_file_btn(1))
+            self.dlg_flow_tt.btn_save_file_t2.clicked.connect(lambda: self.save_table_to_file_btn(2))
             self.dlg_flow_tt.btn_add_row_1.clicked.connect(lambda: self.add_new_row(self.dlg_flow_tt.tbw_1_pg2))
             self.dlg_flow_tt.btn_add_row_2.clicked.connect(lambda: self.add_new_row(self.dlg_flow_tt.tbw_2_pg2))
             self.dlg_flow_tt.btn_del_row_1.clicked.connect(lambda: self.delete_row(self.dlg_flow_tt.tbw_1_pg2))
@@ -5845,7 +2310,7 @@ class HidroPixel:
             self.dlg_exc_rain.tbtn_pg4_6.clicked.connect(lambda: self.save_buttons(self.dlg_exc_rain.le_6_pg4,file_type = 'text'))
             
             # configura botões da página run : excess rainfall
-            self.dlg_exc_rain.btn_run_2.clicked.connect(lambda: self.run_exc_rain())
+            # self.dlg_exc_rain.btn_run_2.clicked.connect(lambda: self.run_exc_rain())
             self.dlg_exc_rain.btn_close_pg4.clicked.connect(lambda: self.close_gui(2))
             
             # Configura botões da página rainfall interpolation
@@ -5898,12 +2363,17 @@ class HidroPixel:
             self.dlg_flow_rout.tbtn_pg4_6.clicked.connect(lambda: self.save_buttons(self.dlg_flow_rout.le_6_pg4, file_type = 'text'))            
             
             # configura botões da página run : flow routing
-            self.dlg_flow_rout.btn_run_2.clicked.connect(lambda: self.run_flow_routing())
+            # self.dlg_flow_rout.btn_run_2.clicked.connect(lambda: self.run_flow_routing())
             self.dlg_flow_rout.btn_close_pg4.clicked.connect(lambda: self.close_gui(3))
 
             '''Menu Hidropixel Plugin'''
             # Run the dialog event loop
             self.dlg_hidro_pixel.exec_()
+
+            # Encerra todas as GUIs
             self.close_gui(1)
             self.close_gui(2)
             self.close_gui(3)
+
+            # Elimina os arquivos criados durante a execução do hidropixel
+            self.apaga_arquivos_temp()

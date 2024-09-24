@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>672</width>
+    <width>678</width>
     <height>587</height>
    </rect>
   </property>
@@ -35,6 +35,9 @@
    <layout class="QGridLayout" name="gridLayout_7">
     <item row="0" column="0">
      <widget class="QTabWidget" name="tabWidget">
+      <property name="enabled">
+       <bool>true</bool>
+      </property>
       <property name="currentIndex">
        <number>0</number>
       </property>
@@ -115,7 +118,7 @@
                 <rect>
                  <x>0</x>
                  <y>0</y>
-                 <width>610</width>
+                 <width>616</width>
                  <height>397</height>
                 </rect>
                </property>
@@ -675,7 +678,7 @@
                 <rect>
                  <x>0</x>
                  <y>0</y>
-                 <width>610</width>
+                 <width>616</width>
                  <height>427</height>
                 </rect>
                </property>
@@ -1181,7 +1184,7 @@
                 <rect>
                  <x>0</x>
                  <y>0</y>
-                 <width>610</width>
+                 <width>616</width>
                  <height>427</height>
                 </rect>
                </property>
@@ -1237,7 +1240,7 @@
                 <rect>
                  <x>0</x>
                  <y>-84</y>
-                 <width>593</width>
+                 <width>599</width>
                  <height>511</height>
                 </rect>
                </property>
@@ -2046,7 +2049,7 @@
                        <item row="0" column="4">
                         <widget class="QCheckBox" name="ch_12_pg4">
                          <property name="enabled">
-                          <bool>false</bool>
+                          <bool>true</bool>
                          </property>
                          <property name="sizePolicy">
                           <sizepolicy hsizetype="Expanding" vsizetype="Fixed">

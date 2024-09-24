@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>620</width>
+    <width>621</width>
     <height>587</height>
    </rect>
   </property>
@@ -160,7 +160,7 @@
                 <rect>
                  <x>0</x>
                  <y>0</y>
-                 <width>558</width>
+                 <width>559</width>
                  <height>418</height>
                 </rect>
                </property>
@@ -672,7 +672,7 @@
                 <rect>
                  <x>0</x>
                  <y>0</y>
-                 <width>558</width>
+                 <width>559</width>
                  <height>448</height>
                 </rect>
                </property>
@@ -999,6 +999,9 @@
                        </item>
                        <item alignment="Qt::AlignRight">
                         <widget class="QLabel" name="label_8">
+                         <property name="enabled">
+                          <bool>false</bool>
+                         </property>
                          <property name="text">
                           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;justify&quot;&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Rainfall maps:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                          </property>
@@ -1037,6 +1040,9 @@
                          </item>
                          <item>
                           <widget class="QLineEdit" name="le_5_pg_ri">
+                           <property name="enabled">
+                            <bool>false</bool>
+                           </property>
                            <property name="sizePolicy">
                             <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
                              <horstretch>0</horstretch>
@@ -1117,6 +1123,9 @@
                           <layout class="QHBoxLayout" name="horizontalLayout_17">
                            <item>
                             <widget class="QToolButton" name="tbtn_pg_r_5">
+                             <property name="enabled">
+                              <bool>false</bool>
+                             </property>
                              <property name="text">
                               <string>...</string>
                              </property>
@@ -1124,6 +1133,9 @@
                            </item>
                            <item>
                             <widget class="QPushButton" name="btn_save_2_pg_ri">
+                             <property name="enabled">
+                              <bool>false</bool>
+                             </property>
                              <property name="text">
                               <string>Save</string>
                              </property>
@@ -1131,6 +1143,9 @@
                            </item>
                            <item>
                             <widget class="QLabel" name="label_42">
+                             <property name="enabled">
+                              <bool>false</bool>
+                             </property>
                              <property name="sizePolicy">
                               <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
                                <horstretch>0</horstretch>
@@ -1241,7 +1256,7 @@
                 <rect>
                  <x>0</x>
                  <y>0</y>
-                 <width>558</width>
+                 <width>559</width>
                  <height>448</height>
                 </rect>
                </property>
@@ -1676,8 +1691,8 @@
                 <rect>
                  <x>0</x>
                  <y>0</y>
-                 <width>254</width>
-                 <height>64</height>
+                 <width>559</width>
+                 <height>448</height>
                 </rect>
                </property>
                <layout class="QGridLayout" name="gridLayout_30">
@@ -1725,8 +1740,8 @@
                 <rect>
                  <x>0</x>
                  <y>0</y>
-                 <width>507</width>
-                 <height>404</height>
+                 <width>559</width>
+                 <height>448</height>
                 </rect>
                </property>
                <layout class="QGridLayout" name="gridLayout_17">
