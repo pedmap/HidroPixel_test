@@ -37,7 +37,8 @@ class RDCVariables:
         self.nomeRDC = ""
         self.sistemaref = ""
         self.unidaderef = ""
-        self.geotransform = ""
+        self.geotransform = []
+        self.projection = None
         self.projection = ""
 
 

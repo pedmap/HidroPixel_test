@@ -9,9 +9,10 @@ from functools import wraps
 from osgeo import ogr, gdal, gdalconst
 # import matplotlib.pyplot as plt
 from pathlib import Path
+import matplotlib.pyplot as plt
 from modulos_files.RDC_variables import RDCVariables
 from modulos_files.global_variables import GlobalVariables
-
+import glob
 
 class DesenvolvePlugin():
     '''Criada para testar e desenvolver as funções do módulo hidroPixel'''
@@ -29,6 +30,7 @@ class DesenvolvePlugin():
         self.blocos_vazao = 0
         self.Pexc = 0
         self.fim, self.inicio = 0,0
+        self.diretorio_atual = os.path.dirname(os.path.abspath(__file__))
 
     def optimize(func):
         '''Esta função utiliza métodos python para otimizar o código, gerando um cache para os resultados do usuário'''
@@ -44,6 +46,287 @@ class DesenvolvePlugin():
             return cache[key]
             
         return wrapper
+    def close_gui(self, function):
+        '''Está função é usada para torna nulo (limpar) as informações adicionadas nos diferentes objetos das funções do Hidropixel Plugin
+           - Function = 1 : Flow travel time
+           - Function = 2 : Excess rainfall
+           - Function = 3 : Flow routing'''
+
+        if function == 1:
+            # Verifica se alguma lineEdit sobreu alteração: modifica a execução da função close
+            line_edit_list = [
+                self.dlg_flow_tt.le_1_pg1.text(),
+                self.dlg_flow_tt.le_5_pg1.text(),
+                self.dlg_flow_tt.le_6_pg1.text(),
+                self.dlg_flow_tt.le_7_pg1.text(),
+                self.dlg_flow_tt.le_8_pg1.text(),
+                self.dlg_flow_tt.le_9_pg1.text(),
+                self.dlg_flow_tt.le_10_pg1.text(),
+                self.dlg_flow_tt.le_11_pg1.text(),
+                self.dlg_flow_tt.le_12_pg1.text(),
+                self.dlg_flow_tt.le_14_pg1.text(),
+                self.dlg_flow_tt.le_15_pg1.text(),
+                self.dlg_flow_tt.le_16_pg1.text(),
+                self.dlg_flow_tt.le_17_pg1.text(),
+                self.dlg_flow_tt.le_18_pg1.text(),
+                self.dlg_flow_tt.le_19_pg1.text(),
+                self.dlg_flow_tt.le_21_pg1.text(),
+                self.dlg_flow_tt.le_1_pg2.text(),
+                self.dlg_flow_tt.le_2_pg2.text(),
+                self.dlg_flow_tt.le_3_pg2.text(),
+                self.dlg_flow_tt.le_4_pg2.text(),
+                self.dlg_flow_tt.le_5_pg2.text(),
+                self.dlg_flow_tt.le_6_pg2.text(),
+                self.dlg_flow_tt.le_8_pg2.text(),
+                self.dlg_flow_tt.le_9_pg2.text(),
+                self.dlg_flow_tt.le_10_pg2.text(),
+                self.dlg_flow_tt.le_6_pg4.text(),
+                self.dlg_flow_tt.le_7_pg4.text(),
+                self.dlg_flow_tt.le_8_pg4.text(),
+                self.dlg_flow_tt.le_9_pg4.text(),
+                self.dlg_flow_tt.le_10_pg4.text(),
+                self.dlg_flow_tt.le_11_pg4.text()
+            ]
+
+            # Verifica se algum elemento da lista de line_edits foi modificado
+            if any(item != '' for item in line_edit_list) and self.save_result == False:
+                while True:
+
+                    result = "Wait! You did not save your changes. Are you sure you want to close?"
+                    reply = QMessageBox.warning(None, "Changes not saved", result, QMessageBox.Ok | QMessageBox.Cancel)
+                    if reply == QMessageBox.Cancel:
+                        break
+
+                    else: 
+                        # Limpando as informações armazenadas: line edit
+                        self.dlg_flow_tt.le_1_pg1.clear()
+                        self.dlg_flow_tt.le_5_pg1.clear()
+                        self.dlg_flow_tt.le_6_pg1.clear()
+                        self.dlg_flow_tt.le_7_pg1.clear()
+                        self.dlg_flow_tt.le_8_pg1.clear()
+                        self.dlg_flow_tt.le_9_pg1.clear()
+                        self.dlg_flow_tt.le_10_pg1.clear()
+                        self.dlg_flow_tt.le_11_pg1.clear()
+                        self.dlg_flow_tt.le_12_pg1.clear()
+                        self.dlg_flow_tt.le_13_pg1.clear()
+                        self.dlg_flow_tt.le_14_pg1.clear()
+                        self.dlg_flow_tt.le_15_pg1.clear()
+                        self.dlg_flow_tt.le_16_pg1.clear()
+                        self.dlg_flow_tt.le_17_pg1.clear()
+                        self.dlg_flow_tt.le_18_pg1.clear()
+                        self.dlg_flow_tt.le_19_pg1.clear()
+                        self.dlg_flow_tt.le_20_pg1.clear()
+                        self.dlg_flow_tt.le_21_pg1.clear()
+
+                        self.dlg_flow_tt.le_1_pg2.clear()
+                        self.dlg_flow_tt.le_2_pg2.clear()
+                        self.dlg_flow_tt.te_1_pg2.clear()
+                        self.dlg_flow_tt.le_3_pg2.clear()
+                        self.dlg_flow_tt.le_4_pg2.clear()
+                        self.dlg_flow_tt.le_5_pg2.clear()
+                        self.dlg_flow_tt.le_6_pg2.clear()
+                        # self.dlg_flow_tt.le_7_pg2.clear()
+                        self.dlg_flow_tt.le_8_pg2.clear()
+                        self.dlg_flow_tt.le_9_pg2.clear()
+                        self.dlg_flow_tt.le_10_pg2.clear()
+
+                        self.dlg_flow_tt.le_6_pg4.clear()
+                        self.dlg_flow_tt.le_7_pg4.clear()
+                        self.dlg_flow_tt.le_8_pg4.clear()
+                        self.dlg_flow_tt.le_9_pg4.clear()
+                        self.dlg_flow_tt.le_10_pg4.clear()
+                        self.dlg_flow_tt.le_11_pg4.clear()
+
+                        # Limpando as informações armazenadas: tables widgets
+                        nlin_tb1 = self.dlg_flow_tt.tbw_1_pg2.rowCount()
+                        ncol_tb1 = self.dlg_flow_tt.tbw_1_pg2.columnCount()
+                        nlin_tb2 = self.dlg_flow_tt.tbw_2_pg2.rowCount()
+                        ncol_tb2 = self.dlg_flow_tt.tbw_2_pg2.columnCount()
+                        # Primeira tabela
+                        for lin in range(nlin_tb1):
+                            for col in range(ncol_tb1):
+                                item = self.dlg_flow_tt.tbw_1_pg2.item(lin, col)
+                                if item is not None:
+                                    item.setText('')
+
+                        # Segunda tabela
+                        for lin in range(nlin_tb2):
+                            for col in range(ncol_tb2):
+                                item = self.dlg_flow_tt.tbw_2_pg2.item(lin, col)
+                                if item is not None:
+                                    item.setText('')
+                        self.dlg_flow_tt.ch_1_pg4.setChecked(False)  
+                        self.dlg_flow_tt.ch_2_pg4.setChecked(False)  
+                        self.dlg_flow_tt.ch_3_pg4.setChecked(False)  
+                        self.dlg_flow_tt.ch_4_pg4.setChecked(False)  
+                        self.dlg_flow_tt.ch_5_pg4.setChecked(False)  
+                        self.dlg_flow_tt.ch_6_pg4.setChecked(False)  
+                        self.dlg_flow_tt.ch_7_pg4.setChecked(False)
+                        self.dlg_flow_tt.ch_8_pg4.setChecked(False)  
+                        self.dlg_flow_tt.ch_9_pg4.setChecked(False)  
+                        self.dlg_flow_tt.ch_10_pg4.setChecked(False)  
+                        self.dlg_flow_tt.ch_11_pg4.setChecked(False)
+                        self.dlg_flow_tt.ch_12_pg4.setChecked(False)  
+                        self.dlg_flow_tt.ch_13_pg4.setChecked(False)  
+                        self.dlg_flow_tt.ch_14_pg4.setChecked(False)  
+                        self.dlg_flow_tt.ch_15_pg4.setChecked(False)  
+                        self.dlg_flow_tt.ch_16_pg4.setChecked(False)  
+                        self.dlg_flow_tt.ch_17_pg4.setChecked(False)  
+                        self.dlg_flow_tt.ch_18_pg4.setChecked(False)
+                        self.dlg_flow_tt.ch_19_pg4.setChecked(False)  
+                        self.dlg_flow_tt.ch_20_pg4.setChecked(False)  
+                        self.dlg_flow_tt.ch_21_pg4.setChecked(False)  
+                        self.dlg_flow_tt.ch_22_pg4.setChecked(False)
+                        self.dlg_flow_tt.close()
+
+                    # Atualiza as variáveis para a condição de salvamento
+                    self.save_result = False
+                    break
+
+            # Se não houver moficações nos objetos do plugin, a janela será fechada normalmente
+            else:
+                self.dlg_flow_tt.close()
+                self.save_result = False
+
+        elif function == 2:
+            # Verifica se alguma lineEdit sobreu alteração: modifica a execução da função close
+            line_edit_list = [
+                self.dlg_exc_rain.le_1_pg1.text(),
+                self.dlg_exc_rain.le_1_pg_ri.text(),
+                self.dlg_exc_rain.le_2_pg_ri.text(),
+                self.dlg_exc_rain.le_3_pg_ri.text(),
+                self.dlg_exc_rain.le_4_pg_ri.text(),
+                self.dlg_exc_rain.le_5_pg_ri.text(),
+                self.dlg_exc_rain.le_1_pg2.text(),
+                self.dlg_exc_rain.le_2_pg2.text(),
+                self.dlg_exc_rain.le_3_pg2.text(),
+                self.dlg_exc_rain.le_4_pg2.text(),
+                self.dlg_exc_rain.le_1_pg4.text(),
+                self.dlg_exc_rain.le_2_pg4.text(),
+                self.dlg_exc_rain.le_3_pg4.text(),
+                self.dlg_exc_rain.le_4_pg4.text(),
+                self.dlg_exc_rain.le_5_pg4.text(),
+            ]
+
+            # Verifica se algum elemento da função foi modificado
+            if any(item != '' for item in line_edit_list) and self.save_result == False:
+                while True:
+
+                    result = "Wait! You did not save your changes. Are you sure you want to close?"
+                    reply = QMessageBox.warning(None, "Changes not saved", result, QMessageBox.Ok | QMessageBox.Cancel)
+                    if reply == QMessageBox.Cancel:
+                        break
+                    
+                    else:
+                        # Limpando os elementos da função excess rainfall
+                        self.dlg_exc_rain.le_1_pg1.clear()
+                        self.dlg_exc_rain.le_2_pg1.clear()
+                        self.dlg_exc_rain.le_3_pg1.clear()
+                        self.dlg_exc_rain.le_4_pg1.clear()
+                        self.dlg_exc_rain.le_1_pg_ri.clear()
+                        self.dlg_exc_rain.le_2_pg_ri.clear()
+                        self.dlg_exc_rain.le_3_pg_ri.clear()
+                        self.dlg_exc_rain.le_4_pg_ri.clear()
+                        self.dlg_exc_rain.le_5_pg_ri.clear()
+                        self.dlg_exc_rain.le_1_pg2.clear()
+                        self.dlg_exc_rain.le_2_pg2.clear()
+                        self.dlg_exc_rain.le_3_pg2.clear()
+                        self.dlg_exc_rain.le_4_pg2.clear()
+                        self.dlg_exc_rain.le_1_pg4.clear()
+                        self.dlg_exc_rain.le_2_pg4.clear()
+                        self.dlg_exc_rain.le_3_pg4.clear()
+                        self.dlg_exc_rain.le_4_pg4.clear()
+                        self.dlg_exc_rain.le_5_pg4.clear()
+                        self.dlg_exc_rain.le_6_pg4.clear()     
+                        self.dlg_exc_rain.rb_1_pg1.setChecked(False) 
+                        self.dlg_exc_rain.rb_2_pg1.setChecked(False) 
+                        self.dlg_exc_rain.ch_1_pg4.setChecked(False)  
+                        self.dlg_exc_rain.ch_2_pg4.setChecked(False)  
+                        self.dlg_exc_rain.ch_3_pg4.setChecked(False)  
+                        self.dlg_exc_rain.ch_4_pg4.setChecked(False)  
+                        self.dlg_exc_rain.ch_5_pg4.setChecked(False)  
+                        self.dlg_exc_rain.ch_6_pg4.setChecked(False)
+                        self.dlg_exc_rain.close()
+
+                    # Atualiza as variáveis para a condição de salvamento
+                    self.save_result = False
+                    break
+            else:
+                # Se não houver moficações nos objetos do plugin, a janela será fechada normalmente
+                self.save_result = False
+                self.dlg_exc_rain.close()
+
+        elif function == 3:
+            # Verifica se alguma lineEdit sobreu alteração: modifica a execução da função close
+            line_edit_list = [
+                self.dlg_flow_rout.le_1_pg1.text(),
+                self.dlg_flow_rout.le_2_pg1.text(),
+                self.dlg_flow_rout.le_3_pg1.text(),
+                self.dlg_flow_rout.le_4_pg1.text(),
+                self.dlg_flow_rout.le_5_pg1.text(),
+                self.dlg_flow_rout.le_1_pg2.text(),
+                self.dlg_flow_rout.le_2_pg2.text(),
+                self.dlg_flow_rout.le_3_pg2.text(),
+                self.dlg_flow_rout.le_4_pg2.text(),
+                self.dlg_flow_rout.le_5_pg2.text(),
+                self.dlg_flow_rout.le_1_pg4.text(),
+                self.dlg_flow_rout.le_2_pg4.text(),
+                self.dlg_flow_rout.le_3_pg4.text(),
+                self.dlg_flow_rout.le_4_pg4.text(),
+                self.dlg_flow_rout.le_5_pg4.text(),
+                self.dlg_flow_rout.le_6_pg4.text()
+            ]
+
+            # Verifica se algum elemento da função foi modificado
+            if any(item != '' for item in line_edit_list) and self.save_result == False:
+                while True:
+
+                    result = "Wait! You did not save your changes. Are you sure you want to close?"
+                    reply = QMessageBox.warning(None, "Changes not saved", result, QMessageBox.Ok | QMessageBox.Cancel)
+                    if reply == QMessageBox.Cancel:
+                        break
+                    
+                    else:
+                        # Limpando os elementos da função excess rainfall
+                        self.dlg_flow_rout.le_1_pg1.clear()
+                        self.dlg_flow_rout.le_2_pg1.clear()
+                        self.dlg_flow_rout.le_3_pg1.clear()
+                        self.dlg_flow_rout.le_4_pg1.clear()
+                        self.dlg_flow_rout.le_5_pg1.clear()
+                        self.dlg_flow_rout.le_1_pg2.clear()
+                        self.dlg_flow_rout.le_2_pg2.clear()
+                        self.dlg_flow_rout.le_3_pg2.clear()
+                        self.dlg_flow_rout.le_4_pg2.clear()
+                        self.dlg_flow_rout.le_5_pg2.clear()
+                        self.dlg_flow_rout.le_1_pg4.clear()
+                        self.dlg_flow_rout.le_2_pg4.clear()
+                        self.dlg_flow_rout.le_3_pg4.clear()
+                        self.dlg_flow_rout.le_4_pg4.clear()
+                        self.dlg_flow_rout.le_5_pg4.clear()
+                        self.dlg_flow_rout.le_6_pg4.clear()     
+                        self.dlg_flow_rout.rb_1_pg1.setChecked(False) 
+                        self.dlg_flow_rout.rb_2_pg1.setChecked(False) 
+                        self.dlg_flow_rout.rb_3_pg1.setChecked(False)  
+                        self.dlg_flow_rout.rb_1_pg4.setChecked(False) 
+                        self.dlg_flow_rout.rb_2_pg4.setChecked(False) 
+                        self.dlg_flow_rout.rb_3_pg4.setChecked(False) 
+                        self.dlg_flow_rout.rb_4_pg4.setChecked(False) 
+                        self.dlg_flow_rout.ch_1_pg4.setChecked(False)  
+                        self.dlg_flow_rout.ch_2_pg4.setChecked(False)  
+                        self.dlg_flow_rout.ch_3_pg4.setChecked(False)  
+                        self.dlg_flow_rout.ch_4_pg4.setChecked(False)  
+                        self.dlg_flow_rout.ch_5_pg4.setChecked(False)  
+                        self.dlg_flow_rout.ch_6_pg4.setChecked(False)
+                        self.dlg_flow_rout.close()
+
+                    # Atualiza as variáveis para a condição de salvamento
+                    self.save_result = False
+                    break
+   
+            else:
+                # Se não houver moficações nos objetos do plugin, a janela será fechada normalmente
+                self.save_result = False
+                self.dlg_flow_rout.close()
 
 
     def leh_bacia(self, file_, function):
@@ -4196,20 +4479,21 @@ class DesenvolvePlugin():
         
     def leh_geotiff_escreve_ascii(self, arquivo, arquivo2, int_float):
         '''Esta função realiza a leitura do arquivo .tif enviado pelo user e o converte em .rst tipo ascii para leitura no visual basic''' 
-        raster_enviado = gdal.Open(arquivo)
+        dados_lidos = gdal.Open(arquivo)
 
         # Lendo os dados raster como um array 
-        dados_lidos_bacia = raster_enviado.GetRasterBand(1).ReadAsArray()
+        dados_lidos_bacia = dados_lidos.GetRasterBand(1).ReadAsArray()
 
         # Tratamento de erro: verifica se o arquivo foi aberto corretamente
-        if raster_enviado is not None:
+        if dados_lidos is not None:
 
             # Obtenção da dimensão da imagem raster
             self.rdc_vars.nlin = dados_lidos.RasterYSize           
             self.rdc_vars.ncol = dados_lidos.RasterXSize
             self.rdc_vars.geotransform = dados_lidos.GetGeoTransform()
-            self.rdc_vars.resolucao = dados_lidos.GetProjection()[1]
-            
+            self.rdc_vars.projection = dados_lidos.GetProjection()
+        bacia_ascii = np.zeros((self.rdc_vars.nlin,self.rdc_vars.ncol))
+
         # Leitura do arquivo ascii
         if int_float == 'int':
             with open(arquivo2, 'r') as arquivo_ascii:
@@ -4221,36 +4505,168 @@ class DesenvolvePlugin():
             with open(arquivo2, 'r') as arquivo_ascii:
                 for lin in range(self.rdc_vars.nlin):
                     for col in range(self.rdc_vars.ncol):
-                        bacia_ascii[lin,col] = float(arquivo_ascii.readline())          
+                        bacia_ascii[lin,col] = float(arquivo_ascii.readline())  
 
-        arquivo2_doc = arquivo2.replace('.rst','.RDC')
-        arquivo2_doc = arquivo2.replace('.RST','.RDC')
-        with open(arquivo2_doc, 'w', encoding = 'utf-8') as arquivo_rdc:
-            arquivo_rdc.write(f'Rows\n{self.rdc_vars.nlin}')
-            arquivo_rdc.write(f'Columns\n{self.rdc_vars.ncol}')
-            arquivo_rdc.write(f'resolution\n{self.rdc_vars.resolucao}')
+        with open(r"C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\SmallExample\1_TravelTime\Input\drenagem",'w',encoding ='utf-8') as arquivo:
+            for lin in range(self.rdc_vars.nlin):
+                for col in range(self.rdc_vars.ncol):
+                    arquivo_ascii.write(f'{str(int(bacia_ascii[lin,col]))}\n')
+        return bacia_ascii, dados_lidos_bacia
+
+    def leh_rst_escreve_geotiff(self, arquivo1, arquivo2, file_type):
+        """Esta função lê os arquivos processados nas rotinas em visual basic, no formato .rst(ascii) e os escreve em geotiff (no diretório informado)
+            arquivo1 = diretório do arquivo raster tipo rst ascii
+            arquivo2 = arquivo raster tiff (será criado)"""
+
+        # Convertendo arquivo ascii para geotiff
+        self.rdc_vars.nlin = 1701
+        self.rdc_vars.ncol = 2722
+        rst_to_raster = np.zeros((self.rdc_vars.nlin,self.rdc_vars.ncol))
+
+        # Leitura do arquivo ascii
+        if file_type == 'int':
+            with open(arquivo1, 'r') as arquivo_ascii:
+                for lin in range(self.rdc_vars.nlin):
+                    for col in range(self.rdc_vars.ncol):
+                        rst_to_raster[lin,col] = int(arquivo_ascii.readline())
+
+        elif file_type == 'float':
+            with open(arquivo1, 'r') as arquivo_ascii:
+                for lin in range(self.rdc_vars.nlin):
+                    for col in range(self.rdc_vars.ncol):
+                        rst_to_raster[lin,col] = float(arquivo_ascii.readline())
+        if file_type == 'int':
+            rst_to_raster = np.loadtxt(arquivo1, dtype=int)
+        elif file_type == 'float':
+            rst_to_raster = np.loadtxt(arquivo1, dtype=float)
+        # Define os dados a serem escritos
+        if file_type == 'int':
+            tipo_dados = gdalconst.GDT_Int16
+        else:
+            tipo_dados = gdalconst.GDT_Float32
+
+        # Obtendo o driver para escrita do arquivo em GeoTiff
+        fn_geotiff = arquivo2
+        driver = gdal.GetDriverByName('GTiff')
+
+        # Cria arquivo final
+        dataset = driver.Create(fn_geotiff, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
+        # dataset.SetGeoTransform(self.rdc_vars.geotransform)
+        # dataset.SetProjection(self.rdc_vars.projection)
+
+        # Escreve os dados na banda do arquivo
+        banda = dataset.GetRasterBand(1)
+        banda.WriteArray(rst_to_raster)
+
+        # Fechando o arquivo
+        dataset = None
+        banda = None
+        driver = None
+        tipo_dados = None
+
+    def apaga_arquivos_temp(self):
+        '''Esta função exclui os arquivos temporários criados durante a execução do plugin'''
+        # Muda para o diretório especificado
+        os.chdir(self.diretorio_atual + r'\temp')
+        # Obtém todos os arquivos com a extensão .txt, .rst, .rdc
+        arquivos_txt = glob.glob('*.txt')
+        arquivos_rst = glob.glob('*.rst')
+        arquivos_rdc = glob.glob('*.rdc')
+
+        # Apaga todos os arquivos .txt
+        for txt in arquivos_txt:
+            os.remove(txt)
+
+        for rst in arquivos_rst:
+            os.remove(rst)
+
+        for rdc in arquivos_rdc:            
+            os.remove(rdc)
+
+    def plot_hidrogramas_e_metricas(self):
+        """Esta função gera o hidrograma calculado vs observado e adiciona as métricas de comparação"""
+        # leh hidrograma observado
+        hidrograma_obs = r"C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\Hidropixel - User Manual and algorithms\Algorithms\4 - Hydrograph\Example\Output\1 - Hydrograph\1_hydrograph_obs.txt"
+        cont = 0
+        with open(hidrograma_obs,'r',  encoding='utf-8') as arquivo_txt:
+            cabecalho = arquivo_txt.readline()
+            linhas = arquivo_txt.readlines()
+            vazoes_obs = np.zeros(len(linhas))
+            tempos_obs = np.zeros(len(linhas))
+
+            for linha in linhas:
+                tempos_obs[cont] = linha.replace('\n','').split(',')[0]
+                vazoes_obs[cont] = linha.replace('\n','').split(',')[1]
+                cont+=1
+                
+        # Determinação do delta_t: deve ser o mesmo para o hidrograma calculado e observado
+        delta_t = tempos_obs[2]-tempos_obs[1]
+        # delta_t = self.dlg_flow_rout.le_2_pg1.text()
+
+        # leh hidrograma calculado
+        cont = 0
+        hidrograma_calc = r"C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\Hidropixel - User Manual and algorithms\Algorithms\4 - Hydrograph\Example\Output\1 - Hydrograph\1_hydrograph.txt"
+        with open(hidrograma_calc,'r', encoding='utf-8') as arquivo_txt:
+            cabecalho = arquivo_txt.readline()
+            linhas = arquivo_txt.readlines()
+            vazoes_calc = np.zeros(len(linhas))
+            tempos_calc = np.zeros(len(linhas))
+
+            for linha in linhas:
+                tempos_calc[cont] = linha.replace('\n','').split(',')[0]
+                vazoes_calc[cont] = linha.replace('\n','').split(',')[1]
+                cont+=1                
+
+        # Calcula metricas para avaliação do modelo
+        er_vazao_pico = ((np.amax(vazoes_calc) - np.amax(vazoes_obs))/np.amax(vazoes_obs))*100 # erro relativo da vazão de pico
+        er_tempo_pico = ((tempos_calc[np.argmax(vazoes_calc)] - tempos_obs[np.argmax(vazoes_obs)])/tempos_obs[np.argmax(vazoes_obs)])*100 # erro relativo do tempo de pico
+        nse = 1 - (np.sum((vazoes_calc - vazoes_obs) ** 2) / np.sum((vazoes_obs - np.mean(vazoes_obs)) ** 2)) # calculo do coeficiente de Nash-Sutcliffe
+        rmse = np.sqrt(np.mean((vazoes_calc - vazoes_obs) ** 2)) # calcula erro medio quadratico
+        
+        # Calcula volume
+        vol_obs = np.sum(vazoes_obs)*delta_t
+        vol_calc = np.sum(vazoes_calc)*delta_t
+        er_vol = ((vol_calc-vol_obs)/vol_obs)
+
+        # Plotagem dos pontos e do polinomio geral
+        plt.figure(figsize=(8, 6))
+        plt.gcf().canvas.manager.window.setWindowTitle('Resulting Watershed Hydrograph')
+        plt.title('HYDROGRAPH')
+        plt.plot(tempos_obs, vazoes_obs,c='black', label="Observed Runoff")
+        plt.plot(tempos_obs, vazoes_calc,c='red', label="Calculated Runoff")
+        plt.xlabel('time (min)')
+        plt.ylabel('Q(m³/s)')
+        plt.legend()
+        plt.grid()
+        # Adicionando as métricas fora do gráfico com ajuste
+        plt.figtext(0.1, 0.25, f'RMSE: {rmse:.2f}', fontsize=10)
+        plt.figtext(0.1, 0.20, f'NS coefficient: {nse:.2f}', fontsize=10)
+        plt.figtext(0.1,0.15, f'relative peak error: {er_vazao_pico:.2f}%', fontsize=10)
+        plt.figtext(0.1, 0.10, f'relative time to peak error: {er_tempo_pico:.2f}%', fontsize=10)
+        plt.figtext(0.1, 0.05, f'relative volume error: {er_vol:.2f}%', fontsize=10)
+
+        plt.subplots_adjust(bottom=0.40)  # Ajusta a margem inferior para caber o texto
+        plt.show()
 
     def run_22(self):
         '''Verifica possíveis inconsistências'''
         # Leitura do mesmo arquivo (bacia) por dois métodos: leitura do .rst bin; leitura do geotiff (.tif)
-        arquivo_bacia_bin = r"C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\SmallExample\input_binary\1_WATERSHED_EXbin.RST"
-        arquivo_bacia_tif = r"C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\SmallExample\input_geotiff\1_bacia.tif"
-        arquivo_bacia_ascii = r"C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\SmallExample\1_TravelTime\Input\1_WATERSHED_EX.RST"
-        result = leh_geotiff_escreve_ascii(arquivo_bacia_tif, arquivo_bacia_ascii)
-        bacia_ascii = result[1]
-        bacia_bin = self.leh_bacia(arquivo_bacia_bin, 2)
+        arquivo_bacia_rst = r"C:\PyQGIS\hidropixel\temp\DEM.rst"
+        arquivo_bacia_tif = r"C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\SmallExample\input_geotiff\2_dem.tif"
+
+        result = self.leh_geotiff_escreve_ascii(arquivo_bacia_tif, arquivo_bacia_rst,'int')
+        bacia_rst = result[1]
         bacia_tif = result[0]
 
         # comparação do arquivo lido
-        print(bacia_bin == bacia_ascii)
-        print(bacia_bin == bacia_tif)
-        print(bacia_ascii == bacia_tif)
+        print(np.count_nonzero(bacia_rst != bacia_tif))
+        print(np.count_nonzero(bacia_rst!= 0))
 
         # Convertendo arquivo ascii para geotiff
-        fn_bacia_geotiff = r"C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\SmallExample\output_geotiff\bacia_out_gt.tif"
+        fn_bacia_geotiff = r"C:\Users\joao1\OneDrive\Documentos\arquivos_para_test\TravelTime_rst_to_tif.tif"
         # Define os dados a serem escritos
-        dados_p_acum = bacia_ascii
-        tipo_dados = gdalconst.GDT_Int16
+        dados_p_acum = bacia_rst
+        tipo_dados = gdalconst.GDT_Float32
 
         # Obtendo o driver para escrita do arquivo em GeoTiff
         driver = gdal.GetDriverByName('GTiff')
@@ -4268,10 +4684,7 @@ class DesenvolvePlugin():
         dataset = None
         banda = None
         driver = None
-        tipo_dados = None 
+        tipo_dados = None
 
-cla_test = DesenvolvePlugin()
-cla_test.run_22()
-# cla_test.run_rainfall_interpolation(2)
-# cla_test.run_exc_rain()
-# cla_test.run_flow_routing()
+classe = DesenvolvePlugin()
+classe.apaga_arquivos_temp()

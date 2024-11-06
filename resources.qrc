@@ -1,9 +1,13 @@
 <RCC>
   <qresource prefix="/plugins/hidroPixel/icons">
     <file>icons/equation_regional_curve.png</file>
+    <file>icons/equation_regional_curve2.png</file>
     <file>icons/folder_icon</file>
     <file>icons/flowdirs.png</file>
     <file>icons/icon.png</file>
     <file>icons/tip_icon.png</file>
+    <file>icons/info.png</file>
+    <file>icons/info(1).png</file>
+    <file>icons/info(2).png</file>
   </qresource>
 </RCC>
