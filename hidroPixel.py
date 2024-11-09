@@ -2730,24 +2730,22 @@ class HidroPixel:
                 self.apaga_arquivos_temp()
                 break
     
-    def carrega_rasters(self,funcao):
-        """Esta função realiza o carregamento dos raster contidos no projeto do qgis e adiciona aos combobox
-        funcao: indica a rotina do hidropixel
-        funcao = 1: Flow Travel Time
-        funcao = 2: Excess Rainfall
-        funcao = 3: Flow Routing"""
-        # adiciona layers raster ao combox
-        lista_layers = [layer for layer in QgsProject.instance().mapLayers().values()]
-        lista_rasters = []
-        for layer in lista_layers:
-            if layer.type() == QgsMapLayer.RasterLayer:
-                lista_rasters.append(layer.name())
+    # def carrega_rasters(self,funcao):
+    #     """Esta função realiza o carregamento dos raster contidos no projeto do qgis e adiciona aos combobox
+    #     funcao: indica a rotina do hidropixel
+    #     funcao = 1: Flow Travel Time
+    #     funcao = 2: Excess Rainfall
+    #     funcao = 3: Flow Routing"""
+    #     # adiciona layers raster ao combox
+    #     lista_layers = [layer for layer in QgsProject.instance().mapLayers().values()]
+    #     lista_rasters = []
+    #     for layer in lista_layers:
+    #         if layer.type() == QgsMapLayer.RasterLayer:
+    #             lista_rasters.append(layer.name())
 
-        if funcao == 1:
-            self.dlg_flow_tt.cbx_1_pg2.addItems(lista_rasters)
+    #     if funcao == 1:
+    #         self.dlg_flow_tt.cbx_1_pg2.addItems(lista_rasters)
           
-
-
     def SsButoes(self,active_button,instancia,page=0):
         """Esta função configura o estilo dos botões das diferentes páginas do plugin. Aquele que estiver em destaque representará a página autal
         page = 1 representa o form Excess Rainfall
@@ -2849,7 +2847,7 @@ class HidroPixel:
 
             # Configura os botões da página configuration: flow travel time
             self.dlg_flow_tt.tbtn_pg1_1.clicked.connect(lambda: self.carrega_work_folder(self.dlg_flow_tt.le_21_pg1))
-            self.carrega_rasters(1)
+            # self.carrega_rasters(1)
             # self.dlg_flow_tt.cb_1_pg1.toggled.connect(lambda: self.sheet_flow_status(self.dlg_flow_tt.cb_1_pg1.isChecked()))
 
             # Configura os botões da página input data : flow travel time
