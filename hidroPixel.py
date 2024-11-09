@@ -66,6 +66,7 @@ class HidroPixel:
         self.iface = iface
         # initialize plugin directory
         self.plugin_dir = os.path.dirname(__file__)
+        print(self.plugin_dir)
         # initialize locale
         locale = QSettings().value('locale/userLocale')[0:2]
         locale_path = os.path.join(
@@ -254,7 +255,7 @@ class HidroPixel:
     def initGui(self):
         """Create the menu entries and toolbar icons inside the QGIS GUI."""
         # Armazena diretório do plugin
-        icon_path = self.diretorio_atual + '\icons\icon.png'
+        icon_path = self.diretorio_atual + '/icons/icon.png'
 
         self.add_action(
             icon_path,
@@ -395,7 +396,7 @@ class HidroPixel:
                         with open(file_name, 'w', encoding ='utf-8') as arquivo_txt:
                             arquivo_txt.write('Flow Travel Time - Configuration\n')
                             arquivo_txt.write('\n')
-                            arquivo_txt.write('GENERAL INFORMATIONS\n')
+                            arquivo_txt.write('GENERAL INFORMATION\n')
                             arquivo_txt.write('Minimum slope surface travel time determination (m/km):\n')
                             arquivo_txt.write(f'={self.dlg_flow_tt.le_1_pg1.text()}\n')
                             arquivo_txt.write('Orthogonal step for distance computation (dx):\n')
@@ -413,7 +414,7 @@ class HidroPixel:
                             arquivo_txt.write(f'G = {self.dlg_flow_tt.le_11_pg1.text()}\n')
                             arquivo_txt.write(f'H = {self.dlg_flow_tt.le_12_pg1.text()}\n')
 
-                            arquivo_txt.write('CHANELS WITHOUT CROSS SECTIONAL AREA INFORMATIONS\n')
+                            arquivo_txt.write('CHANELS WITHOUT CROSS SECTIONAL AREA INFORMATION\n')
                             arquivo_txt.write('Manning coefficient for river segments without cross-section information:\n')
                             arquivo_txt.write(f'={self.dlg_flow_tt.le_14_pg1.text()}\n')
                             arquivo_txt.write('Maximum river segment lenght for river segments without cross-section information (m)\n')
@@ -821,7 +822,7 @@ class HidroPixel:
 
                         # Adiciona as informações lidas nas suas respectivas 
                         
-                        # General informations
+                        # General information
                         self.dlg_flow_tt.le_1_pg1.setText(str(values[0]))
                         self.dlg_flow_tt.le_3_pg1.setText(str(values[1]))
                         self.dlg_flow_tt.le_4_pg1.setText(str(values[2]))
@@ -1166,7 +1167,7 @@ class HidroPixel:
 
         if table == 1:
             # Solicita um local de salvamento para o usuário
-            self.file_name_tb1 = self.diretorio_atual + r'\temp' + r'\segment_characteristics.txt'
+            self.file_name_tb1 = self.diretorio_atual + r'/temp' + r'/segment_characteristics.txt'
             if self.file_name_tb1:
                 # seleciona as dimensões da tabela
                 nlin_tb1 = self.dlg_flow_tt.tbw_1_pg2.rowCount()
@@ -1188,7 +1189,7 @@ class HidroPixel:
                         arquivo_txt_csv.write('\n')
                 
         elif table ==2:
-            self.file_name_tb2 = self.diretorio_atual + r'\temp' + r'\surface_roughness.txt'
+            self.file_name_tb2 = self.diretorio_atual + r'/temp' + r'/surface_roughness.txt'
             if self.file_name_tb2:
                 # seleciona as dimensões da tabela
                 nlin_tb1 = self.dlg_flow_tt.tbw_2_pg2.rowCount()
@@ -1958,7 +1959,7 @@ class HidroPixel:
     def apaga_arquivos_temp(self):
         '''Esta função exclui os arquivos temporários criados durante a execução do plugin'''
         # Muda para o diretório temp
-        os.chdir(self.diretorio_atual + r'\temp')
+        os.chdir(self.diretorio_atual + r'/temp')
         # Obtém todos os arquivos com a extensão .txt, .rst, .rdc
         arquivos_txt = glob.glob('*.txt')
         arquivos_rst = glob.glob('*.rst')
@@ -1982,21 +1983,21 @@ class HidroPixel:
     def run_process_rainfall_interpol(self):
         """Esta função configura a execução da rotina Rainfall Interpolation do vb.net, gerando os arquivos necessários à execução daquela"""
         # Captura diretório dos arquivo txt (pasta temp)
-        direct_temp = self.diretorio_atual + r'\temp'
+        direct_temp = self.diretorio_atual + r'/temp'
 
         # Chama funções para tranformação do raster em geotiff para rst tipo ascii
-        bacia_file = direct_temp + r'\Watershed.rst'
+        bacia_file = direct_temp + r'/Watershed.rst'
         self.leh_geotiff_escreve_ascii(self.dlg_exc_rain.le_1_pg_ri.text(),bacia_file, 'int')
 
         # Cria uma cópia dos arquivos para a pasta temp: evita erros relacionados aos caracteries especiais
-        rain_gauges = direct_temp + r'\rain_gauges.txt'
+        rain_gauges = direct_temp + r'/rain_gauges.txt'
         shutil.copy(self.dlg_exc_rain.le_2_pg_ri.text(),rain_gauges)
 
-        rainfall_data = direct_temp + r'\rainfall_data.txt'
+        rainfall_data = direct_temp + r'/rainfall_data.txt'
         shutil.copy(self.dlg_exc_rain.le_3_pg_ri.text(),rainfall_data)
 
         # Escreve arquivo txt com os diretórios e nome dos inputs enviados pelo user
-        direct_in_files = direct_temp + r'\input_files_config_rain_inte.txt'
+        direct_in_files = direct_temp + r'/input_files_config_rain_inte.txt'
         with open(direct_in_files, 'w', encoding = 'utf-8') as arquivo_txt:
             # Escreve cabeçalho
             arquivo_txt.write("Selected input file directory\n")
@@ -2006,11 +2007,11 @@ class HidroPixel:
             arquivo_txt.write(f"map_condiction,{self.map_cond}")
 
         # Organiza os caminhos dos arquivos de saída enviados pelo user: modifica a extensão de .tif para .rst
-        self.output1_ri = direct_temp + r'\rainfall_interpolated.txt'
-        map_output_path = direct_temp + r'\maps'
+        self.output1_ri = direct_temp + r'/rainfall_interpolated.txt'
+        map_output_path = direct_temp + r'/maps'
 
         # Escreve aquivo txt contendo o diretório informado pelo user: será fornecido para a rotina em visual basic
-        direct_out_files = direct_temp + r'\output_files_config_rain_inte.txt'
+        direct_out_files = direct_temp + r'/output_files_config_rain_inte.txt'
         with open(direct_out_files, 'w', encoding = 'utf-8') as arquivo_txt:
             arquivo_txt.write("Select output file directory\n")
             arquivo_txt.write(f"rainfall_interpolated_file,{self.output1_ri}\n")
@@ -2021,7 +2022,7 @@ class HidroPixel:
         self.map_cond = condicao
         self.run_process_rainfall_interpol()
         # Chama executável vb para iniciar o processamento
-        rainfall_interpol_vb =  self.diretorio_atual + r'\temp\Rainfall_Interpolation.exe'
+        rainfall_interpol_vb =  self.diretorio_atual + r'/temp/Rainfall_Interpolation.exe'
         rainfall_iterp_exe = subprocess.run([rainfall_interpol_vb])   
 
         if rainfall_iterp_exe.returncode == 0:
@@ -2033,7 +2034,7 @@ class HidroPixel:
             # Se o usuário escolheu para gerar os mapas da precipitação interpolada, eles serão enviados para a pasta informada
             else:
                 # Captura os arquivos da pasta map
-                os.chdir(self.diretorio_atual + r'\temp\maps')
+                os.chdir(self.diretorio_atual + r'/temp/maps')
                 lista_mapas = glog.glob('*.asc')
                 for mapa in lista_mapas:
                     self.leh_asc_escreve_geotiff(mapa)
@@ -2046,52 +2047,52 @@ class HidroPixel:
     def run_process_excess_rainfall(self):
         """Esta função organiza os arquivos enviados pelo user e os configura para serem lidos nas rotinas em visual basic"""
         # Captura diretório dos arquivo txt (pasta temp)
-        direct_temp = self.diretorio_atual + r'\temp'
+        direct_temp = self.diretorio_atual + r'/temp'
 
         # Chama funções para tranformação do raster em geotiff para rst tipo ascii
 
         # leh bacia tif gera bacia rst ascii
-        bacia_file = direct_temp + r'\Watershed.rst'
+        bacia_file = direct_temp + r'/Watershed.rst'
         self.leh_geotiff_escreve_ascii(self.dlg_exc_rain.le_1_pg2.text(),bacia_file, 'int')     
 
         # leh cn map tif gera cn map rst ascii
-        cn_file = direct_temp + r'\CN_map.rst'
+        cn_file = direct_temp + r'/CN_map.rst'
         self.leh_geotiff_escreve_ascii(self.dlg_exc_rain.le_2_pg2.text(),cn_file, 'int')
         
         # move arquivo da precipitação para a pasta temp
         if self.dlg_exc_rain.rb_1_pg1.isChecked():
-            chuva_media = direct_temp + r'\Areal_averaged_rainfall.txt'
+            chuva_media = direct_temp + r'/Areal_averaged_rainfall.txt'
             shutil.copy(self.dlg_exc_rain.le_3_pg2.text(),chuva_media)
 
         if self.dlg_exc_rain.rb_2_pg1.isChecked():
-            chuva_distribuida = direct_temp + r'\Spatially_distributed_rainfall.txt'
+            chuva_distribuida = direct_temp + r'/Spatially_distributed_rainfall.txt'
             shutil.copy(self.dlg_exc_rain.le_4_pg2.text(),chuva_distribuida)
 
         # Escreve arquivos de parâmetros
-        direct_parameters = direct_temp + r'\parameters_exc_rainf.txt'
+        direct_parameters = direct_temp + r'/parameters_exc_rainf.txt'
         with open(direct_parameters, 'w', encoding = 'utf-8') as arquivo_txt:
             arquivo_txt.write(f"Initial abstraction (λ),{self.dlg_exc_rain.le_1_pg1.text()}")
 
         # gera arquivo contendo os diretórios dos inputs
-        direct_in_files = direct_temp + r'\input_files_config_rain_excess.txt'
+        direct_in_files = direct_temp + r'/input_files_config_rain_excess.txt'
         with open(direct_in_files, 'w', encoding = 'utf-8') as arquivo_txt:
             # Escreve cabeçalho
             arquivo_txt.write("Selected input file directory\n")
             arquivo_txt.write(f'{1 if self.dlg_exc_rain.le_1_pg2.text() !="" else 0},watershed,{bacia_file}\n')
             arquivo_txt.write(f'{1 if self.dlg_exc_rain.le_2_pg2.text() !="" else 0},curve_number_map,{cn_file}\n')
-            arquivo_txt.write(f'{1 if self.dlg_exc_rain.le_3_pg2.text() !="" else 0},Areal_averaged_rainfall,{chuva_media if self.dlg_exc_rain.rb_1_pg1.isChecked() == True else ''}\n')
-            arquivo_txt.write(f'{1 if self.dlg_exc_rain.le_4_pg2.text() !="" else 0},Spatially_distributed_rainfall,{chuva_distribuida if self.dlg_exc_rain.rb_2_pg1.isChecked() == True else ''}\n')
+            arquivo_txt.write(f'{1 if self.dlg_exc_rain.le_3_pg2.text() !="" else 0},Areal_averaged_rainfall,{chuva_media if self.dlg_exc_rain.rb_1_pg1.isChecked() == True else ""}\n')
+            arquivo_txt.write(f'{1 if self.dlg_exc_rain.le_4_pg2.text() !="" else 0},Spatially_distributed_rainfall,{chuva_distribuida if self.dlg_exc_rain.rb_2_pg1.isChecked() == True else ""}\n')
             arquivo_txt.write(f'{1},parameters,{direct_parameters}\n')
 
         # Escreve aquivos de saída
-        self.output1_exec_rain = direct_temp + r'\Map_of_watershed_pixels_ID.rst'
-        self.output2_exec_rain = direct_temp + r'\Map_of_maximum_potential_retention.rst'
-        self.output3_exec_rain = direct_temp + r'\Map_of_initial_abstraction.rst'
-        self.output4_exec_rain = direct_temp + r'\Map_of_total_rainfall.rst'
-        self.output5_exec_rain = direct_temp + r'\Map_of_total_excess_rainfall.rst'
-        self.output6_exec_rain = direct_temp + r'\Excess_hyetographs_per_pixel.txt'
+        self.output1_exec_rain = direct_temp + r'/Map_of_watershed_pixels_ID.rst'
+        self.output2_exec_rain = direct_temp + r'/Map_of_maximum_potential_retention.rst'
+        self.output3_exec_rain = direct_temp + r'/Map_of_initial_abstraction.rst'
+        self.output4_exec_rain = direct_temp + r'/Map_of_total_rainfall.rst'
+        self.output5_exec_rain = direct_temp + r'/Map_of_total_excess_rainfall.rst'
+        self.output6_exec_rain = direct_temp + r'/Excess_hyetographs_per_pixel.txt'
 
-        direct_out_files = direct_temp + r'\output_files_config_rain_excess.txt'
+        direct_out_files = direct_temp + r'/output_files_config_rain_excess.txt'
         with open(direct_out_files, "w",encoding ="utf-8") as arquivo_txt:
             arquivo_txt.write("Select output file directory\n")
             arquivo_txt.write(f"{1 if self.dlg_exc_rain.ch_1_pg4.isChecked() == True else 0},Map of watershed pixels ID,{self.output1_exec_rain}\n")
@@ -2152,7 +2153,7 @@ class HidroPixel:
             self.dlg_exc_rain.progressBar.setValue(40)
 
             # Chama executável vb para iniciar o processamento
-            exc_rain_vb =  self.diretorio_atual + r'\temp\excess_rainfall.exe'
+            exc_rain_vb =  self.diretorio_atual + r'/temp/excess_rainfall.exe'
             exc_rain_exe = subprocess.run([exc_rain_vb])           
 
             # verifica se houve algum erro no processamento das rotinas no vb, caso não, a execução continua no python
@@ -2240,10 +2241,10 @@ class HidroPixel:
         """Esta função configura a escrita dos arquivos txt para integração com a linguagem visual basic"""
         
         # Captura diretório dos arquivo txt (pasta temp)
-        direct_temp = self.diretorio_atual + r'\temp'
+        direct_temp = self.diretorio_atual + r'/temp'
 
         # Escreve txt contendo código de direções de fluxo
-        flow_directions_code = direct_temp + r'\flow_directions_code.txt'
+        flow_directions_code = direct_temp + r'/flow_directions_code.txt'
         with open(flow_directions_code, 'w', encoding = 'utf-8') as arquivo_txt:
             # Escreve cabeçalho
             arquivo_txt.write('Flow Directions Code\n')
@@ -2257,7 +2258,7 @@ class HidroPixel:
             arquivo_txt.write(f'H,{self.dlg_flow_tt.le_12_pg1.text()}')
 
         # Escreve arquivo txt contento os parâmetros do modelo
-        parameters_file = direct_temp + r'\parameters_flow_tt.txt'
+        parameters_file = direct_temp + r'/parameters_flow_tt.txt'
         with open(parameters_file,'w', encoding = 'utf-8') as arquivo_txt:
             arquivo_txt.write(f'Manning coefficient for river segments without cross-section information,{self.dlg_flow_tt.le_14_pg1.text()}\n')
             arquivo_txt.write(f'Sheet flow lenght (m),30.48\n')
@@ -2275,29 +2276,29 @@ class HidroPixel:
         self.save_table_to_file(2)
 
         # Chama funções para tranformação do raster em geotiff para rst tipo ascii
-        bacia_file = direct_temp + r'\Watershed.rst'
+        bacia_file = direct_temp + r'/Watershed.rst'
         self.leh_geotiff_escreve_ascii(self.dlg_flow_tt.le_1_pg2.text(),bacia_file, 'int')
 
-        dem_file = direct_temp + r'\DEM.rst'
+        dem_file = direct_temp + r'/DEM.rst'
         self.leh_geotiff_escreve_ascii(self.dlg_flow_tt.le_2_pg2.text(),dem_file, 'float')
 
-        Flow_Dir_file = direct_temp + r'\Flow_dir.rst'
+        Flow_Dir_file = direct_temp + r'/Flow_dir.rst'
         self.leh_geotiff_escreve_ascii(self.dlg_flow_tt.le_3_pg2.text(),Flow_Dir_file, 'int')
 
-        drainage_file = direct_temp + r'\drainage.rst'
+        drainage_file = direct_temp + r'/drainage.rst'
         self.leh_geotiff_escreve_ascii(self.dlg_flow_tt.le_4_pg2.text(),drainage_file, 'int')
 
-        river_segments_file = direct_temp + r'\river_segments.rst'
+        river_segments_file = direct_temp + r'/river_segments.rst'
         self.leh_geotiff_escreve_ascii(self.dlg_flow_tt.le_5_pg2.text(),river_segments_file, 'int')
 
-        DA_km2_file = direct_temp + r'\DA_km2.rst'
+        DA_km2_file = direct_temp + r'/DA_km2.rst'
         self.leh_geotiff_escreve_ascii(self.dlg_flow_tt.le_6_pg2.text(),DA_km2_file, 'float')
         
-        LULC_file = direct_temp + r'\LULC.rst'
+        LULC_file = direct_temp + r'/LULC.rst'
         self.leh_geotiff_escreve_ascii(self.dlg_flow_tt.le_9_pg2.text(),LULC_file, 'int')
 
         # Escreve arquivo txt com os diretórios e nome dos inputs enviados pelo user
-        direct_in_files = direct_temp + r'\input_files_config_flow_tt.txt'
+        direct_in_files = direct_temp + r'/input_files_config_flow_tt.txt'
         with open(direct_in_files, 'w', encoding = 'utf-8') as arquivo_txt:
             # Escreve cabeçalho
             arquivo_txt.write("Selected input file directory\n")
@@ -2314,15 +2315,15 @@ class HidroPixel:
             arquivo_txt.write(f'{1},parameters,{parameters_file}') # Arquivo obrigatório, condição apenas para manter o padrão e controle
         
         # Organiza os caminhos dos arquivos de saída enviados pelo user: modifica a extensão de .tif para .rst
-        self.output1_flow_tt = direct_temp + r'\Slope.rst'
-        self.output2_flow_tt = direct_temp + r'\river_segments.rst'
+        self.output1_flow_tt = direct_temp + r'/Slope.rst'
+        self.output2_flow_tt = direct_temp + r'/river_segments.rst'
         self.output3_flow_tt = direct_temp + r'Hydraulic_radius-roughness_and_slope.txt'
-        self.output4_flow_tt = direct_temp + r'\River_cross-sectional_area.rst'
-        self.output5_flow_tt = direct_temp + r'\River_bankfull_width.rst' 
-        self.output6_flow_tt = direct_temp + r'\Flow_travel_time.rst'
+        self.output4_flow_tt = direct_temp + r'/River_cross-sectional_area.rst'
+        self.output5_flow_tt = direct_temp + r'/River_bankfull_width.rst'
+        self.output6_flow_tt = direct_temp + r'/Flow_travel_time.rst'
 
         # Escreve aquivo txt contendo o diretório informado pelo user: será fornecido para a rotina em visual basic
-        direct_out_files = direct_temp + r'\output_files_config_flow_tt.txt'
+        direct_out_files = direct_temp + r'/output_files_config_flow_tt.txt'
         with open(direct_out_files, 'w', encoding = 'utf-8') as arquivo_txt:
             arquivo_txt.write("Select output file directory\n")
             arquivo_txt.write(f'{1 if self.dlg_flow_tt.ch_6_pg4.isChecked() == True else 0},Slope,{self.output1_flow_tt}\n') #rst
@@ -2413,7 +2414,7 @@ class HidroPixel:
                 self.dlg_flow_tt.progressBar.setValue(40)
 
                 # Chama executável vb para iniciar o processamento
-                travel_time_vb =  self.diretorio_atual + r'\temp\Travel_Time.exe'
+                travel_time_vb =  self.diretorio_atual + r'/temp/Travel_Time.exe'
                 flow_tt_exe = subprocess.run([travel_time_vb])           
 
                 # verifica se houve algum erro no processamento das rotinas no vb, caso não, a execução continua no python
@@ -2490,10 +2491,10 @@ class HidroPixel:
     def run_process_flow_rout(self):
         """Esta função organiza os arquivos de entrada para as rotinas em vb apartir do plugin qgis"""
         # Captura diretório dos arquivo txt (pasta temp)
-        direct_temp = self.diretorio_atual + r'\temp'
+        direct_temp = self.diretorio_atual + r'/temp'
 
         # Escreve arquivos de parâmetros
-        parameters_flow_rout = direct_temp + r'\parameters_exc_rainf.txt'
+        parameters_flow_rout = direct_temp + r'/parameters_exc_rainf.txt'
         with open(parameters_flow_rout, 'w', encoding = 'utf-8') as arquivo_txt:
             arquivo_txt.write(f"Rainfall time step (min),{self.dlg_flow_rout.le_2_pg1.text()}\n")
             arquivo_txt.write(f"Parameter β,{self.dlg_flow_rout.le_5_pg1.text()}\n")
@@ -2501,23 +2502,23 @@ class HidroPixel:
             arquivo_txt.write(f"m3/s,{1 if self.dlg_flow_rout.rb_4_pg4.isChecked() == True else 0}")
 
         # Chama funções para tranformação do raster em geotiff para rst tipo ascii
-        bacia_file = direct_temp + r'\Watershed.rst'
+        bacia_file = direct_temp + r'/Watershed.rst'
         self.leh_geotiff_escreve_ascii(self.dlg_flow_rout.le_1_pg2.text(),bacia_file, 'int')
 
-        pixels_id_file = direct_temp + r'\map_pixels_id.rst'
+        pixels_id_file = direct_temp + r'/map_pixels_id.rst'
         self.leh_geotiff_escreve_ascii(self.dlg_flow_rout.le_2_pg2.text(),pixels_id_file, 'int')
 
-        flow_tt_file = direct_temp + r'\flow_tt.rst'
+        flow_tt_file = direct_temp + r'/flow_tt.rst'
         self.leh_geotiff_escreve_ascii(self.dlg_flow_rout.le_3_pg2.text(),flow_tt_file, 'float')
 
-        hietograma_file = direct_temp + r'\excess_hyetographs.txt'
+        hietograma_file = direct_temp + r'/excess_hyetographs.txt'
         shutil.copy(self.dlg_flow_rout.le_4_pg2.text(),hietograma_file)
 
-        total_exc_rain_file = direct_temp + r'\total_excess_rainfall.rst'
+        total_exc_rain_file = direct_temp + r'/total_excess_rainfall.rst'
         self.leh_geotiff_escreve_ascii(self.dlg_flow_rout.le_5_pg2.text(),total_exc_rain_file, 'float')
 
         # Escreve txt contendo código de direções de fluxo
-        flow_directions_code = direct_temp + r'\input_files_config_flow_rout.txt'
+        flow_directions_code = direct_temp + r'/input_files_config_flow_rout.txt'
         with open(flow_directions_code, 'w', encoding = 'utf-8') as arquivo_txt:
             arquivo_txt.write("Select input file directory\n")
             arquivo_txt.write(f'{1 if self.dlg_flow_rout.le_1_pg2.text() !="" else 0},watershed,{bacia_file}\n')
@@ -2527,12 +2528,12 @@ class HidroPixel:
             arquivo_txt.write(f'{1 if self.dlg_flow_rout.le_5_pg2.text() !="" else 0},total_excess_rainfall,{total_exc_rain_file}\n')
             arquivo_txt.write(f'{1},parameters,{parameters_flow_rout}')
 
-        self.output1_flow_rout = direct_temp + r'\map_of_resulting_peak_discharge.rst'
-        self.output2_flow_rout = direct_temp + r'\map_of_resulting_runoff_volume.rst'
-        self.output3_flow_rout = direct_temp + r'\Resulting watershed hydrograph.txt'
+        self.output1_flow_rout = direct_temp + r'/map_of_resulting_peak_discharge.rst'
+        self.output2_flow_rout = direct_temp + r'/map_of_resulting_runoff_volume.rst'
+        self.output3_flow_rout = direct_temp + r'/Resulting watershed hydrograph.txt'
 
         # Escreve aquivo txt contendo o diretório informado pelo user: será fornecido para a rotina em visual basic
-        direct_out_files = direct_temp + r'\output_files_config_flow_rout.txt'
+        direct_out_files = direct_temp + r'/output_files_config_flow_rout.txt'
         with open(direct_out_files, 'w', encoding = 'utf-8') as arquivo_txt:
             arquivo_txt.write("Select output file directory\n")
             arquivo_txt.write(f'{1 if self.dlg_flow_rout.ch_4_pg4.isChecked() == True else 0},map_of_resulting_peak_discharge,{self.output1_flow_rout}\n') #rst   
@@ -2679,7 +2680,7 @@ class HidroPixel:
             self.dlg_flow_rout.progressBar.setValue(40)
 
             # Chama executável vb para iniciar o processamento
-            flow_rout_vb =  self.diretorio_atual + r'\temp\HidropixelDLR.exe'
+            flow_rout_vb =  self.diretorio_atual + r'/temp/HidropixelDLR.exe'
             flow_rout_exe = subprocess.run([flow_rout_vb])     
 
             # verifica se houve algum erro no processamento das rotinas no vb, caso não, a execução continua no python
