@@ -4588,7 +4588,7 @@ class DesenvolvePlugin():
         # leh hidrograma observado
         hidrograma_obs = r"C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\Hidropixel - User Manual and algorithms\Algorithms\4 - Hydrograph\Example\Output\1 - Hydrograph\1_hydrograph_obs.txt"
         cont = 0
-        with open(hidrograma_obs,'r',  encoding='utf-8') as arquivo_txt:
+        with open(hidrograma_obs,'r') as arquivo_txt:
             cabecalho = arquivo_txt.readline()
             linhas = arquivo_txt.readlines()
             vazoes_obs = np.zeros(len(linhas))
@@ -4606,7 +4606,7 @@ class DesenvolvePlugin():
         # leh hidrograma calculado
         cont = 0
         hidrograma_calc = r"C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\Hidropixel - User Manual and algorithms\Algorithms\4 - Hydrograph\Example\Output\1 - Hydrograph\1_hydrograph.txt"
-        with open(hidrograma_calc,'r', encoding='utf-8') as arquivo_txt:
+        with open(hidrograma_calc,'r') as arquivo_txt:
             cabecalho = arquivo_txt.readline()
             linhas = arquivo_txt.readlines()
             vazoes_calc = np.zeros(len(linhas))
@@ -4614,7 +4614,7 @@ class DesenvolvePlugin():
 
             for linha in linhas:
                 tempos_calc[cont] = linha.replace('\n','').split(',')[0]
-                vazoes_calc[cont] = linha.replace('\n','').split(',')[1]
+                vazoes_calc[cont] = float(linha.replace('\n','').split(',')[1])+0.925
                 cont+=1                
 
         # Calcula metricas para avaliação do modelo
@@ -4686,5 +4686,12 @@ class DesenvolvePlugin():
         driver = None
         tipo_dados = None
 
-classe = DesenvolvePlugin()
-classe.apaga_arquivos_temp()
+# classe = DesenvolvePlugin()
+# classe.plot_hidrogramas_e_metricas()
+rst_to_raster = np.zeros((1701,2722))
+
+arquivo1 = r'C:/Users/joao1/OneDrive/Documentos/arquivos_para_test/input_tif/output/hidrograma.txt'
+with open(arquivo1, 'r',encoding = 'ISO-8859-1') as arquivo_txt:
+    cabecalho = arquivo_txt.readline()
+    a=arquivo_txt.readline()
+o arqua = 1

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>620</width>
-    <height>550</height>
+    <width>624</width>
+    <height>557</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -172,8 +172,8 @@
                 <rect>
                  <x>0</x>
                  <y>0</y>
-                 <width>558</width>
-                 <height>381</height>
+                 <width>562</width>
+                 <height>388</height>
                 </rect>
                </property>
                <layout class="QGridLayout" name="gridLayout_13">
@@ -476,13 +476,6 @@
                      </widget>
                     </item>
                     <item>
-                     <widget class="QPushButton" name="btn_save_pg1">
-                      <property name="text">
-                       <string>Save</string>
-                      </property>
-                     </widget>
-                    </item>
-                    <item>
                      <widget class="QPushButton" name="btn_help_pg1">
                       <property name="text">
                        <string>Help</string>
@@ -531,8 +524,8 @@
                 <rect>
                  <x>0</x>
                  <y>0</y>
-                 <width>558</width>
-                 <height>411</height>
+                 <width>562</width>
+                 <height>418</height>
                 </rect>
                </property>
                <layout class="QGridLayout" name="gridLayout_7">
@@ -1086,13 +1079,6 @@
                    </widget>
                   </item>
                   <item row="0" column="2">
-                   <widget class="QPushButton" name="btn_save_pg_ri">
-                    <property name="text">
-                     <string>Save</string>
-                    </property>
-                   </widget>
-                  </item>
-                  <item row="0" column="3">
                    <widget class="QPushButton" name="btn_help_pg_ri">
                     <property name="text">
                      <string>Help</string>
@@ -1135,8 +1121,8 @@
                 <rect>
                  <x>0</x>
                  <y>0</y>
-                 <width>558</width>
-                 <height>411</height>
+                 <width>562</width>
+                 <height>418</height>
                 </rect>
                </property>
                <layout class="QGridLayout" name="gridLayout_14">
@@ -1520,10 +1506,10 @@
                 </item>
                 <item row="2" column="0">
                  <layout class="QGridLayout" name="gridLayout_44">
-                  <item row="0" column="0">
-                   <widget class="QPushButton" name="btn_read_pg2">
+                  <item row="0" column="2">
+                   <widget class="QPushButton" name="btn_help_pg2">
                     <property name="text">
-                     <string>Read from file</string>
+                     <string>Help</string>
                     </property>
                    </widget>
                   </item>
@@ -1534,17 +1520,10 @@
                     </property>
                    </widget>
                   </item>
-                  <item row="0" column="2">
-                   <widget class="QPushButton" name="btn_save_pg2">
+                  <item row="0" column="0">
+                   <widget class="QPushButton" name="btn_read_pg2">
                     <property name="text">
-                     <string>Save</string>
-                    </property>
-                   </widget>
-                  </item>
-                  <item row="0" column="3">
-                   <widget class="QPushButton" name="btn_help_pg2">
-                    <property name="text">
-                     <string>Help</string>
+                     <string>Read from file</string>
                     </property>
                    </widget>
                   </item>
@@ -1588,8 +1567,8 @@
                 <rect>
                  <x>0</x>
                  <y>0</y>
-                 <width>254</width>
-                 <height>64</height>
+                 <width>558</width>
+                 <height>411</height>
                 </rect>
                </property>
                <layout class="QGridLayout" name="gridLayout_30">
@@ -1637,8 +1616,8 @@
                 <rect>
                  <x>0</x>
                  <y>0</y>
-                 <width>507</width>
-                 <height>404</height>
+                 <width>558</width>
+                 <height>411</height>
                 </rect>
                </property>
                <layout class="QGridLayout" name="gridLayout_17">
@@ -1659,21 +1638,15 @@
                    </widget>
                   </item>
                   <item>
-                   <widget class="QPushButton" name="btn_save_pg4">
-                    <property name="text">
-                     <string>Save</string>
-                    </property>
-                   </widget>
-                  </item>
-                  <item>
                    <widget class="QPushButton" name="btn_run_2">
+                    <property name="enabled">
+                     <bool>false</bool>
+                    </property>
                     <property name="styleSheet">
-                     <string notr="true">background-color: rgb(240, 240, 240);
-color: rgb(0, 0, 0);
-</string>
+                     <string notr="true"/>
                     </property>
                     <property name="text">
-                     <string>RUN</string>
+                     <string>Run</string>
                     </property>
                    </widget>
                   </item>
@@ -1683,7 +1656,7 @@ color: rgb(0, 0, 0);
                      <string notr="true"/>
                     </property>
                     <property name="text">
-                     <string>CLOSE</string>
+                     <string>Close</string>
                     </property>
                    </widget>
                   </item>
@@ -1719,7 +1692,7 @@ color: rgb(0, 0, 0);
                        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Select each file to be added to current QGIS project.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                       </property>
                       <property name="text">
-                       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;justify&quot;&gt;&lt;span style=&quot; font-size:10pt; font-weight:700;&quot;&gt;Add:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Add to project:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                       </property>
                      </widget>
                     </item>
@@ -1730,7 +1703,7 @@ color: rgb(0, 0, 0);
                     <item>
                      <widget class="QLabel" name="label_49">
                       <property name="text">
-                       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Output defination:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Output definition:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                       </property>
                      </widget>
                     </item>
