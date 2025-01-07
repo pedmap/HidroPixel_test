@@ -7,7 +7,6 @@ import numpy as np
 from functools import wraps
 # import matplotlib as plt
 from osgeo import ogr, gdal, gdalconst
-# import matplotlib.pyplot as plt
 from pathlib import Path
 import matplotlib.pyplot as plt
 from modulos_files.RDC_variables import RDCVariables
@@ -367,8 +366,8 @@ class DesenvolvePlugin():
                     # Fechando o dataset GDAL
 
                     rst_file_bacia = None
+                   #  print(f'Qtd pix bacia: {np.count_nonzero(self.global_vars.bacia)}\nÁrea da bacia: {(np.count_nonzero(self.global_vars.bacia))*30**2/1000000} Km²')
                     return self.global_vars.bacia
-                    print(f'Qtd pix bacia: {np.count_nonzero(self.global_vars.bacia)}\nÁrea da bacia: {(np.count_nonzero(self.global_vars.bacia))*30**2/1000000} Km²')
 
             elif function == 2 or function == 3:
                 # Realizando a abertura do arquivo raster e coletando as informações referentes as dimensões do mesmo
@@ -405,8 +404,8 @@ class DesenvolvePlugin():
 
                 else:
                     """Caso o arquivo raster apresente erros durante a abertura, ocorrerá um erro"""
-                    resulte = f"Failde to open the raster file: {arquivo}"
-                    print(resulte)
+                    result = f"Failed to open the raster file: {arquivo}"
+                    print(result)
                     # QMessageBox.warning(None, "ERROR!", resulte)
 
                 # Lê informações do arquivo de metadados (.rdc)
@@ -522,7 +521,7 @@ class DesenvolvePlugin():
                 rst_file_claRIO = None
             else:
                 # Caso o arquivo raster apresente erros durante a abertura, ocorrerá um erro
-                resulte = f"Failde to open the raster file: {arquivo}"
+                resulte = f"Failed to open the raster file: {arquivo}"
                 # QMessageBox.warning(None, "ERROR!", resulte)
                 
         else:
@@ -625,7 +624,7 @@ class DesenvolvePlugin():
             rst_file_dir = None
         else:
             """Caso o arquivo raster apresente erros durante a abertura, ocorrerá um erro"""
-            resulte = f"Failde to open the raster file: {self.rdc_vars.nomeRST}"
+            resulte = f"Failed to open the raster file: {self.rdc_vars.nomeRST}"
             # QMessageBox.warning(None, "ERROR!", resulte)
 
         # Verificação do valor da variável maxdir
@@ -677,7 +676,7 @@ class DesenvolvePlugin():
             rst_file_drenagem = None
         else:
             """Caso o arquivo raster apresente erros durante a abertura, ocorrerá um erro"""
-            resulte = f"Failde to open the raster file: {arquivo}"
+            resulte = f"Failed to open the raster file: {arquivo}"
             # QMessageBox.warning(None, "ERROR!", resulte)
 
 
@@ -702,7 +701,7 @@ class DesenvolvePlugin():
             rst_file_MDE = None
         else:
             """Caso o arquivo raster apresente erros durante a abertura, ocorrerá um erro"""
-            resulte = f"Failde to open the raster file: {arquivo}"
+            resulte = f"Failed to open the raster file: {arquivo}"
             # QMessageBox.warning(None, "ERROR!", resulte)
 
     def leh_precipitacao_24h(self):
@@ -741,7 +740,7 @@ class DesenvolvePlugin():
 
         else:
             """Caso o arquivo raster apresente erros durante a abertura, ocorrerá um erro"""
-            resulte = f"Failde to open the raster file: {arquivo}"
+            resulte = f"Failed to open the raster file: {arquivo}"
             # QMessageBox.warning(None, "ERROR!", resulte)
 
 
@@ -807,7 +806,7 @@ class DesenvolvePlugin():
 
         else:
             """Caso o arquivo raster apresente erros durante a abertura, ocorrerá um erro"""
-            resulte = f"Failde to open the raster file: {arquivo}"
+            resulte = f"Failed to open the raster file: {arquivo}"
             # QMessageBox.warning(None, "ERROR!", resulte)
 
     def project(self,x1, x2, y1,y2,tipo2,dist2,lado2,diagonal2):
@@ -2459,7 +2458,7 @@ class DesenvolvePlugin():
                 rst_file_CN = None
             else:
                 # Caso o arquivo raster apresente erros durante a abertura, ocorrerá um erro
-                resulte = f"Failde to open the raster file: {arquivo}"
+                resulte = f"Failed to open the raster file: {arquivo}"
                 # QMessageBox.warning(None, "ERROR!", resulte)
                 
         else:
@@ -2488,7 +2487,7 @@ class DesenvolvePlugin():
                 rst_file_Tempo_total = None
             else:
                 # Caso o arquivo raster apresente erros durante a abertura, ocorrerá um erro
-                resulte = f"Failde to open the raster file: {arquivo}"
+                resulte = f"Failed to open the raster file: {arquivo}"
                 # QMessageBox.warning(None, "ERROR!", resulte)
                 
         else:
@@ -2517,7 +2516,7 @@ class DesenvolvePlugin():
                 rst_file_chuva_acumulada = None
             else:
                 # Caso o arquivo raster apresente erros durante a abertura, ocorrerá um erro
-                resulte = f"Failde to open the raster file: {arquivo}"
+                resulte = f"Failed to open the raster file: {arquivo}"
                 # QMessageBox.warning(None, "ERROR!", resulte)
                 
         else:
@@ -2671,7 +2670,7 @@ class DesenvolvePlugin():
         for w in range(self.blocos_chuva):
             # Pasta enviada pelo user
             path = r'c:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\resultados_test_modelo'
-            arquivo = path + f'\{str(self.tempo[w])}.RST'
+            arquivo = path + f"\\{str(self.tempo[w])}.RST"
 
             # interpolação da pricipitação para o evento em questão
             for lin in range(self.rdc_vars.nlin):
@@ -4519,9 +4518,10 @@ class DesenvolvePlugin():
             arquivo2 = arquivo raster tiff (será criado)"""
 
         # Convertendo arquivo ascii para geotiff
-        self.rdc_vars.nlin = 1701
-        self.rdc_vars.ncol = 2722
+        self.rdc_vars.ncol = 1924
+        self.rdc_vars.nlin = 962
         rst_to_raster = np.zeros((self.rdc_vars.nlin,self.rdc_vars.ncol))
+        cont = 0
 
         # Leitura do arquivo ascii
         if file_type == 'int':
@@ -4529,7 +4529,7 @@ class DesenvolvePlugin():
                 for lin in range(self.rdc_vars.nlin):
                     for col in range(self.rdc_vars.ncol):
                         rst_to_raster[lin,col] = int(arquivo_ascii.readline())
-
+                        cont+=1
         elif file_type == 'float':
             with open(arquivo1, 'r') as arquivo_ascii:
                 for lin in range(self.rdc_vars.nlin):
@@ -4563,6 +4563,8 @@ class DesenvolvePlugin():
         banda = None
         driver = None
         tipo_dados = None
+
+        return cont
 
     def apaga_arquivos_temp(self):
         '''Esta função exclui os arquivos temporários criados durante a execução do plugin'''
@@ -4648,50 +4650,45 @@ class DesenvolvePlugin():
         plt.subplots_adjust(bottom=0.40)  # Ajusta a margem inferior para caber o texto
         plt.show()
 
+#### MEUS TESTES
+    def check_basin_dimensions(self, file):
+        """ 
+        Opens a .tif file and retrieves its dimensions, corner coordinates, 
+        total area, and coordinate system.
+        """
+
+        raster = gdal.Open(file)
+        
+        if not raster:
+            print(f"Failed to open raster file: {file}")
+            return None
+        
+        nlin = raster.RasterYSize  
+        ncol = raster.RasterXSize  
+        
+        geotransform = raster.GetGeoTransform()
+        xmin = geotransform[0]
+        ymin = geotransform[3]
+        xmax = xmin + geotransform[1] * ncol
+        ymax = ymin + geotransform[5] * nlin
+
+        total_area = nlin * ncol
+        
+        return (nlin, ncol, xmin, xmax, ymin, ymax, total_area)
+
+    def check_all_equal(self, raster_list):
+        # dimensoes usadas para comparar
+        dims = self.check_basin_dimensions(raster_list[0])
+    
+        return all(self.check_basin_dimensions(raster) == dims for raster in raster_list)
+
     def run_22(self):
         '''Verifica possíveis inconsistências'''
-        # Leitura do mesmo arquivo (bacia) por dois métodos: leitura do .rst bin; leitura do geotiff (.tif)
-        arquivo_bacia_rst = r"C:\PyQGIS\hidropixel\temp\DEM.rst"
-        arquivo_bacia_tif = r"C:\Users\joao1\OneDrive\Área de Trabalho\Pesquisa\SmallExample\input_geotiff\2_dem.tif"
+        p = r"C:\Users\pedro\pesquisa\dados\input_data_hidropixel_plugin\input_data_hidropixel_plugin\flow_travel_time\digital_elevation_model.tif"
+        pl = [r"C:\Users\pedro\pesquisa\dados\input_data_hidropixel_plugin\input_data_hidropixel_plugin\flow_travel_time\digital_elevation_model.tif"] * 3
 
-        result = self.leh_geotiff_escreve_ascii(arquivo_bacia_tif, arquivo_bacia_rst,'int')
-        bacia_rst = result[1]
-        bacia_tif = result[0]
+        print(self.check_basin_dimensions(p))
+        self.check_all_equal(pl)
 
-        # comparação do arquivo lido
-        print(np.count_nonzero(bacia_rst != bacia_tif))
-        print(np.count_nonzero(bacia_rst!= 0))
-
-        # Convertendo arquivo ascii para geotiff
-        fn_bacia_geotiff = r"C:\Users\joao1\OneDrive\Documentos\arquivos_para_test\TravelTime_rst_to_tif.tif"
-        # Define os dados a serem escritos
-        dados_p_acum = bacia_rst
-        tipo_dados = gdalconst.GDT_Float32
-
-        # Obtendo o driver para escrita do arquivo em GeoTiff
-        driver = gdal.GetDriverByName('GTiff')
-
-        # Cria arquivo final
-        dataset = driver.Create(fn_bacia_geotiff, self.rdc_vars.ncol, self.rdc_vars.nlin, 1, tipo_dados)
-        dataset.SetGeoTransform(self.rdc_vars.geotransform)
-        dataset.SetProjection(self.rdc_vars.projection)
-
-        # Escreve os dados na banda do arquivo
-        banda = dataset.GetRasterBand(1)
-        banda.WriteArray(dados_p_acum)
-
-        # Fechando o arquivo
-        dataset = None
-        banda = None
-        driver = None
-        tipo_dados = None
-
-# classe = DesenvolvePlugin()
-# classe.plot_hidrogramas_e_metricas()
-rst_to_raster = np.zeros((1701,2722))
-
-arquivo1 = r'C:/Users/joao1/OneDrive/Documentos/arquivos_para_test/input_tif/output/hidrograma.txt'
-with open(arquivo1, 'r',encoding = 'ISO-8859-1') as arquivo_txt:
-    cabecalho = arquivo_txt.readline()
-    a=arquivo_txt.readline()
-o arqua = 1
+classe = DesenvolvePlugin()
+classe.run_22()
