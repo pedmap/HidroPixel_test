@@ -4651,17 +4651,21 @@ class DesenvolvePlugin():
         plt.show()
 
 #### MEUS TESTES
-    def check_basin_dimensions(self, file):
-        """ 
-        Opens a .tif file and retrieves its dimensions, corner coordinates, 
-        total area, and coordinate system.
-        """
-
+    def abrir_raster(self, file):
         raster = gdal.Open(file)
-        
+        band = raster.GetRasterBand(1)
+        raster_data = band.ReadAsArray()
+
         if not raster:
             print(f"Failed to open raster file: {file}")
             return None
+        return (raster, band, raster_data)
+        
+    def check_basin_dimensions(self, file):
+        """ 
+        aaaaaa
+        """
+        raster, _, raster_data = self.abrir_raster(file)      
         
         nlin = raster.RasterYSize  
         ncol = raster.RasterXSize  
@@ -4672,16 +4676,128 @@ class DesenvolvePlugin():
         xmax = xmin + geotransform[1] * ncol
         ymax = ymin + geotransform[5] * nlin
 
-        total_area = nlin * ncol
+
+        pixel_width = abs(geotransform[1])  # X
+        pixel_height = abs(geotransform[5])  # Y
+
+        # Seleciona pixels com valor 1
+        rows, cols = (raster_data == 1).nonzero()
+
+        # Numero de pixels com valor 1
+        num_selected_pixels = len(rows)
         
-        return (nlin, ncol, xmin, xmax, ymin, ymax, total_area)
+        # calculo da área
+        basin_area = num_selected_pixels * pixel_width * pixel_height
+
+        
+        return (nlin, ncol, xmin, xmax, ymin, ymax, basin_area)
 
     def check_all_equal(self, raster_list):
         # dimensoes usadas para comparar
         dims = self.check_basin_dimensions(raster_list[0])
-    
-        return all(self.check_basin_dimensions(raster) == dims for raster in raster_list)
+        is_all_equal = all(self.check_basin_dimensions(raster)[-1] == dims[-1] for raster in raster_list)
 
+        return is_all_equal
+    #############################################################################
+
+    def dir_flux(self, raster_cotas, raster_fluxo, raster_bacia, minimum_slope=0.0001):
+
+        dataset_cotas, _band_cotas, raster_cotas_data = self.abrir_raster(raster_cotas)
+        _dataset_fluxo, _band_fluxo, raster_fluxo_data = self.abrir_raster(raster_fluxo)
+        _dataset_bacia, _band_bacia, raster_bacia_data = self.abrir_raster(raster_bacia)
+
+        linhas = dataset_cotas.RasterYSize
+        colunas = dataset_cotas.RasterXSize
+
+
+        # matriz para armazenar a declividade
+        s = np.zeros((linhas, colunas))
+
+        resultados_validos = []  #amazena os valores dos pixels com caminho válido
+        direcoes_fluxo = []     # armazena as direções de fluxo
+
+        # Direções de fluxo associadas aos 8 vizinhos
+        direcoes_dict = {
+            (0, 1): 90,      # Norte (i, j+1)
+            (1, 1): 135,     # Nordeste (i+1, j+1)
+            (1, 0): 180,     # Leste (i+1, j)
+            (1, -1): 225,    # Sudeste (i+1, j-1)
+            (0, -1): 270,    # Sul (i, j-1)
+            (-1, -1): 315,   # Sudoeste (i-1, j-1)
+            (-1, 0): 360,    # Oeste (i-1, j)
+            (-1, 1): 45      # Noroeste (i-1, j+1)
+        }
+
+        # Itera sobre todos os pixels do raster de cotas
+        for i in range(linhas):
+            for j in range(colunas):
+                # Considera apenas os pixels dentro da bacia
+                if raster_bacia_data[i, j] == 1:
+                    # 8 vizinhos ao redor do pixel
+                    vizinhos = [
+                        (i-1, j-1), (i-1, j), (i-1, j+1),  # Linha acima
+                        (i, j-1),               (i, j+1),   # Linha atual
+                        (i+1, j-1), (i+1, j), (i+1, j+1)   # Linha abaixo
+                    ]
+
+                    # Inicializa a cota do pixel atual e a direção do melhor vizinho
+                    menor_cota = raster_cotas_data[i, j]
+                    melhor_direcao = None
+
+                    print(f"Cota atual no pixel ({i}, {j}): {menor_cota}")
+
+                    # procura pelo vizinho com a menor cota
+                    for vizinho in vizinhos:
+                        vi, vj = vizinho
+                        if 0 <= vi < linhas and 0 <= vj < colunas:
+                            vizinho_cota = raster_cotas_data[vi, vj]
+                            print(f"Verificando vizinho: ({vi}, {vj}) com cota {vizinho_cota}")
+                            
+                        # verificr se a cota do vizinho é menor
+                        if vizinho_cota < menor_cota:
+                            menor_cota = vizinho_cota
+                            melhor_direcao = (vi, vj)
+                            print(f"Novo melhor vizinho encontrado: ({vi}, {vj}) com cota {menor_cota}")
+                                            
+                    # não achou vizinho válido
+                    if melhor_direcao is None:
+                        print(f"Erro: Nenhum vizinho válido encontrado para o pixel ({i}, {j})")
+                        return None
+                    
+                    next_i, next_j = melhor_direcao
+
+                    # Verifica se o fluxo é válido (vizinho com cota menor)
+                    if raster_cotas_data[next_i, next_j] < raster_cotas_data[i, j]:
+                        # Calcular a declividade entre o pixel atual e o vizinho com cota menor
+                        distancia = np.sqrt((next_i - i) ** 2 + (next_j - j) ** 2)
+
+                        # Evitar divisão por zero
+                        if distancia > 0:
+                            s[i, j] = (raster_cotas_data[i, j] - raster_cotas_data[next_i, next_j]) / distancia
+                        else:
+                            s[i, j] = 0
+
+                        # garante que a declividade não seja negativa (ou muito pequena)
+                        if s[i, j] <= minimum_slope:
+                            s[i, j] = minimum_slope
+
+                        # Adicionar o valor do pixel atual na lista de resultados válidos
+                        resultados_validos.append(raster_fluxo_data[i, j])
+
+                        # Adicionar a direção ao caminho (em graus)
+                        # ver com as coordenadas dps
+                        fluxo_direcao = direcoes_dict.get((next_i - i, next_j - j), None)
+                        if fluxo_direcao:
+                            direcoes_fluxo.append(fluxo_direcao)
+
+        
+        print(f"Declividade calculada com sucesso para o raster {raster_cotas}")
+        print(f"Valores válidos encontrados: {resultados_validos}")
+        print(f"Direções de fluxo: {direcoes_fluxo}")
+        return s, resultados_validos, direcoes_fluxo
+
+
+    
     def run_22(self):
         '''Verifica possíveis inconsistências'''
         p = r"C:\Users\pedro\pesquisa\dados\input_data_hidropixel_plugin\input_data_hidropixel_plugin\flow_travel_time\digital_elevation_model.tif"
