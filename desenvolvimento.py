@@ -4700,21 +4700,13 @@ class DesenvolvePlugin():
         return is_all_equal
     #############################################################################
 
-    def dir_flux(self, raster_cotas, raster_fluxo, raster_bacia, minimum_slope=0.0001):
-
-        dataset_cotas, _band_cotas, raster_cotas_data = self.abrir_raster(raster_cotas)
+    def dir_flux(self, raster_fluxo, raster_bacia):
+        # Abrir o raster de fluxo e o raster da bacia
         _dataset_fluxo, _band_fluxo, raster_fluxo_data = self.abrir_raster(raster_fluxo)
         _dataset_bacia, _band_bacia, raster_bacia_data = self.abrir_raster(raster_bacia)
 
-        linhas = dataset_cotas.RasterYSize
-        colunas = dataset_cotas.RasterXSize
-
-
-        # matriz para armazenar a declividade
-        s = np.zeros((linhas, colunas))
-
-        resultados_validos = []  #amazena os valores dos pixels com caminho válido
-        direcoes_fluxo = []     # armazena as direções de fluxo
+        linhas = _dataset_fluxo.RasterYSize
+        colunas = _dataset_fluxo.RasterXSize
 
         # Direções de fluxo associadas aos 8 vizinhos
         direcoes_dict = {
@@ -4728,75 +4720,58 @@ class DesenvolvePlugin():
             (-1, 1): 45      # Noroeste (i-1, j+1)
         }
 
-        # Itera sobre todos os pixels do raster de cotas
+        # Conjunto para armazenar pixels já validados
+        pixels_validos = set()
+
+        # Itera sobre todos os pixels do raster de fluxo
         for i in range(linhas):
             for j in range(colunas):
                 # Considera apenas os pixels dentro da bacia
                 if raster_bacia_data[i, j] == 1:
-                    # 8 vizinhos ao redor do pixel
-                    vizinhos = [
-                        (i-1, j-1), (i-1, j), (i-1, j+1),  # Linha acima
-                        (i, j-1),               (i, j+1),   # Linha atual
-                        (i+1, j-1), (i+1, j), (i+1, j+1)   # Linha abaixo
-                    ]
+                    # Se o pixel já foi validado anteriormente, ignora e passa para o próximo
+                    if (i, j) in pixels_validos:
+                        continue
 
-                    # Inicializa a cota do pixel atual e a direção do melhor vizinho
-                    menor_cota = raster_cotas_data[i, j]
-                    melhor_direcao = None
+                    # Conjunto para armazenar os pixels visitados no caminho específico
+                    pixels_visitados = set()
 
-                    print(f"Cota atual no pixel ({i}, {j}): {menor_cota}")
+                    # Direção de fluxo do pixel atual
+                    fluxo = raster_fluxo_data[i, j]
 
-                    # procura pelo vizinho com a menor cota
-                    for vizinho in vizinhos:
-                        vi, vj = vizinho
+                    # Verifica se o fluxo tem uma direção válida
+                    if fluxo in direcoes_dict.values():
+                        # Identifica a direção correspondente à direção de fluxo
+                        for direcao, angulo in direcoes_dict.items():
+                            if fluxo == angulo:
+                                vi, vj = i + direcao[0], j + direcao[1]
+                                # print(f"\t  Fluxo segue para o vizinho ({vi}, {vj})")
+                                break
+                        
+                        # Verifica se o próximo vizinho está dentro dos limites
                         if 0 <= vi < linhas and 0 <= vj < colunas:
-                            vizinho_cota = raster_cotas_data[vi, vj]
-                            print(f"Verificando vizinho: ({vi}, {vj}) com cota {vizinho_cota}")
-                            
-                        # verificr se a cota do vizinho é menor
-                        if vizinho_cota < menor_cota:
-                            menor_cota = vizinho_cota
-                            melhor_direcao = (vi, vj)
-                            print(f"Novo melhor vizinho encontrado: ({vi}, {vj}) com cota {menor_cota}")
-                                            
-                    # não achou vizinho válido
-                    if melhor_direcao is None:
-                        print(f"Erro: Nenhum vizinho válido encontrado para o pixel ({i}, {j})")
-                        return None
-                    
-                    next_i, next_j = melhor_direcao
-
-                    # Verifica se o fluxo é válido (vizinho com cota menor)
-                    if raster_cotas_data[next_i, next_j] < raster_cotas_data[i, j]:
-                        # Calcular a declividade entre o pixel atual e o vizinho com cota menor
-                        distancia = np.sqrt((next_i - i) ** 2 + (next_j - j) ** 2)
-
-                        # Evitar divisão por zero
-                        if distancia > 0:
-                            s[i, j] = (raster_cotas_data[i, j] - raster_cotas_data[next_i, next_j]) / distancia
+                            # Verifica se o vizinho está fora da bacia (valor 0)
+                            if raster_bacia_data[vi, vj] == 0:
+                                # print(f"\t    Pixel ({i}, {j}) tem fluxo válido para fora da bacia, saindo em ({vi}, {vj}).")
+                                pixels_validos.add((i, j))  # Marca o pixel como válido
+                            elif (vi, vj) in pixels_validos:
+                                # print(f"\t    Pixel ({i}, {j}) tem fluxo para um caminho já validado. Seguindo para o próximo pixel.")
+                                pixels_validos.add((i, j))  # Marca o pixel como válido
+                            elif (vi, vj) in pixels_visitados:
+                                # print(f"\t    Erro: Fluxo está indo em círculo. Ciclo detectado no pixel ({vi}, {vj}). Execução interrompida.")
+                                return
+                            else:
+                                # Marca o pixel atual como visitado
+                                pixels_visitados.add((i, j))
+                                # Atualiza a posição do pixel e segue para o próximo passo
+                                i, j = vi, vj
+                                fluxo = raster_fluxo_data[i, j]
                         else:
-                            s[i, j] = 0
-
-                        # garante que a declividade não seja negativa (ou muito pequena)
-                        if s[i, j] <= minimum_slope:
-                            s[i, j] = minimum_slope
-
-                        # Adicionar o valor do pixel atual na lista de resultados válidos
-                        resultados_validos.append(raster_fluxo_data[i, j])
-
-                        # Adicionar a direção ao caminho (em graus)
-                        # ver com as coordenadas dps
-                        fluxo_direcao = direcoes_dict.get((next_i - i, next_j - j), None)
-                        if fluxo_direcao:
-                            direcoes_fluxo.append(fluxo_direcao)
-
-        
-        print(f"Declividade calculada com sucesso para o raster {raster_cotas}")
-        print(f"Valores válidos encontrados: {resultados_validos}")
-        print(f"Direções de fluxo: {direcoes_fluxo}")
-        return s, resultados_validos, direcoes_fluxo
-
-
+                            # print(f"\t    Erro: Pixel ({i}, {j}) tem fluxo fora dos limites do raster. Execução interrompida.")
+                            return
+                    else:
+                        # print(f"\tErro: Pixel ({i}, {j}) tem fluxo inválido. Execução interrompida.")
+                        return
+    print("\tTodos os fluxos foram validados com sucesso.")
     
     def run_22(self):
         '''Verifica possíveis inconsistências'''
