@@ -4702,22 +4702,22 @@ class DesenvolvePlugin():
 
     def dir_flux(self, raster_fluxo, raster_bacia):
         # Abrir o raster de fluxo e o raster da bacia
-        _dataset_fluxo, _band_fluxo, raster_fluxo_data = self.abrir_raster(raster_fluxo)
+        dataset_fluxo, _band_fluxo, raster_fluxo_data = self.abrir_raster(raster_fluxo)
         _dataset_bacia, _band_bacia, raster_bacia_data = self.abrir_raster(raster_bacia)
 
-        linhas = _dataset_fluxo.RasterYSize
-        colunas = _dataset_fluxo.RasterXSize
+        linhas = dataset_fluxo.RasterYSize
+        colunas = dataset_fluxo.RasterXSize
 
         # Direções de fluxo associadas aos 8 vizinhos
         direcoes_dict = {
-            (0, 1): 90,      # Norte (i, j+1)
-            (1, 1): 135,     # Nordeste (i+1, j+1)
-            (1, 0): 180,     # Leste (i+1, j)
-            (1, -1): 225,    # Sudeste (i+1, j-1)
-            (0, -1): 270,    # Sul (i, j-1)
-            (-1, -1): 315,   # Sudoeste (i-1, j-1)
-            (-1, 0): 360,    # Oeste (i-1, j)
-            (-1, 1): 45      # Noroeste (i-1, j+1)
+            (-1, 0): 90,     # Norte (i-1, j)
+            (-1, 1): 45,     # Nordeste (i-1, j+1)
+            (0, 1): 0,       # Leste (i, j+1)
+            (1, 1): 315,     # Sudeste (i+1, j+1)
+            (1, 0): 270,     # Sul (i+1, j)
+            (1, -1): 225,    # Sudoeste (i+1, j-1)
+            (0, -1): 180,    # Oeste (i, j-1)
+            (-1, -1): 135    # Noroeste (i-1, j-1)
         }
 
         # Conjunto para armazenar pixels já validados
@@ -4728,50 +4728,55 @@ class DesenvolvePlugin():
             for j in range(colunas):
                 # Considera apenas os pixels dentro da bacia
                 if raster_bacia_data[i, j] == 1:
-                    # Se o pixel já foi validado anteriormente, ignora e passa para o próximo
+                    print(f"\nIniciando análise do pixel ({i}, {j})")
+
+                    # Se o pixel já foi validado anteriormente, ignora
                     if (i, j) in pixels_validos:
+                        print(f"  -> Pixel ({i}, {j}) já foi validado antes. Pulando.")
                         continue
 
                     # Conjunto para armazenar os pixels visitados no caminho específico
                     pixels_visitados = set()
+                    pi, pj = i, j  # Mantém uma cópia da posição original
 
-                    # Direção de fluxo do pixel atual
-                    fluxo = raster_fluxo_data[i, j]
+                    while True:
+                        # Direção de fluxo do pixel atual
+                        fluxo = raster_fluxo_data[pi, pj]
+                        print(f"  - Pixel atual: ({pi}, {pj}) | Fluxo: {fluxo}")
 
-                    # Verifica se o fluxo tem uma direção válida
-                    if fluxo in direcoes_dict.values():
-                        # Identifica a direção correspondente à direção de fluxo
-                        for direcao, angulo in direcoes_dict.items():
-                            if fluxo == angulo:
-                                vi, vj = i + direcao[0], j + direcao[1]
-                                # print(f"\t  Fluxo segue para o vizinho ({vi}, {vj})")
-                                break
-                        
-                        # Verifica se o próximo vizinho está dentro dos limites
-                        if 0 <= vi < linhas and 0 <= vj < colunas:
-                            # Verifica se o vizinho está fora da bacia (valor 0)
-                            if raster_bacia_data[vi, vj] == 0:
-                                # print(f"\t    Pixel ({i}, {j}) tem fluxo válido para fora da bacia, saindo em ({vi}, {vj}).")
-                                pixels_validos.add((i, j))  # Marca o pixel como válido
-                            elif (vi, vj) in pixels_validos:
-                                # print(f"\t    Pixel ({i}, {j}) tem fluxo para um caminho já validado. Seguindo para o próximo pixel.")
-                                pixels_validos.add((i, j))  # Marca o pixel como válido
-                            elif (vi, vj) in pixels_visitados:
-                                # print(f"\t    Erro: Fluxo está indo em círculo. Ciclo detectado no pixel ({vi}, {vj}). Execução interrompida.")
-                                return
+                        # Verifica se o fluxo tem uma direção válida
+                        if fluxo in direcoes_dict.values():
+                            # Identifica a direção correspondente à direção de fluxo
+                            for direcao, angulo in direcoes_dict.items():
+                                if fluxo == angulo:
+                                    vi, vj = pi + direcao[0], pj + direcao[1]
+                                    print(f"    -> Fluxo direcionado para ({vi}, {vj})")
+                                    break
+                            
+                            # Verifica se o próximo vizinho está dentro dos limites
+                            if 0 <= vi < linhas and 0 <= vj < colunas:
+                                if raster_bacia_data[vi, vj] == 0:
+                                    print(f"    -> Saída encontrada. ({pi}, {pj}) está saindo da bacia.")
+                                    pixels_validos.add((pi, pj))
+                                    break
+                                elif (vi, vj) in pixels_validos:
+                                    print(f"    -> Pixel ({vi}, {vj}) já foi validado. Encerrando percurso.")
+                                    pixels_validos.add((pi, pj))
+                                    break
+                                elif (vi, vj) in pixels_visitados:
+                                    print(f"    [ERROR] Ciclo detectado! O fluxo voltou ao pixel ({vi}, {vj}).")
+                                    return
+                                else:
+                                    pixels_visitados.add((pi, pj))
+                                    pi, pj = vi, vj  # Atualiza a posição do pixel e segue o fluxo
                             else:
-                                # Marca o pixel atual como visitado
-                                pixels_visitados.add((i, j))
-                                # Atualiza a posição do pixel e segue para o próximo passo
-                                i, j = vi, vj
-                                fluxo = raster_fluxo_data[i, j]
+                                print(f"    [ERROR] O fluxo está indo para fora dos limites do raster!")
+                                return
                         else:
-                            # print(f"\t    Erro: Pixel ({i}, {j}) tem fluxo fora dos limites do raster. Execução interrompida.")
+                            print(f"    [ERROR] O pixel ({pi}, {pj}) tem um fluxo inválido!")
                             return
-                    else:
-                        # print(f"\tErro: Pixel ({i}, {j}) tem fluxo inválido. Execução interrompida.")
-                        return
-    print("\tTodos os fluxos foram validados com sucesso.")
+
+        print("Todos os fluxos foram validados com sucesso.")
     
     def run_22(self):
         '''Verifica possíveis inconsistências'''
