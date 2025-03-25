@@ -4750,10 +4750,6 @@ class DesenvolvePlugin():
                         fluxo = raster_fluxo_data[pi, pj]
                         #print(f"  - Pixel atual: ({pi}, {pj}) | Fluxo: {fluxo}")
 
-                        # Verifica se o fluxo é 360 e trata como Leste (0°)
-                        if fluxo == 0 or fluxo == -1:
-                            fluxo = 90
-
                         # Verifica se o fluxo tem uma direção válida
                         if fluxo in direcoes_dict.values():
                             # Identifica a direção correspondente à direção de fluxo
@@ -4787,7 +4783,7 @@ class DesenvolvePlugin():
                                     caminhos_exutorio += 1  # Incrementa a contagem dos caminhos
                                     break  # Interrompe o percurso, pois chegou ao exutório
 
-                                # Verifica se o próximo pixel já foi validado (não precisa continuar)
+                                # Verifica se o próximo pixel já foi validado
                                 elif (vi, vj) in pixels_validos:
                                     #print(f"    -> Pixel ({vi}, {vj}) já foi validado. Encerrando percurso.")
                                     # Adiciona o pixel atual aos pixels válidos
