@@ -4709,43 +4709,50 @@ class DesenvolvePlugin():
         colunas = dataset_fluxo.RasterXSize
 
         direcoes_dict = {
-            (0, 1): 0,      # Leste
-            (-1, 1): 45,    # Nordeste
-            (-1, 0): 90,    # Norte
-            (-1, -1): 135,  # Noroeste
-            (0, -1): 180,   # Oeste
-            (1, -1): 225,   # Sudoeste
-            (1, 0): 270,    # Sul
-            (1, 1): 315     # Sudeste 
+            (0, 1): 90,      # Leste
+            (-1, 1): 45,     # Nordeste
+            (-1, 0): 360,    # Norte
+            (-1, -1): 315,   # Noroeste
+            (0, -1): 270,    # Oeste
+            (1, -1): 225,    # Sudoeste
+            (1, 0): 180,     # Sul
+            (1, 1): 135      # Sudeste
         }
 
-        # Conjunto para armazenar pixels já validados
-        pixels_validos = set()
+        # Conjunto para armazenar os pixels válidos e inválidos
+        pixels_validos = set() # Chegam ao exutorio
+        pixels_invalidos = set() # Não chegam ao exutorio
+        caminhos_exutorio = 0
 
         # Itera sobre todos os pixels do raster de fluxo
         for i in range(linhas):
             for j in range(colunas):
                 # Considera apenas os pixels dentro da bacia
                 if raster_bacia_data[i, j] == 1:
-                    print(f"\nIniciando análise do pixel ({i}, {j})")
+                    #print(f"\nIniciando análise do pixel ({i}, {j})")
 
-                    # Se o pixel já foi validado anteriormente, ignora
-                    if (i, j) in pixels_validos:
-                        print(f"  -> Pixel ({i}, {j}) já foi validado antes. Pulando.")
+                    # Se o pixel já está nos pixels inválidos, pula para o próximo
+                    if (i, j) in pixels_invalidos:
+                        #print(f"  -> Pixel ({i}, {j}) está em pixels inválidos. Pulando.")
                         continue
 
-                    # Conjunto para armazenar os pixels visitados no caminho específico
-                    pixels_visitados = set()
+                    # Se o pixel já está nos pixels válidos, pula para o próximo
+                    if (i, j) in pixels_validos:
+                        #print(f"  -> Pixel ({i}, {j}) já foi validado. Pulando.")
+                        continue
+
+                    # Conjunto para armazenar os pixels visitados no caminho
+                    pixels_no_caminho = set()
                     pi, pj = i, j  # Mantém uma cópia da posição original
 
                     while True:
                         # Direção de fluxo do pixel atual
                         fluxo = raster_fluxo_data[pi, pj]
-                        print(f"  - Pixel atual: ({pi}, {pj}) | Fluxo: {fluxo}")
+                        #print(f"  - Pixel atual: ({pi}, {pj}) | Fluxo: {fluxo}")
 
                         # Verifica se o fluxo é 360 e trata como Leste (0°)
-                        if fluxo == 360:
-                            fluxo = 0
+                        if fluxo == 0 or fluxo == -1:
+                            fluxo = 90
 
                         # Verifica se o fluxo tem uma direção válida
                         if fluxo in direcoes_dict.values():
@@ -4753,41 +4760,67 @@ class DesenvolvePlugin():
                             for direcao, angulo in direcoes_dict.items():
                                 if fluxo == angulo:
                                     vi, vj = pi + direcao[0], pj + direcao[1]
-                                    print(f"    -> Fluxo direcionado para ({vi}, {vj})")
+                                    #print(f"    -> Fluxo direcionado para ({vi}, {vj})")
                                     break
 
                             # Verifica se o próximo vizinho está dentro dos limites
                             if 0 <= vi < linhas and 0 <= vj < colunas:
+                                # Verifica se o próximo pixel está dentro da bacia
+                                if raster_bacia_data[vi, vj] != 1:
+                                    #print(f"    [AVISO] O fluxo está indo para fora da bacia! ({vi}, {vj}) não está na bacia.")
+                                    # Adiciona apenas o último pixel que causou a falha ao conjunto de inválidos
+                                    pixels_invalidos.add((pi, pj))
+                                    break  # Interrompe o fluxo
+
                                 # Se o próximo pixel for o exutório, para o processo
                                 if (vi, vj) == exutorio:
                                     print(f"    -> Exutório encontrado! ({pi}, {pj}) está saindo da bacia.")
-                                    pixels_validos.add((pi, pj))
+                                    # Adiciona os pixels do caminho até o exutório no conjunto de válidos
+                                    pixels_no_caminho.add((pi, pj))  # Adiciona o pixel atual ao caminho
+                                    pixels_no_caminho.add((vi, vj))  # Adiciona o exutório ao caminho
+
+                                    # Adiciona todos os pixels do caminho ao conjunto de válidos
+                                    for px, py in pixels_no_caminho:
+                                        pixels_validos.add((px, py))
+                                        print(f"    Pixel válido adicionado: ({px}, {py})")
+
+                                    caminhos_exutorio += 1  # Incrementa a contagem dos caminhos
                                     break  # Interrompe o percurso, pois chegou ao exutório
 
-                                # Verifica se o próximo pixel já foi validado
+                                # Verifica se o próximo pixel já foi validado (não precisa continuar)
                                 elif (vi, vj) in pixels_validos:
-                                    print(f"    -> Pixel ({vi}, {vj}) já foi validado. Encerrando percurso.")
+                                    #print(f"    -> Pixel ({vi}, {vj}) já foi validado. Encerrando percurso.")
+                                    # Adiciona o pixel atual aos pixels válidos
                                     pixels_validos.add((pi, pj))
                                     break  # Interrompe o percurso
 
-                                # Verifica se o próximo pixel já foi visitado (evita ciclos)
-                                elif (vi, vj) in pixels_visitados:
-                                    print(f"    [ERRO] Ciclo detectado! O fluxo voltou ao pixel ({vi}, {vj}).")
-                                    return  # Interrompe o processo em caso de ciclo
+                                # Verifica se o próximo pixel já está em pixels inválidos
+                                elif (vi, vj) in pixels_invalidos:
+                                    #print(f"    -> Pixel ({vi}, {vj}) está em pixels inválidos. Encerrando percurso.")
+                                    # Adiciona apenas o último pixel que causou a falha aos pixels inválidos
+                                    pixels_invalidos.add((pi, pj))
+                                    break  # Interrompe o percurso
 
                                 else:
                                     # Continua o fluxo para o próximo pixel
-                                    pixels_visitados.add((pi, pj))
+                                    pixels_no_caminho.add((pi, pj))  # Adiciona o pixel ao caminho
                                     pi, pj = vi, vj  # Atualiza a posição e segue o fluxo
-
                             else:
-                                print(f"    [ERRO] O fluxo está indo para fora dos limites do raster!")
-                                return  # Interrompe se o fluxo sair dos limites
+                                #print(f"    [AVISO] O fluxo está indo para fora dos limites do raster!")
+                                # Adiciona apenas o último pixel que causou a falha ao conjunto de inválidos
+                                pixels_invalidos.add((pi, pj))
+                                break  # Interrompe o fluxo
 
                         else:
-                            print(f"    [ERRO] O pixel ({pi}, {pj}) tem um fluxo inválido!")
-                            return  # Interrompe o processo se o fluxo for inválido
+                            #print(f"    [ERRO] O pixel ({pi}, {pj}) tem um fluxo inválido!")
+                            # Adiciona apenas o último pixel que causou a falha ao conjunto de inválidos
+                            pixels_invalidos.add((pi, pj))
+                            break  # Interrompe o processo se o fluxo for inválido
 
+        # Imprime a quantidade de caminhos que chegaram ao exutório
+        print(f"\nQuantidade de caminhos que chegaram ao exutório: {caminhos_exutorio}")
+        print(f"\nNúmero total de pixels válidos: {len(pixels_validos)}")
+        print(f"\nNúmero total de pixels inválidos: {len(pixels_invalidos)}")
         print("\nTodos os fluxos foram validados com sucesso.")
     
     def run_22(self):
