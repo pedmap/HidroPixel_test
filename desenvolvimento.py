@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 from modulos_files.RDC_variables import RDCVariables
 from modulos_files.global_variables import GlobalVariables
 import glob
+from collections import deque # usado na verificação de fluxo
 
 class DesenvolvePlugin():
     '''Criada para testar e desenvolver as funções do módulo hidroPixel'''
@@ -4701,13 +4702,21 @@ class DesenvolvePlugin():
     #############################################################################
 
     def dir_flux(self, raster_fluxo, raster_bacia, exutorio):
-        # Abrir o raster de fluxo e o raster da bacia
+        """
+        Função para rastrear se todos os pixels da bacia convergem para o exutório.
+        A busca começa do primeiro pixel da bacia e verifica se cada pixel chega até o exutório.
+        """
+        # Abrir os rasters de fluxo e bacia
+        print("Abrindo os rasters de fluxo e bacia...")
         dataset_fluxo, _band_fluxo, raster_fluxo_data = self.abrir_raster(raster_fluxo)
         _dataset_bacia, _band_bacia, raster_bacia_data = self.abrir_raster(raster_bacia)
 
         linhas = dataset_fluxo.RasterYSize
         colunas = dataset_fluxo.RasterXSize
 
+        print(f"Tamanho do raster: {linhas} linhas x {colunas} colunas")
+
+        # Definir as direções de fluxo (mapear ângulos para direções)
         direcoes_dict = {
             (0, 1): 90,      # Leste
             (-1, 1): 45,     # Nordeste
@@ -4719,105 +4728,81 @@ class DesenvolvePlugin():
             (1, 1): 135      # Sudeste
         }
 
-        # Conjunto para armazenar os pixels válidos e inválidos
-        pixels_validos = set() # Chegam ao exutorio
-        pixels_invalidos = set() # Não chegam ao exutorio
-        caminhos_exutorio = 0
+        # Função auxiliar para verificar se as coordenadas estão dentro dos limites do raster
+        def dentro_dos_limites(i, j, linhas, colunas):
+            return 0 <= i < linhas and 0 <= j < colunas
 
-        # Itera sobre todos os pixels do raster de fluxo
+        # Função auxiliar para realizar a BFS a partir de um pixel da bacia
+        def bfs_para_exutorio():
+            """
+            BFS a partir do primeiro pixel da bacia, verificando se cada pixel da bacia pode
+            chegar até o exutório, seguindo o fluxo de cada pixel.
+            """
+            fila = deque()
+            visitados = set()
+
+            # Adicionar todos os pixels da bacia na fila
+            for i in range(linhas):
+                for j in range(colunas):
+                    if raster_bacia_data[i, j] == 1:  # Verificar se o pixel está na bacia
+                        fila.append((i, j))
+                        visitados.add((i, j))
+
+            while fila:
+                pi, pj = fila.popleft()
+
+                # Verificar a direção de fluxo para o pixel atual
+                fluxo_pixel = raster_fluxo_data[pi, pj]  # A direção do fluxo do pixel atual
+
+                # Convertemos o valor do fluxo para a direção de movimento
+                direcao_fluxo = None
+                for dir_vec, angulo in direcoes_dict.items():
+                    if fluxo_pixel == angulo:
+                        direcao_fluxo = dir_vec
+                        break
+
+                # Agora, vamos verificar se a direção do fluxo leva até um vizinho
+                vi, vj = pi + direcao_fluxo[0], pj + direcao_fluxo[1]
+
+                # Verifica se a direção está dentro dos limites e se o vizinho pertence à bacia
+                if dentro_dos_limites(vi, vj, linhas, colunas) and raster_bacia_data[vi, vj] == 1:
+                    if (vi, vj) not in visitados:
+                        visitados.add((vi, vj))
+                        fila.append((vi, vj))
+
+            return visitados
+
+        # Função para verificar se conseguimos chegar no exutório
+        def verifica_se_chegou_exutorio(pixels_visitados, exutorio):
+            """
+            Verifica se o exutório foi alcançado a partir de algum dos pixels visitados.
+            """
+            if exutorio in pixels_visitados:
+                print(f"Exutório ({exutorio}) alcançado!")
+                return True
+            else:
+                print(f"Exutório ({exutorio}) NÃO alcançado!")
+                return False
+
+        # Iniciar BFS a partir do primeiro pixel da bacia
+        print(f"Iniciando BFS a partir do primeiro pixel da bacia.")
+        pixels_visitados = bfs_para_exutorio()
+
+        # Verificar se todos os pixels da bacia foram visitados e se o exutório foi alcançado
         for i in range(linhas):
             for j in range(colunas):
-                # Considera apenas os pixels dentro da bacia
-                if raster_bacia_data[i, j] == 1:
-                    #print(f"\nIniciando análise do pixel ({i}, {j})")
+                if raster_bacia_data[i, j] == 1:  # Só considerar pixels dentro da bacia
+                    if (i, j) not in pixels_visitados:
+                        print(f"Pixel ({i}, {j}) NÃO convergiu para o exutório.")
+                        print("\nInterrompendo a execução, pois nem todos os pixels da bacia convergiram para o exutório.")
+                        return  # Interrompe a execução imediatamente
 
-                    # Se o pixel já está nos pixels inválidos, pula para o próximo
-                    if (i, j) in pixels_invalidos:
-                        #print(f"  -> Pixel ({i}, {j}) está em pixels inválidos. Pulando.")
-                        continue
+        # Verificar se o exutório foi alcançado
+        if not verifica_se_chegou_exutorio(pixels_visitados, exutorio):
+            print("\nInterrompendo a execução, pois o exutório não foi alcançado por todos os pixels.")
+            return  # Interrompe a execução se o exutório não foi alcançado
 
-                    # Se o pixel já está nos pixels válidos, pula para o próximo
-                    if (i, j) in pixels_validos:
-                        #print(f"  -> Pixel ({i}, {j}) já foi validado. Pulando.")
-                        continue
-
-                    # Conjunto para armazenar os pixels visitados no caminho
-                    pixels_no_caminho = set()
-                    pi, pj = i, j  # Mantém uma cópia da posição original
-
-                    while True:
-                        # Direção de fluxo do pixel atual
-                        fluxo = raster_fluxo_data[pi, pj]
-                        #print(f"  - Pixel atual: ({pi}, {pj}) | Fluxo: {fluxo}")
-
-                        # Verifica se o fluxo tem uma direção válida
-                        if fluxo in direcoes_dict.values():
-                            # Identifica a direção correspondente à direção de fluxo
-                            for direcao, angulo in direcoes_dict.items():
-                                if fluxo == angulo:
-                                    vi, vj = pi + direcao[0], pj + direcao[1]
-                                    #print(f"    -> Fluxo direcionado para ({vi}, {vj})")
-                                    break
-
-                            # Verifica se o próximo vizinho está dentro dos limites
-                            if 0 <= vi < linhas and 0 <= vj < colunas:
-                                # Verifica se o próximo pixel está dentro da bacia
-                                if raster_bacia_data[vi, vj] != 1:
-                                    #print(f"    [AVISO] O fluxo está indo para fora da bacia! ({vi}, {vj}) não está na bacia.")
-                                    # Adiciona apenas o último pixel que causou a falha ao conjunto de inválidos
-                                    pixels_invalidos.add((pi, pj))
-                                    break  # Interrompe o fluxo
-
-                                # Se o próximo pixel for o exutório, para o processo
-                                if (vi, vj) == exutorio:
-                                    print(f"    -> Exutório encontrado! ({pi}, {pj}) está saindo da bacia.")
-                                    # Adiciona os pixels do caminho até o exutório no conjunto de válidos
-                                    pixels_no_caminho.add((pi, pj))  # Adiciona o pixel atual ao caminho
-                                    pixels_no_caminho.add((vi, vj))  # Adiciona o exutório ao caminho
-
-                                    # Adiciona todos os pixels do caminho ao conjunto de válidos
-                                    for px, py in pixels_no_caminho:
-                                        pixels_validos.add((px, py))
-                                        print(f"    Pixel válido adicionado: ({px}, {py})")
-
-                                    caminhos_exutorio += 1  # Incrementa a contagem dos caminhos
-                                    break  # Interrompe o percurso, pois chegou ao exutório
-
-                                # Verifica se o próximo pixel já foi validado
-                                elif (vi, vj) in pixels_validos:
-                                    #print(f"    -> Pixel ({vi}, {vj}) já foi validado. Encerrando percurso.")
-                                    # Adiciona o pixel atual aos pixels válidos
-                                    pixels_validos.add((pi, pj))
-                                    break  # Interrompe o percurso
-
-                                # Verifica se o próximo pixel já está em pixels inválidos
-                                elif (vi, vj) in pixels_invalidos:
-                                    #print(f"    -> Pixel ({vi}, {vj}) está em pixels inválidos. Encerrando percurso.")
-                                    # Adiciona apenas o último pixel que causou a falha aos pixels inválidos
-                                    pixels_invalidos.add((pi, pj))
-                                    break  # Interrompe o percurso
-
-                                else:
-                                    # Continua o fluxo para o próximo pixel
-                                    pixels_no_caminho.add((pi, pj))  # Adiciona o pixel ao caminho
-                                    pi, pj = vi, vj  # Atualiza a posição e segue o fluxo
-                            else:
-                                #print(f"    [AVISO] O fluxo está indo para fora dos limites do raster!")
-                                # Adiciona apenas o último pixel que causou a falha ao conjunto de inválidos
-                                pixels_invalidos.add((pi, pj))
-                                break  # Interrompe o fluxo
-
-                        else:
-                            #print(f"    [ERRO] O pixel ({pi}, {pj}) tem um fluxo inválido!")
-                            # Adiciona apenas o último pixel que causou a falha ao conjunto de inválidos
-                            pixels_invalidos.add((pi, pj))
-                            break  # Interrompe o processo se o fluxo for inválido
-
-        # Imprime a quantidade de caminhos que chegaram ao exutório
-        print(f"\nQuantidade de caminhos que chegaram ao exutório: {caminhos_exutorio}")
-        print(f"\nNúmero total de pixels válidos: {len(pixels_validos)}")
-        print(f"\nNúmero total de pixels inválidos: {len(pixels_invalidos)}")
-        print("\nTodos os fluxos foram validados com sucesso.")
+        print("\nTodos os pixels da bacia convergiram para o exutório.")
     
     def run_22(self):
         '''Verifica possíveis inconsistências'''
