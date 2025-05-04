@@ -4706,92 +4706,100 @@ class DesenvolvePlugin():
         dataset_fluxo, _band_fluxo, raster_fluxo_data = self.abrir_raster(raster_fluxo)
         _dataset_bacia, _band_bacia, raster_bacia_data = self.abrir_raster(raster_bacia)
 
-        # dimensões do raster
         linhas = dataset_fluxo.RasterYSize
         colunas = dataset_fluxo.RasterXSize
         print(f"Tamanho do raster: {linhas} linhas x {colunas} colunas")
 
-        # Dicionário que mapeia deslocamentos para ângulos de fluxo
+        # Dicionário ângulo -> vetor de deslocamento
         direcoes_dict = {
-            (0,  1):  90,   # Leste
-            (-1, 1):  45,   # Nordeste
-            (-1, 0):  360,  # Norte
-            (-1, -1): 315,  # Noroeste
-            (0, -1): 270,   # Oeste
-            (1, -1): 225,   # Sudoeste
-            (1,  0): 180,   # Sul
-            (1,  1): 135    # Sudeste
+            (-1, 1):  45, (0,  1):  90, (1,  1): 135,
+            (1,  0): 180, (1, -1): 225, (0, -1): 270,
+            (-1, -1): 315, (-1, 0): 360
         }
+        angulo_para_vetor = {ang: vec for vec, ang in direcoes_dict.items()}
 
-        # Função para verificar se um pixel está dentro dos limites do raster
         def dentro_dos_limites(i, j):
-            return 0 < i < linhas and 0 < j < colunas
+            return 0 <= i < linhas and 0 <= j < colunas
 
-        # Função para verificar se o exutório está dentro da bacia
         def verifica_exutorio_valido(exutorio):
-            ex_i, ex_j = exutorio
-            if dentro_dos_limites(ex_i, ex_j) and raster_bacia_data[ex_i, ex_j] == 1:
-                print(f"Exutório em ({ex_i}, {ex_j}) é um local válido dentro da bacia.")
-                return True
-            else:
-                print(f"Exutório em ({ex_i}, {ex_j}) NÃO é um local válido dentro da bacia.")
-                return False
+            i, j = exutorio
+            return dentro_dos_limites(i, j) and raster_bacia_data[i, j] == 1
 
-        # Algoritmo BFS para verificar a conectividade entre os pixels da bacia e o exutório
-        # https://pt.wikipedia.org/wiki/Busca_em_largura
-        def bfs_para_exutorio():
-            fila = deque()  # Fila para armazenar os pixels a serem processados
-            visitados = set()  # Conjunto para armazenar os pixels já visitados
-            
-            # Adiciona todos os pixels da bacia à fila inicial
-            for i in range(linhas):
-                for j in range(colunas):
-                    if raster_bacia_data[i, j] == 1:  # Verifica se o pixel pertence à bacia
-                        fila.append((i, j))  # Adiciona o pixel à fila
-                        visitados.add((i, j))  # Marca como visitado
-
-            # Processa os pixels na fila até que todos sejam visitados
-            while fila:
-                pi, pj = fila.popleft()  # Remove o primeiro pixel da fila
-                fluxo_pixel = raster_fluxo_data[pi, pj]  # Obtém o valor de fluxo do pixel atual
-                
-                # Verifica qual direção o fluxo está seguindo no pixel atual
-                direcao_fluxo = next((dir_vec for dir_vec, angulo in direcoes_dict.items() if fluxo_pixel == angulo), None)
-                
-                if direcao_fluxo:  # Se houver uma direção de fluxo válida
-                    # Calcula a posição do pixel vizinho de acordo com a direção do fluxo
-                    vi, vj = pi + direcao_fluxo[0], pj + direcao_fluxo[1]
-                    
-                    # Verifica se o pixel vizinho está dentro dos limites do raster, é parte da bacia e não foi visitado ainda
-                    if dentro_dos_limites(vi, vj) and raster_bacia_data[vi, vj] == 1 and (vi, vj) not in visitados:
-                        visitados.add((vi, vj))  # Marca o pixel vizinho como visitado
-                        fila.append((vi, vj))  # Adiciona o pixel vizinho à fila para processamento posterior
-
-            return visitados  # Retorna todos os pixels  que conseguiram alcançar o exutório
-
-        # Função que verifica se algum pixel da bacia não foi visitado
-        def verifica_pixels_nao_visitados(pixels_visitados):
-            for i in range(linhas):
-                for j in range(colunas):
-                    if raster_bacia_data[i, j] == 1 and (i, j) not in pixels_visitados:
-                        print(f"Pixel ({i}, {j}) NÃO convergiu para o exutório.")
-                        print("\nInterrompendo a execução.")
-                        return True  # Retorna True se algum pixel não foi visitado (não convergiu para o exutório)
-            return False  # Retorna False se todos os pixels foram visitados
-
-        # Verifica se o exutório é válido
         if not verifica_exutorio_valido(exutorio):
-            print("\nInterrompendo a execução devido à localização inválida do exutório.")
+            print("Exutório inválido. Abortando.")
             return
 
-        print("Iniciando BFS a partir dos pixels da bacia.")
-        pixels_visitados = bfs_para_exutorio()  # Executa a BFS para encontrar os pixels que conseguem alcançar o exutório
+        status = np.full_like(raster_bacia_data, -1, dtype=np.int8)  # -1: não verificado, 0: inválido, 1: válido
 
-        # Verifica se algum pixel da bacia ficou sem conexão com o exutório
-        if verifica_pixels_nao_visitados(pixels_visitados):
-            return
+        print("Validando caminhos dos pixels até o exutório...\n")
+        falhas = 0
+        total = 0
 
-        print("\nTodos os pixels da bacia convergiram para o exutório.")
+        for i in range(linhas):
+            for j in range(colunas):
+                if raster_bacia_data[i, j] != 1:
+                    continue
+                total += 1
+
+                if status[i, j] != -1:
+                    continue  # já avaliado
+
+                pilha = [(i, j)]
+                visitando = set()
+                caminho = []
+
+                while pilha:
+                    ci, cj = pilha[-1]
+                    if (ci, cj) in visitando:
+                        # Detecção de ciclo
+                        for pi, pj in pilha:
+                            status[pi, pj] = 0
+                        break
+
+                    visitando.add((ci, cj))
+                    caminho.append((ci, cj))
+
+                    if (ci, cj) == exutorio:
+                        for pi, pj in caminho:
+                            status[pi, pj] = 1
+                        break
+
+                    fluxo = raster_fluxo_data[ci, cj]
+                    desloc = angulo_para_vetor.get(fluxo)
+                    if desloc is None:
+                        for pi, pj in caminho:
+                            status[pi, pj] = 0
+                        break
+
+                    ni, nj = ci + desloc[0], cj + desloc[1]
+                    if not dentro_dos_limites(ni, nj) or raster_bacia_data[ni, nj] != 1:
+                        for pi, pj in caminho:
+                            status[pi, pj] = 0
+                        break
+
+                    if status[ni, nj] == 1:
+                        for pi, pj in caminho:
+                            status[pi, pj] = 1
+                        break
+                    elif status[ni, nj] == 0:
+                        for pi, pj in caminho:
+                            status[pi, pj] = 0
+                        break
+                    elif (ni, nj) in visitando:
+                        for pi, pj in caminho:
+                            status[pi, pj] = 0
+                        break
+                    else:
+                        pilha.append((ni, nj))
+
+                if status[i, j] == 0:
+                    falhas += 1
+                    print(f"✘ Pixel ({i}, {j}) NÃO leva ao exutório.")
+
+        if falhas == 0:
+            print(f"\nSUCESSO: Todos os {total} pixels da bacia convergem para o exutório.")
+        else:
+            print(f"\nERRO: {falhas} de {total} pixels da bacia NÃO convergiram para o exutório.")
     
     def run_22(self):
         '''Verifica possíveis inconsistências'''
